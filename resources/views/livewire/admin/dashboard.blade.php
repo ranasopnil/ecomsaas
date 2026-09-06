@@ -43,8 +43,10 @@
 
     @include('livewire.admin.partials.setup-flow')
 
+    @include('livewire.admin.partials.sales-boxes')
+
     {{-- The four figures. Each one rolls up to its new value on its own. --}}
-    <div class="rise rise-2 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="rise rise-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @php
             $exp = $store->currency_exponent;
             $tiles = [
@@ -66,7 +68,7 @@
 
         @foreach ($tiles as $tile)
             <div class="card card-hover p-5">
-                <p class="text-sm text-slate-500">{{ $tile['label'] }}</p>
+                <p class="text-xs font-medium uppercase tracking-wide text-slate-400">{{ $tile['label'] }}</p>
                 <p x-data="counter({{ $tile['value'] }}, {{ $tile['decimals'] }}, @js($tile['prefix']))"
                    x-effect="target = {{ $tile['value'] }}"
                    x-text="display"
@@ -120,6 +122,10 @@
                         <path d="{{ $line }}" fill="none" stroke="#5b3df5" stroke-width="1.1"
                               stroke-linecap="round" stroke-linejoin="round"
                               pathLength="1" style="stroke-dasharray:1;stroke-dashoffset:0;animation:draw .9s ease-out" />
+
+                        {{-- Where the line ends today. --}}
+                        @php([$lastX, $lastY] = end($coords))
+                        <circle cx="{{ $lastX }}" cy="{{ $lastY }}" r="2.6" fill="#fff" stroke="#5b3df5" stroke-width="1.2" />
                     </svg>
 
                     <div class="mt-2 flex justify-between text-xs text-slate-400">
@@ -156,16 +162,23 @@
                 </div>
 
                 @forelse ($alerts as $level)
-                    <div class="flex items-center justify-between border-b border-slate-50 py-2 text-sm last:border-0">
-                        <div class="min-w-0">
-                            <p class="truncate font-medium">{{ $level->variant?->product?->name }}</p>
-                            <p class="text-xs text-slate-500">{{ $level->variant?->choiceLabel() }}</p>
-                        </div>
-                        <span class="ms-3 shrink-0 rounded-full px-2 py-0.5 text-xs font-medium
+                    @php($image = $level->variant?->displayImage())
+                    <a href="{{ route('admin.stock.index') }}" wire:navigate
+                       class="-mx-2 flex items-center gap-3 rounded-xl px-2 py-2 text-sm transition hover:bg-slate-50">
+                        <span class="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                            @if ($image)
+                                <img src="{{ $image->thumbnailUrl() }}" alt="" class="h-full w-full object-cover">
+                            @endif
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block truncate font-medium">{{ $level->variant?->product?->name }}</span>
+                            <span class="block text-xs text-slate-500">{{ $level->variant?->choiceLabel() }}</span>
+                        </span>
+                        <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold
                                      {{ $level->available <= 0 ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800' }}">
                             {{ $level->available <= 0 ? 'Sold out' : $level->available.' left' }}
                         </span>
-                    </div>
+                    </a>
                 @empty
                     <p class="py-6 text-center text-sm text-slate-500">Nothing needs your attention.</p>
                 @endforelse
@@ -181,24 +194,33 @@
                 <a href="{{ route('admin.products.index') }}" wire:navigate class="text-sm text-violet-700 hover:underline">Products &rarr;</a>
             </div>
 
+            @php($mostValuable = $topProducts->first()['value']->minor ?? 1)
             <div class="divide-y divide-slate-50">
-                @forelse ($topProducts as $row)
+                @forelse ($topProducts as $rank => $row)
                     @php($variant = $row['variant'])
                     @php($image = $variant->displayImage())
+                    @php($share = $mostValuable > 0 ? max(4, round($row['value']->minor / $mostValuable * 100)) : 0)
                     <div class="flex items-center gap-4 p-4">
+                        <span class="w-4 shrink-0 text-xs font-bold text-slate-300">{{ $rank + 1 }}</span>
+
                         <div class="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-slate-100">
                             @if ($image)
                                 <img src="{{ $image->thumbnailUrl() }}" alt="" class="h-full w-full object-cover">
                             @endif
                         </div>
+
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-sm font-medium">{{ $variant->product?->name }}</p>
-                            <p class="text-xs text-slate-500">{{ $variant->choiceLabel() }}</p>
+                            <p class="text-xs text-slate-500">
+                                {{ $variant->choiceLabel() }} · {{ number_format($variant->inventory?->available ?? 0) }} in stock
+                            </p>
+                            <span class="mt-1.5 block h-1 w-full overflow-hidden rounded-full bg-slate-100">
+                                <span class="block h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-600"
+                                      style="width: {{ $share }}%; transition: width .8s ease"></span>
+                            </span>
                         </div>
-                        <div class="text-end">
-                            <p class="text-sm font-semibold tabular-nums">{{ $store->currency }} {{ $row['value']->toDisplay() }}</p>
-                            <p class="text-xs text-slate-500">{{ number_format($variant->inventory?->available ?? 0) }} in stock</p>
-                        </div>
+
+                        <p class="shrink-0 text-sm font-semibold tabular-nums">{{ $store->currency }} {{ $row['value']->toDisplay() }}</p>
                     </div>
                 @empty
                     <p class="p-8 text-center text-sm text-slate-500">Add a product and its stock to see this.</p>
@@ -213,14 +235,20 @@
                 <p class="text-sm text-slate-500">Every stock change, as it happened</p>
             </div>
 
-            <div class="divide-y divide-slate-50">
+            <div class="p-5">
                 @forelse ($activity as $movement)
-                    <div class="flex items-start gap-3 p-4">
-                        <span class="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold
+                    <div class="relative flex gap-3 pb-4 last:pb-0">
+                        {{-- The thread joining one change to the next. --}}
+                        @unless ($loop->last)
+                            <span class="absolute start-[0.85rem] top-8 bottom-0 w-px bg-slate-100"></span>
+                        @endunless
+
+                        <span class="relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold
                                      {{ $movement->quantity_change >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700' }}">
                             {{ $movement->quantity_change >= 0 ? '+' : '−' }}{{ abs($movement->quantity_change) }}
                         </span>
-                        <div class="min-w-0">
+
+                        <div class="min-w-0 pt-0.5">
                             <p class="truncate text-sm font-medium">{{ $movement->variant?->product?->name }}</p>
                             <p class="text-xs text-slate-500">
                                 {{ $movement->note ?: str_replace('_', ' ', $movement->reason) }} ·

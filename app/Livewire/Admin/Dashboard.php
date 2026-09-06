@@ -74,6 +74,7 @@ class Dashboard extends Component
                 ->where('available', '>', 0)
                 ->count(),
             'money' => $this->stockMoney($store->currency, $store->currency_exponent),
+            'sales' => $this->sales($store),
             'health' => $this->health($store, $productCount),
             'chart' => $this->chart(),
             'topProducts' => $this->topProducts($store),
@@ -114,6 +115,93 @@ class Dashboard extends Component
             'missingCost' => (int) ($totals->missing_cost ?? 0),
             'counted' => (int) ($totals->counted ?? 0),
         ];
+    }
+
+    /**
+     * What the shop has sold, taken from stock that went out marked as sold.
+     *
+     * Until there is a checkout, this is the truest figure the shop has: every
+     * sale recorded on the stock screen counts. Value is worked out at today's
+     * prices, because a price is not written down against a stock movement.
+     *
+     * @return array{
+     *     today: array{revenue: Money, profit: Money, units: int},
+     *     yesterday: array{revenue: Money, profit: Money, units: int},
+     *     change: float|null,
+     *     spark: array<int, int>,
+     *     sparkPeak: int,
+     * }
+     */
+    protected function sales(Tenant $store): array
+    {
+        $timezone = $store->timezone;
+        $startOfToday = Carbon::now($timezone)->startOfDay();
+
+        $today = $this->soldBetween($startOfToday, Carbon::now($timezone), $store);
+        $yesterday = $this->soldBetween($startOfToday->copy()->subDay(), $startOfToday, $store);
+
+        $change = $yesterday['revenue']->minor > 0
+            ? round(($today['revenue']->minor - $yesterday['revenue']->minor) / $yesterday['revenue']->minor * 100, 1)
+            : null;
+
+        return [
+            'today' => $today,
+            'yesterday' => $yesterday,
+            'change' => $change,
+            'spark' => $spark = $this->soldPerDay($timezone, 7),
+            'sparkPeak' => max(1, max($spark)),
+        ];
+    }
+
+    /**
+     * @return array{revenue: Money, profit: Money, units: int}
+     */
+    protected function soldBetween(Carbon $from, Carbon $to, Tenant $store): array
+    {
+        $totals = InventoryMovement::query()
+            ->join('product_variants', function ($join) {
+                $join->on('product_variants.id', '=', 'inventory_movements.product_variant_id')
+                    ->on('product_variants.tenant_id', '=', 'inventory_movements.tenant_id');
+            })
+            ->where('inventory_movements.reason', InventoryMovement::REASON_SOLD)
+            ->whereBetween('inventory_movements.created_at', [$from->copy()->utc(), $to->copy()->utc()])
+            ->selectRaw('COALESCE(SUM(ABS(inventory_movements.quantity_change)), 0) AS units')
+            ->selectRaw('COALESCE(SUM(ABS(inventory_movements.quantity_change) * product_variants.price_minor), 0) AS revenue_minor')
+            ->selectRaw('COALESCE(SUM(ABS(inventory_movements.quantity_change)
+                         * (product_variants.price_minor - product_variants.cost_price_minor))
+                         FILTER (WHERE product_variants.cost_price_minor IS NOT NULL), 0) AS profit_minor')
+            ->first();
+
+        return [
+            'units' => (int) ($totals->units ?? 0),
+            'revenue' => new Money((int) ($totals->revenue_minor ?? 0), $store->currency, $store->currency_exponent),
+            'profit' => new Money((int) ($totals->profit_minor ?? 0), $store->currency, $store->currency_exponent),
+        ];
+    }
+
+    /**
+     * Units sold on each of the last few days, for the little line in the box.
+     *
+     * @return array<int, int>
+     */
+    protected function soldPerDay(string $timezone, int $days): array
+    {
+        $rows = InventoryMovement::query()
+            ->where('reason', InventoryMovement::REASON_SOLD)
+            ->where('created_at', '>=', Carbon::now($timezone)->startOfDay()->subDays($days - 1)->utc())
+            ->selectRaw("(created_at AT TIME ZONE 'UTC' AT TIME ZONE ?)::date AS on_day", [$timezone])
+            ->selectRaw('COALESCE(SUM(ABS(quantity_change)), 0) AS units')
+            ->groupBy('on_day')
+            ->pluck('units', 'on_day');
+
+        $series = [];
+
+        for ($back = $days - 1; $back >= 0; $back--) {
+            $day = Carbon::now($timezone)->startOfDay()->subDays($back)->toDateString();
+            $series[] = (int) ($rows[$day] ?? 0);
+        }
+
+        return $series;
     }
 
     /**
