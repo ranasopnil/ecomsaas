@@ -62,6 +62,19 @@ class PackageManagementTest extends TestCase
         $this->assertTrue($package->fresh('entitlements')->allowsFeature('online_payments'));
     }
 
+    public function test_staff_cannot_give_a_plan_more_domains_than_the_platform_allows(): void
+    {
+        Livewire::test(PackageForm::class)
+            ->set('name', 'Too generous')
+            ->set('slug', 'too-generous')
+            ->set('prices.BDT', '9990')
+            ->set('limits.custom_domains', '3')
+            ->call('save')
+            ->assertHasErrors('limits.custom_domains');
+
+        $this->assertDatabaseCount('packages', 0);
+    }
+
     public function test_a_currency_without_decimals_keeps_its_real_value(): void
     {
         Livewire::test(PackageForm::class)

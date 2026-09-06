@@ -86,7 +86,7 @@ class PackageSeeder extends Seeder
                 'entitlements' => [
                     'products' => null,
                     'staff_accounts' => 10,
-                    'custom_domains' => 3,
+                    'custom_domains' => 2,
                     'storage_mb' => 25000,
                     'orders_per_month' => null,
                     'cash_on_delivery' => true,

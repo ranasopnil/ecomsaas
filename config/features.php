@@ -28,6 +28,8 @@ return [
         'type' => 'limit',
         'label' => 'Custom domains',
         'default' => 0,
+        // No plan may go past this, however generous. A shop is one shop.
+        'max' => 2,
     ],
 
     'storage_mb' => [

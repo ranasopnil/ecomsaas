@@ -128,6 +128,36 @@ class CustomDomainTest extends TestCase
         app(DomainRegistrar::class)->add($this->store, 'second.com');
     }
 
+    public function test_no_plan_can_give_a_shop_more_than_two_domains(): void
+    {
+        // A plan with no ceiling of its own still stops at the platform's two.
+        $generous = Tenant::factory()->create(['currency' => 'BDT']);
+        app(SubscribeToPackage::class)->handle($generous, Package::factory()->allowing(['custom_domains' => null])->create());
+        Entitlements::forget();
+
+        Tenancy::run($generous, function () use ($generous) {
+            Domain::factory()->create(['tenant_id' => $generous->id]);
+
+            $this->assertSame(2, Entitlements::limit('custom_domains'));
+
+            $registrar = app(DomainRegistrar::class);
+            $registrar->add($generous, 'first.com');
+            $registrar->add($generous, 'second.com');
+
+            $this->expectException(LimitReached::class);
+            $registrar->add($generous, 'third.com');
+        });
+    }
+
+    public function test_a_plan_set_above_the_ceiling_is_still_held_to_two(): void
+    {
+        $tenant = Tenant::factory()->create(['currency' => 'BDT']);
+        app(SubscribeToPackage::class)->handle($tenant, Package::factory()->allowing(['custom_domains' => 9])->create());
+        Entitlements::forget();
+
+        Tenancy::run($tenant, fn () => $this->assertSame(2, Entitlements::limit('custom_domains')));
+    }
+
     public function test_a_domain_pointing_here_is_verified_without_any_code_to_paste(): void
     {
         $domain = app(DomainRegistrar::class)->add($this->store, 'myshop.com');
@@ -270,6 +300,7 @@ class CustomDomainTest extends TestCase
 
             Livewire::test(DomainIndex::class)
                 ->assertSee('Not included in your plan')
+                ->assertSee('orange cloud must be OFF')
                 ->set('hostname', 'myshop.com')
                 ->call('add')
                 ->assertHasErrors('hostname');

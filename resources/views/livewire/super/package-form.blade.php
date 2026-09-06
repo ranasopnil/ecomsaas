@@ -114,7 +114,8 @@
                     <div>
                         @if ($definition['type'] === 'limit')
                             <label class="mb-1 block text-sm font-medium">{{ $definition['label'] }}</label>
-                            <input type="number" min="0" wire:model="limits.{{ $feature }}" placeholder="No limit"
+                            <input type="number" min="0" @if (isset($definition['max'])) max="{{ $definition['max'] }}" @endif
+                                   wire:model="limits.{{ $feature }}" placeholder="{{ isset($definition['max']) ? 'Up to '.$definition['max'] : 'No limit' }}"
                                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none">
                             @error('limits.'.$feature) <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                         @else

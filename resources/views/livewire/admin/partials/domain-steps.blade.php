@@ -86,7 +86,7 @@
 
     <ul class="mt-3 space-y-2.5 text-sm text-amber-900">
         @foreach ([
-            ['On Cloudflare, leave the orange cloud on.', 'Switch each record to DNS only — the grey cloud. With the orange cloud your address never reaches us and the padlock cannot be set up.'],
+            ['On Cloudflare, the orange cloud must be OFF.', 'Switch each record to DNS only — the grey cloud. With the orange cloud on, your address never reaches us and the padlock cannot be set up.'],
             ['Use a CNAME for the domain itself.', 'The plain domain needs an A record. A CNAME there breaks email and is rejected by many providers.'],
             ['Use forwarding or redirect.', 'Web forwarding sends visitors somewhere else instead of pointing the address at us. Your shop will not load.'],
             ['Type https:// in the Name box.', 'The Name is only @ or www. Nothing else goes in it.'],

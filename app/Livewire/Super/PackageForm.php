@@ -114,7 +114,25 @@ class PackageForm extends Component
             'sort_order' => ['required', 'integer', 'min:0', 'max:999'],
             'prices.*' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
             'limits.*' => ['nullable', 'integer', 'min:0', 'max:1000000'],
-        ];
+        ] + $this->ceilingRules();
+    }
+
+    /**
+     * Features with a platform-wide ceiling refuse anything above it.
+     *
+     * @return array<string, array<int, string>>
+     */
+    protected function ceilingRules(): array
+    {
+        $rules = [];
+
+        foreach (config('features') as $feature => $definition) {
+            if (isset($definition['max'])) {
+                $rules["limits.{$feature}"] = ['nullable', 'integer', 'min:0', 'max:'.$definition['max']];
+            }
+        }
+
+        return $rules;
     }
 
     protected function validationAttributes(): array

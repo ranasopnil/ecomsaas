@@ -33,11 +33,26 @@ class Entitlements
 
         $row = $this->rows()[$feature] ?? null;
 
-        if ($row === null) {
-            return config("features.{$feature}.default");
+        $limit = $row === null
+            ? config("features.{$feature}.default")
+            : ($row->enabled ? $row->limit_value : 0);
+
+        return $this->cap($feature, $limit);
+    }
+
+    /**
+     * Some features have a ceiling the platform itself sets, above any plan.
+     * Null (no limit) becomes the ceiling; anything larger is brought down.
+     */
+    protected function cap(string $feature, ?int $limit): ?int
+    {
+        $max = config("features.{$feature}.max");
+
+        if ($max === null) {
+            return $limit;
         }
 
-        return $row->enabled ? $row->limit_value : 0;
+        return $limit === null ? (int) $max : min($limit, (int) $max);
     }
 
     /**
