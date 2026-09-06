@@ -1,14 +1,10 @@
 <div class="space-y-6">
-    <div>
-        <h1 class="text-2xl font-semibold">Brands</h1>
+    <div class="rise">
+        <h1 class="text-3xl font-bold tracking-tight">Brands</h1>
         <p class="mt-1 text-sm text-slate-500">The makers whose things you sell.</p>
     </div>
 
-    @if ($message !== '')
-        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{{ $message }}</div>
-    @endif
-
-    <form wire:submit="save" class="rounded-xl bg-white p-6 shadow-sm">
+    <form wire:submit="save" class="card rise rise-1 p-6">
         <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
             {{ $editingId ? 'Edit brand' : 'New brand' }}
         </h2>
@@ -26,7 +22,7 @@
                 Shown in the shop
             </label>
 
-            <button type="submit" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+            <button type="submit" class="btn btn-primary">
                 {{ $editingId ? 'Save changes' : 'Add brand' }}
             </button>
 
@@ -36,7 +32,7 @@
         </div>
     </form>
 
-    <div class="overflow-x-auto rounded-xl bg-white shadow-sm">
+    <div class="card rise rise-2 overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
                 <tr>
@@ -55,9 +51,9 @@
                         <td class="px-5 py-3">
                             <div class="flex justify-end gap-2">
                                 <button wire:click="edit({{ $brand->id }})"
-                                        class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">Edit</button>
+                                        class="btn btn-quiet !px-3 !py-1.5">Edit</button>
                                 <button wire:click="delete({{ $brand->id }})" wire:confirm="Delete {{ $brand->name }}?"
-                                        class="rounded-lg border border-rose-200 px-3 py-1.5 text-sm text-rose-700 hover:bg-rose-50">Delete</button>
+                                        class="btn !px-3 !py-1.5 border border-rose-200 text-rose-700 hover:bg-rose-50">Delete</button>
                             </div>
                         </td>
                     </tr>

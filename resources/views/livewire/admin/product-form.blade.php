@@ -2,23 +2,19 @@
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
             <a href="{{ route('admin.products.index') }}" wire:navigate class="text-sm text-slate-500 hover:text-slate-900">&larr; Products</a>
-            <h1 class="mt-1 text-2xl font-semibold">{{ $product ? 'Edit '.$product->name : 'New product' }}</h1>
+            <h1 class="mt-1 text-3xl font-bold tracking-tight">{{ $product ? 'Edit '.$product->name : 'New product' }}</h1>
         </div>
 
         @if ($product)
             <a href="{{ route('storefront.product', $product->slug) }}" target="_blank" rel="noopener"
-               class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50">
+               class="btn btn-quiet">
                 View as a customer &nearr;
             </a>
         @endif
     </div>
 
-    @if ($message !== '')
-        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{{ $message }}</div>
-    @endif
-
     <form wire:submit="save" class="space-y-6">
-        <div class="rounded-xl bg-white p-6 shadow-sm">
+        <div class="card p-6">
             <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">The product</h2>
 
             <div class="grid gap-4 sm:grid-cols-2">
@@ -110,7 +106,7 @@
             </div>
         </div>
 
-        <div class="rounded-xl bg-white p-6 shadow-sm">
+        <div class="card p-6">
             <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
                 Price and stock @if ($product?->has_variants) <span class="normal-case text-slate-400">(the starting point for each choice)</span> @endif
             </h2>
@@ -201,7 +197,7 @@
 
 
 
-        <div class="rounded-xl bg-white p-6 shadow-sm">
+        <div class="card p-6">
             <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Delivery</h2>
             <p class="mt-1 mb-4 text-sm text-slate-500">
                 Size and weight are optional, but couriers price on them, so filling them in means the
@@ -247,7 +243,7 @@
         </div>
 
     @if ($product)
-        <div class="rounded-xl bg-white p-6 shadow-sm">
+        <div class="card p-6">
             <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Photos</h2>
             <p class="mt-1 mb-4 text-sm text-slate-500">
                 The first photo is the one customers see in the shop listing. Big pictures are shrunk for you.
@@ -283,7 +279,8 @@
             @if ($images->isNotEmpty())
                 <div class="mt-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
                     @foreach ($images as $image)
-                        <div class="overflow-hidden rounded-xl border border-slate-200">
+                        <div wire:key="photo-{{ $image->id }}"
+                             class="overflow-hidden rounded-xl border border-slate-200 {{ $justTouchedPhoto === $image->id ? 'settled' : '' }}">
                             <div class="aspect-square bg-slate-100">
                                 <img src="{{ $image->thumbnailUrl() }}" alt="{{ $image->alt_text ?: $product->name }}"
                                      class="h-full w-full object-cover">
@@ -323,11 +320,11 @@
         </div>
     @endif
 
-        <div class="rounded-xl bg-white p-6 shadow-sm">
+        <div class="card p-6">
             <div class="mb-2 flex items-center justify-between">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Variants</h2>
                 <button type="button" wire:click="addOption"
-                        class="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800">
+                        class="btn btn-primary !px-3 !py-1.5">
                     + Add variant
                 </button>
             </div>
@@ -358,7 +355,7 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <button type="submit" class="rounded-lg bg-slate-900 px-5 py-2 text-sm font-medium text-white hover:bg-slate-800">
+            <button type="submit" class="btn btn-primary !px-5">
                 <span wire:loading.remove wire:target="save">Save product</span>
                 <span wire:loading wire:target="save">Saving…</span>
             </button>
@@ -367,7 +364,7 @@
     </form>
 
     @if ($product?->has_variants && count($variantRows) > 0)
-        <div class="rounded-xl bg-white p-6 shadow-sm">
+        <div class="card p-6">
             <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">Each variant combination</h2>
 
             <div class="overflow-x-auto">
@@ -430,7 +427,7 @@
             </div>
 
             <button type="button" wire:click="saveVariants"
-                    class="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                    class="btn btn-primary mt-4">
                 Save the combinations
             </button>
         </div>

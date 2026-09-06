@@ -21,7 +21,8 @@ class ProductIndex extends Component
     #[Url]
     public string $status = '';
 
-    public string $message = '';
+    /** The row that just changed, so only that one is highlighted. */
+    public ?int $justChanged = null;
 
     public function updatedSearch(): void
     {
@@ -38,7 +39,7 @@ class ProductIndex extends Component
         $product = Product::findOrFail($productId);
         $product->update(['status' => Product::STATUS_ARCHIVED]);
 
-        $this->message = "{$product->name} was put away. It is no longer in the shop.";
+        $this->announce($product->id, "{$product->name} was put away. It is no longer in the shop.");
     }
 
     public function putBackOnSale(int $productId): void
@@ -46,7 +47,7 @@ class ProductIndex extends Component
         $product = Product::findOrFail($productId);
         $product->update(['status' => Product::STATUS_ACTIVE, 'published_at' => $product->published_at ?? now()]);
 
-        $this->message = "{$product->name} is back on sale.";
+        $this->announce($product->id, "{$product->name} is back on sale.");
     }
 
     public function delete(int $productId): void
@@ -55,7 +56,18 @@ class ProductIndex extends Component
         $name = $product->name;
         $product->delete();
 
-        $this->message = "{$name} was deleted.";
+        $this->announce(null, "{$name} was deleted.");
+    }
+
+    /**
+     * Say what happened without reloading the page: a short message in the
+     * corner, and a brief highlight on the row that changed.
+     */
+    protected function announce(?int $productId, string $message, string $tone = 'ok'): void
+    {
+        $this->justChanged = $productId;
+
+        $this->dispatch('toast', ['text' => $message, 'tone' => $tone]);
     }
 
     public function render()

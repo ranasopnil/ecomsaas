@@ -18,8 +18,6 @@ class BrandIndex extends Component
 
     public bool $is_active = true;
 
-    public string $message = '';
-
     protected function rules(): array
     {
         return ['name' => ['required', 'string', 'max:255']];
@@ -53,7 +51,7 @@ class BrandIndex extends Component
 
         $brand->save();
 
-        $this->message = "{$brand->name} was saved.";
+        $this->dispatch('toast', ['text' => "{$brand->name} was saved.", 'tone' => 'ok']);
         $this->cancel();
     }
 
@@ -62,13 +60,13 @@ class BrandIndex extends Component
         $brand = Brand::withCount('products')->findOrFail($brandId);
 
         if ($brand->products_count > 0) {
-            $this->message = "{$brand->name} still has products. Move them to another brand first.";
+            $this->dispatch('toast', ['text' => "{$brand->name} still has products. Move them to another brand first.", 'tone' => 'bad']);
 
             return;
         }
 
         $brand->delete();
-        $this->message = "{$brand->name} was deleted.";
+        $this->dispatch('toast', ['text' => "{$brand->name} was deleted.", 'tone' => 'ok']);
     }
 
     protected function uniqueSlug(string $source, ?int $ignoreId): string

@@ -84,7 +84,8 @@ class ProductForm extends Component
     /** Which combination a photo belongs to, or nothing for the whole product. */
     public ?int $photoForVariant = null;
 
-    public string $message = '';
+    /** The photo that just changed, so only that tile is highlighted. */
+    public ?int $justTouchedPhoto = null;
 
     public function mount(?Product $product = null): void
     {
@@ -195,7 +196,7 @@ class ProductForm extends Component
     public function addOption(): void
     {
         if (count($this->options) >= 3) {
-            $this->message = 'Three kinds of choice is the most a product can have.';
+            $this->dispatch('toast', ['text' => 'Three variants is the most a product can have.', 'tone' => 'bad']);
 
             return;
         }
@@ -407,7 +408,7 @@ class ProductForm extends Component
 
         $this->product = $this->product->fresh(['variants.inventory', 'options.values']);
         $this->loadVariantRows();
-        $this->message = 'The choices were saved.';
+        $this->dispatch('toast', ['text' => 'The variant prices and counts were saved.', 'tone' => 'ok']);
     }
 
     /**
@@ -438,7 +439,7 @@ class ProductForm extends Component
 
         $this->newPhotos = [];
         $this->product = $this->product->fresh(['images', 'variants.inventory', 'options.values']);
-        $this->message = 'Photo added.';
+        $this->dispatch('toast', ['text' => 'Photo added.', 'tone' => 'ok']);
     }
 
     public function deletePhoto(int $imageId): void
@@ -448,7 +449,7 @@ class ProductForm extends Component
         app(ImageService::class)->delete($image);
 
         $this->product = $this->product->fresh(['images', 'variants.inventory', 'options.values']);
-        $this->message = 'Photo removed.';
+        $this->dispatch('toast', ['text' => 'Photo removed.', 'tone' => 'ok']);
     }
 
     public function makePhotoPrimary(int $imageId): void
@@ -456,7 +457,8 @@ class ProductForm extends Component
         app(ImageService::class)->makePrimary(ProductImage::findOrFail($imageId));
 
         $this->product = $this->product->fresh(['images']);
-        $this->message = 'That photo is now the main one.';
+        $this->justTouchedPhoto = $imageId;
+        $this->dispatch('toast', ['text' => 'That photo is now the main one.', 'tone' => 'ok']);
     }
 
     /**
@@ -469,7 +471,8 @@ class ProductForm extends Component
         $image->update(['product_variant_id' => $variantId === '' || $variantId === null ? null : (int) $variantId]);
 
         $this->product = $this->product->fresh(['images']);
-        $this->message = 'Photo updated.';
+        $this->justTouchedPhoto = $imageId;
+        $this->dispatch('toast', ['text' => 'Photo updated.', 'tone' => 'ok']);
     }
 
     protected function looksLikeYoutube(string $url): bool

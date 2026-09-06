@@ -21,8 +21,6 @@ class CategoryIndex extends Component
 
     public bool $is_active = true;
 
-    public string $message = '';
-
     protected function rules(): array
     {
         return [
@@ -70,7 +68,7 @@ class CategoryIndex extends Component
 
         $category->save();
 
-        $this->message = "{$category->name} was saved.";
+        $this->dispatch('toast', ['text' => "{$category->name} was saved.", 'tone' => 'ok']);
         $this->cancel();
     }
 
@@ -79,13 +77,13 @@ class CategoryIndex extends Component
         $category = Category::withCount('products')->findOrFail($categoryId);
 
         if ($category->products_count > 0) {
-            $this->message = "{$category->name} still has products in it. Move them first.";
+            $this->dispatch('toast', ['text' => "{$category->name} still has products in it. Move them first.", 'tone' => 'bad']);
 
             return;
         }
 
         $category->delete();
-        $this->message = "{$category->name} was deleted.";
+        $this->dispatch('toast', ['text' => "{$category->name} was deleted.", 'tone' => 'ok']);
     }
 
     protected function uniqueSlug(string $source, ?int $ignoreId): string

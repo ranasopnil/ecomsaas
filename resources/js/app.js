@@ -65,3 +65,129 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 });
+
+
+/**
+ * Numbers that count up to their new value instead of jumping.
+ *
+ * Nothing here reloads the page. When Livewire sends back a new figure, the
+ * old one rolls up to it and the box it sits in glows for a moment, so the
+ * shopkeeper can see exactly what changed.
+ */
+document.addEventListener('alpine:init', () => {
+    window.Alpine.data('counter', (value, decimals = 0, prefix = '', suffix = '') => ({
+        target: Number(value) || 0,
+        shown: 0,
+        decimals,
+        prefix,
+        suffix,
+
+        init() {
+            this.roll(0, this.target);
+
+            // $watch fires whenever Livewire hands the component a new figure.
+            this.$watch('target', (now, before) => {
+                this.roll(Number(before) || 0, Number(now) || 0);
+                this.$el.classList.remove('settled');
+                void this.$el.offsetWidth;
+                this.$el.classList.add('settled');
+            });
+        },
+
+        roll(from, to) {
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                this.shown = to;
+                return;
+            }
+
+            const start = performance.now();
+            const span = 650;
+
+            const step = (now) => {
+                const done = Math.min((now - start) / span, 1);
+                // Ease out: quick at first, gentle at the end.
+                const eased = 1 - Math.pow(1 - done, 3);
+
+                this.shown = from + (to - from) * eased;
+
+                if (done < 1) {
+                    requestAnimationFrame(step);
+                }
+            };
+
+            requestAnimationFrame(step);
+        },
+
+        get display() {
+            return this.prefix + this.shown.toLocaleString(undefined, {
+                minimumFractionDigits: this.decimals,
+                maximumFractionDigits: this.decimals,
+            }) + this.suffix;
+        },
+    }));
+
+    /** Short messages that appear in the corner and fade out on their own. */
+    window.Alpine.data('toasts', () => ({
+        items: [],
+
+        init() {
+            window.addEventListener('toast', (event) => this.push(event.detail));
+
+            // Livewire components announce themselves the same way. Alpine may
+            // start after Livewire has already booted, so cope with both.
+            const listen = () => window.Livewire.on('toast', (payload) => this.push(payload[0] ?? payload));
+
+            if (window.Livewire) {
+                listen();
+            } else {
+                document.addEventListener('livewire:init', listen);
+            }
+        },
+
+        push(detail) {
+            const id = Date.now() + Math.random();
+
+            this.items.push({
+                id,
+                text: detail?.text ?? String(detail ?? ''),
+                tone: detail?.tone ?? 'ok',
+            });
+
+            setTimeout(() => {
+                this.items = this.items.filter((item) => item.id !== id);
+            }, 4000);
+        },
+    }));
+});
+
+/**
+ * The thin progress bar for moving between pages. Livewire fetches the next
+ * page in the background, so this replaces the browser's own reload.
+ */
+document.addEventListener('livewire:navigate', () => {
+    const bar = document.getElementById('route-progress');
+
+    if (! bar) {
+        return;
+    }
+
+    bar.style.opacity = '1';
+    bar.style.width = '35%';
+
+    requestAnimationFrame(() => { bar.style.width = '70%'; });
+});
+
+document.addEventListener('livewire:navigated', () => {
+    const bar = document.getElementById('route-progress');
+
+    if (! bar) {
+        return;
+    }
+
+    bar.style.width = '100%';
+
+    setTimeout(() => {
+        bar.style.opacity = '0';
+        bar.style.width = '0';
+    }, 250);
+});

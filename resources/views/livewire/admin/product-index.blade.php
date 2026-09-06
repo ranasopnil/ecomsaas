@@ -1,22 +1,22 @@
 <div class="space-y-6">
-    <div class="flex items-end justify-between">
+    <div class="rise flex flex-wrap items-end justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-semibold">Products</h1>
+            <h1 class="text-3xl font-bold tracking-tight">Products</h1>
             <p class="mt-1 text-sm text-slate-500">Everything your shop sells.</p>
         </div>
-        <a href="{{ route('admin.products.create') }}" wire:navigate
-           class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Add a product</a>
+        <a href="{{ route('admin.products.create') }}" wire:navigate class="btn btn-primary">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add product
+        </a>
     </div>
 
-    @if ($message !== '')
-        <div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{{ $message }}</div>
-    @endif
-
-    <div class="flex flex-wrap gap-3">
+    <div class="rise flex flex-wrap gap-3">
         <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search products"
-               class="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none">
+               class="w-full max-w-xs rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-violet-400 focus:outline-none">
         <select wire:model.live="status"
-                class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none">
+                class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-violet-400 focus:outline-none">
             <option value="">Every state</option>
             <option value="draft">Still writing</option>
             <option value="active">On sale</option>
@@ -24,7 +24,7 @@
         </select>
     </div>
 
-    <div class="overflow-x-auto rounded-xl bg-white shadow-sm">
+    <div class="card rise rise-1 overflow-x-auto">
         <table class="w-full text-start text-sm">
             <thead class="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
                 <tr>
@@ -39,7 +39,7 @@
             <tbody class="divide-y divide-slate-100">
                 @forelse ($products as $product)
                     @php($variant = $product->defaultVariant())
-                    <tr>
+                    <tr wire:key="product-{{ $product->id }}" class="{{ $justChanged === $product->id ? 'settled' : '' }}">
                         <td class="px-5 py-3">
                             <a href="{{ route('admin.products.edit', $product) }}" wire:navigate class="font-medium hover:underline">
                                 {{ $product->name }}
@@ -86,20 +86,20 @@
                         <td class="px-5 py-3">
                             <div class="flex justify-end gap-2">
                                 <a href="{{ route('storefront.product', $product->slug) }}" target="_blank" rel="noopener"
-                                   class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+                                   class="btn btn-quiet !px-3 !py-1.5"
                                    title="See this product the way a customer does">View</a>
                                 <a href="{{ route('admin.products.edit', $product) }}" wire:navigate
-                                   class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">Edit</a>
+                                   class="btn btn-quiet !px-3 !py-1.5">Edit</a>
                                 @if ($product->status === 'archived')
                                     <button wire:click="putBackOnSale({{ $product->id }})"
-                                            class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">Put back</button>
+                                            class="btn btn-quiet !px-3 !py-1.5">Put back</button>
                                 @else
                                     <button wire:click="archive({{ $product->id }})"
-                                            class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">Put away</button>
+                                            class="btn btn-quiet !px-3 !py-1.5">Put away</button>
                                 @endif
                                 <button wire:click="delete({{ $product->id }})"
                                         wire:confirm="Delete {{ $product->name }}?"
-                                        class="rounded-lg border border-rose-200 px-3 py-1.5 text-sm text-rose-700 hover:bg-rose-50">Delete</button>
+                                        class="btn !px-3 !py-1.5 border border-rose-200 text-rose-700 hover:bg-rose-50">Delete</button>
                             </div>
                         </td>
                     </tr>

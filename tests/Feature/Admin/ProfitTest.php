@@ -68,11 +68,11 @@ class ProfitTest extends TestCase
 
         Livewire::test(Dashboard::class)
             // 10 x 600 + 4 x 300 = 7200
-            ->assertSee('7200.00')
+            ->assertSee('7,200.00')
             // 10 x 1000 + 4 x 500 = 12000
-            ->assertSee('12000.00')
+            ->assertSee('12,000.00')
             // profit 4800
-            ->assertSee('4800.00');
+            ->assertSee('4,800.00');
     }
 
     public function test_things_with_no_cost_entered_are_left_out_and_said_so(): void
@@ -82,8 +82,8 @@ class ProfitTest extends TestCase
         $service->create(['name' => 'Not costed', 'price' => '900', 'stock' => 5]);
 
         Livewire::test(Dashboard::class)
-            ->assertSee('1200.00')
-            ->assertSee('have no cost entered yet');
+            ->assertSee('1,200.00')
+            ->assertSee('have no cost entered');
     }
 
     public function test_selling_below_cost_is_pointed_out(): void
@@ -121,7 +121,7 @@ class ProfitTest extends TestCase
         Tenancy::run($other, function () use ($other) {
             $this->actingAs(User::factory()->create(['tenant_id' => $other->id]));
 
-            Livewire::test(Dashboard::class)->assertDontSee('45000.00');
+            Livewire::test(Dashboard::class)->assertDontSee('45,000.00');
         });
     }
 }

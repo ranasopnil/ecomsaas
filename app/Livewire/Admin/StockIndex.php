@@ -22,7 +22,8 @@ class StockIndex extends Component
     /** @var array<int, string> variant id => counted figure */
     public array $counted = [];
 
-    public string $message = '';
+    /** The line that was just counted, so only that one is highlighted. */
+    public ?int $justCounted = null;
 
     public function updatedSearch(): void
     {
@@ -36,18 +37,23 @@ class StockIndex extends Component
 
     public function saveCount(int $variantId): void
     {
-        $variant = ProductVariant::findOrFail($variantId);
+        $variant = ProductVariant::with('product')->findOrFail($variantId);
         $value = $this->counted[$variantId] ?? null;
 
         if ($value === null || $value === '' || ! is_numeric($value)) {
-            $this->message = 'Enter the number you counted.';
+            $this->dispatch('toast', ['text' => 'Enter the number you counted.', 'tone' => 'bad']);
 
             return;
         }
 
         app(InventoryService::class)->setTo($variant, (int) $value, 'Counted in the stock screen');
 
-        $this->message = 'Stock updated for '.$variant->product->name.' ('.$variant->choiceLabel().').';
+        $this->justCounted = $variantId;
+        $this->dispatch('toast', [
+            'text' => $variant->product->name.' is now '.(int) $value.' in stock.',
+            'tone' => 'ok',
+        ]);
+
         unset($this->counted[$variantId]);
     }
 
