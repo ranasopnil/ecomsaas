@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -47,6 +48,49 @@ class ProductVariant extends Model
     public function inventory(): HasOne
     {
         return $this->hasOne(InventoryLevel::class);
+    }
+
+    public function images(): HasMany
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('position');
+    }
+
+    /**
+     * What the shopper should see for this combination: its own photo if it
+     * has one, otherwise the product's main photo.
+     */
+    public function displayImage(): ?ProductImage
+    {
+        $own = $this->relationLoaded('images') ? $this->images : $this->images()->get();
+
+        if ($own->isNotEmpty()) {
+            return $own->first();
+        }
+
+        $product = $this->relationLoaded('product') ? $this->product : $this->product()->first();
+
+        return $product?->primaryImage();
+    }
+
+    /**
+     * What the shop makes on one of these, before any costs it has not told
+     * us about. Null when no cost has been entered.
+     */
+    public function profitMinor(): ?int
+    {
+        return $this->cost_price_minor === null ? null : $this->price_minor - $this->cost_price_minor;
+    }
+
+    /**
+     * Profit as a share of the price, e.g. 42.5 for 42.5%.
+     */
+    public function marginPercent(): ?float
+    {
+        if ($this->cost_price_minor === null || $this->price_minor <= 0) {
+            return null;
+        }
+
+        return round(($this->price_minor - $this->cost_price_minor) / $this->price_minor * 100, 1);
     }
 
     public function optionValues(): BelongsToMany

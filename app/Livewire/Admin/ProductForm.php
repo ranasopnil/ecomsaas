@@ -7,16 +7,21 @@ use App\Facades\Tenancy;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductImage;
+use App\Services\Catalogue\ImageService;
 use App\Services\Catalogue\InventoryService;
 use App\Services\Catalogue\ProductService;
 use App\Support\Money;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 #[Layout('layouts.admin')]
 class ProductForm extends Component
 {
+    use WithFileUploads;
+
     public ?Product $product = null;
 
     public string $name = '';
@@ -38,6 +43,8 @@ class ProductForm extends Component
 
     public string $sku = '';
 
+    public string $cost_price = '';
+
     public string $stock = '0';
 
     public bool $track_inventory = true;
@@ -49,8 +56,14 @@ class ProductForm extends Component
     /** @var array<int, array{name: string, values: string}> */
     public array $options = [];
 
-    /** @var array<int, array{price: string, sku: string, stock: string}> */
+    /** @var array<int, array{price: string, cost: string, sku: string, stock: string}> */
     public array $variantRows = [];
+
+    /** Photos waiting to be uploaded. */
+    public array $newPhotos = [];
+
+    /** Which combination a photo belongs to, or nothing for the whole product. */
+    public ?int $photoForVariant = null;
 
     public string $message = '';
 
@@ -76,6 +89,9 @@ class ProductForm extends Component
                 ? (new Money($variant->compare_at_price_minor, $variant->currency, $variant->currency_exponent))->toDecimal()
                 : '';
             $this->sku = (string) $variant->sku;
+            $this->cost_price = $variant->cost_price_minor !== null
+                ? (new Money($variant->cost_price_minor, $variant->currency, $variant->currency_exponent))->toDecimal()
+                : '';
 
             $level = $variant->inventory;
             $this->stock = (string) ($level?->available ?? 0);
@@ -102,6 +118,9 @@ class ProductForm extends Component
         foreach ($this->product->fresh(['variants.inventory'])->variants as $variant) {
             $this->variantRows[$variant->id] = [
                 'price' => $variant->price->toDecimal(),
+                'cost' => $variant->cost_price_minor !== null
+                    ? (new Money($variant->cost_price_minor, $variant->currency, $variant->currency_exponent))->toDecimal()
+                    : '',
                 'sku' => (string) $variant->sku,
                 'stock' => (string) ($variant->inventory?->available ?? 0),
             ];
@@ -119,6 +138,8 @@ class ProductForm extends Component
             'status' => ['required', Rule::in([Product::STATUS_DRAFT, Product::STATUS_ACTIVE, Product::STATUS_ARCHIVED])],
             'price' => ['required', 'numeric', 'min:0'],
             'compare_at_price' => ['nullable', 'numeric', 'min:0'],
+            'cost_price' => ['nullable', 'numeric', 'min:0'],
+            'newPhotos.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:8192'],
             'sku' => ['nullable', 'string', 'max:100'],
             'stock' => ['required', 'integer'],
             'low_stock_threshold' => ['nullable', 'integer', 'min:0'],
@@ -165,6 +186,7 @@ class ProductForm extends Component
             'status' => $this->status,
             'price' => $this->price,
             'compare_at_price' => $this->compare_at_price ?: null,
+            'cost_price' => $this->cost_price ?: null,
             'sku' => $this->sku ?: null,
             'stock' => (int) $this->stock,
             'track_inventory' => $this->track_inventory,
@@ -231,6 +253,9 @@ class ProductForm extends Component
             'compare_at_price_minor' => $this->compare_at_price === ''
                 ? null
                 : Money::fromDecimal($this->compare_at_price, $currency, $exponent)->minor,
+            'cost_price_minor' => $this->cost_price === ''
+                ? null
+                : Money::fromDecimal($this->cost_price, $currency, $exponent)->minor,
             'sku' => $this->sku ?: null,
         ]);
 
@@ -272,6 +297,9 @@ class ProductForm extends Component
 
             $variant->update([
                 'price_minor' => Money::fromDecimal($row['price'], $currency, $exponent)->minor,
+                'cost_price_minor' => ($row['cost'] ?? '') === '' || ! is_numeric($row['cost'])
+                    ? null
+                    : Money::fromDecimal($row['cost'], $currency, $exponent)->minor,
                 'sku' => $row['sku'] ?: null,
             ]);
 
@@ -287,6 +315,68 @@ class ProductForm extends Component
         $this->message = 'The choices were saved.';
     }
 
+    /**
+     * Photos are saved as soon as they are chosen, so the shopkeeper sees them
+     * straight away rather than after saving the whole page.
+     */
+    public function updatedNewPhotos(): void
+    {
+        if ($this->product === null) {
+            $this->addError('newPhotos', 'Save the product first, then add its photos.');
+            $this->newPhotos = [];
+
+            return;
+        }
+
+        $this->validate(['newPhotos.*' => ['image', 'mimes:jpg,jpeg,png,webp,gif', 'max:8192']]);
+
+        $images = app(ImageService::class);
+
+        foreach ($this->newPhotos as $photo) {
+            try {
+                $images->store($this->product, $photo, $this->photoForVariant);
+            } catch (LimitReached $e) {
+                $this->addError('newPhotos', $e->getMessage());
+                break;
+            }
+        }
+
+        $this->newPhotos = [];
+        $this->product = $this->product->fresh(['images', 'variants.inventory', 'options.values']);
+        $this->message = 'Photo added.';
+    }
+
+    public function deletePhoto(int $imageId): void
+    {
+        $image = ProductImage::findOrFail($imageId);
+
+        app(ImageService::class)->delete($image);
+
+        $this->product = $this->product->fresh(['images', 'variants.inventory', 'options.values']);
+        $this->message = 'Photo removed.';
+    }
+
+    public function makePhotoPrimary(int $imageId): void
+    {
+        app(ImageService::class)->makePrimary(ProductImage::findOrFail($imageId));
+
+        $this->product = $this->product->fresh(['images']);
+        $this->message = 'That photo is now the main one.';
+    }
+
+    /**
+     * Attach a photo to one combination, or to the product as a whole.
+     */
+    public function assignPhoto(int $imageId, ?string $variantId): void
+    {
+        $image = ProductImage::findOrFail($imageId);
+
+        $image->update(['product_variant_id' => $variantId === '' || $variantId === null ? null : (int) $variantId]);
+
+        $this->product = $this->product->fresh(['images']);
+        $this->message = 'Photo updated.';
+    }
+
     protected function assertDecimalsAllowed(string $field, string $value): void
     {
         if ($value === '' || Tenancy::current()->currency_exponent > 0) {
@@ -300,10 +390,18 @@ class ProductForm extends Component
 
     public function render()
     {
+        $images = $this->product?->images()->orderBy('position')->get() ?? collect();
+
         return view('livewire.admin.product-form', [
             'brands' => Brand::orderBy('name')->get(),
             'categories' => Category::orderBy('name')->get(),
             'currency' => Tenancy::current()->currency,
+            'images' => $images,
+            'editorImages' => $images->map(fn ($image) => [
+                'url' => $image->url(),
+                'thumbnail' => $image->thumbnailUrl(),
+                'alt' => $image->alt_text ?? '',
+            ])->all(),
         ])->title($this->product ? 'Edit '.$this->product->name : 'New product');
     }
 }

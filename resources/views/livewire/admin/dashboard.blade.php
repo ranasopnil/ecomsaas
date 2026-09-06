@@ -19,6 +19,46 @@
     </div>
 
     <div class="rounded-xl bg-white p-5 shadow-sm">
+        <h2 class="text-sm font-semibold">Money in your stock</h2>
+        <p class="mt-1 text-sm text-slate-500">
+            Worked out from what you paid and what you charge, for the stock you have on the shelf right now.
+        </p>
+
+        <div class="mt-4 grid gap-4 sm:grid-cols-3">
+            <div>
+                <p class="text-sm text-slate-500">What it cost you</p>
+                <p class="mt-1 text-2xl font-semibold tabular-nums">{{ $store->currency }} {{ $money['cost']->toDecimal() }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-slate-500">What it would sell for</p>
+                <p class="mt-1 text-2xl font-semibold tabular-nums">{{ $store->currency }} {{ $money['retail']->toDecimal() }}</p>
+            </div>
+            <div>
+                <p class="text-sm text-slate-500">You would make</p>
+                <p class="mt-1 text-2xl font-semibold tabular-nums {{ $money['profit']->minor < 0 ? 'text-rose-700' : 'text-emerald-700' }}">
+                    {{ $store->currency }} {{ $money['profit']->toDecimal() }}
+                </p>
+                @if ($money['margin'] !== null)
+                    <p class="text-xs text-slate-500">{{ $money['margin'] }}% of the selling price</p>
+                @endif
+            </div>
+        </div>
+
+        @if ($money['missingCost'] > 0)
+            <p class="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {{ number_format($money['missingCost']) }} thing(s) you sell have no cost entered yet, so they are left
+                out of these figures. Put the cost on the product page to include them.
+            </p>
+        @endif
+
+        @if ($money['profit']->minor < 0)
+            <p class="mt-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-900">
+                At these prices you would lose money on the stock you hold. Check your prices and your costs.
+            </p>
+        @endif
+    </div>
+
+    <div class="rounded-xl bg-white p-5 shadow-sm">
         <h2 class="text-sm font-semibold">Your plan</h2>
         <p class="mt-2 text-sm text-slate-600">
             @if ($productAllowance === null)

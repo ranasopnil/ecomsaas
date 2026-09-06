@@ -31,6 +31,7 @@
                     <th class="px-5 py-3 text-start font-semibold">Product</th>
                     <th class="px-5 py-3 text-start font-semibold">State</th>
                     <th class="px-5 py-3 text-start font-semibold">Price</th>
+                    <th class="px-5 py-3 text-start font-semibold">You make</th>
                     <th class="px-5 py-3 text-start font-semibold">Stock</th>
                     <th class="px-5 py-3 text-end font-semibold">&nbsp;</th>
                 </tr>
@@ -64,6 +65,16 @@
                             {{ $variant ? $variant->currency.' '.$variant->price->toDecimal() : '—' }}
                         </td>
                         <td class="px-5 py-3 tabular-nums">
+                            @if ($variant?->marginPercent() !== null)
+                                <span class="{{ $variant->profitMinor() < 0 ? 'text-rose-700' : '' }}">
+                                    {{ number_format($variant->profitMinor() / (10 ** $variant->currency_exponent), $variant->currency_exponent) }}
+                                </span>
+                                <span class="text-xs text-slate-500">({{ $variant->marginPercent() }}%)</span>
+                            @else
+                                <span class="text-xs text-slate-400">No cost set</span>
+                            @endif
+                        </td>
+                        <td class="px-5 py-3 tabular-nums">
                             @php($stock = $product->variants->sum(fn ($v) => $v->inventory?->available ?? 0))
                             @php($tracked = $product->variants->contains(fn ($v) => $v->inventory?->track_inventory))
                             @if (! $tracked)
@@ -74,6 +85,9 @@
                         </td>
                         <td class="px-5 py-3">
                             <div class="flex justify-end gap-2">
+                                <a href="{{ route('storefront.product', $product->slug) }}" target="_blank" rel="noopener"
+                                   class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50"
+                                   title="See this product the way a customer does">View</a>
                                 <a href="{{ route('admin.products.edit', $product) }}" wire:navigate
                                    class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">Edit</a>
                                 @if ($product->status === 'archived')
@@ -90,7 +104,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="px-5 py-10 text-center text-slate-500">
+                    <tr><td colspan="6" class="px-5 py-10 text-center text-slate-500">
                         No products yet. Add your first one.
                     </td></tr>
                 @endforelse

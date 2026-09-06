@@ -54,6 +54,18 @@ class Product extends Model
         return $this->hasMany(ProductOption::class)->orderBy('position');
     }
 
+    public function images(): HasMany
+    {
+        return $this->hasMany(ProductImage::class)->orderByDesc('is_primary')->orderBy('position');
+    }
+
+    public function primaryImage(): ?ProductImage
+    {
+        $images = $this->relationLoaded('images') ? $this->images : $this->images()->get();
+
+        return $images->firstWhere('is_primary', true) ?? $images->first();
+    }
+
     public function defaultVariant(): ?ProductVariant
     {
         return $this->variants->firstWhere('is_default', true) ?? $this->variants->first();

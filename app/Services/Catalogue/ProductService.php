@@ -7,6 +7,7 @@ use App\Facades\Tenancy;
 use App\Models\Product;
 use App\Models\ProductOption;
 use App\Models\ProductVariant;
+use App\Support\HtmlSanitiser;
 use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -19,7 +20,10 @@ use Illuminate\Support\Str;
  */
 class ProductService
 {
-    public function __construct(protected InventoryService $inventory) {}
+    public function __construct(
+        protected InventoryService $inventory,
+        protected HtmlSanitiser $sanitiser,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data
@@ -34,7 +38,7 @@ class ProductService
                 'brand_id' => $data['brand_id'] ?? null,
                 'name' => $data['name'],
                 'slug' => $this->uniqueSlug($data['slug'] ?? $data['name']),
-                'description' => $data['description'] ?? null,
+                'description' => $this->sanitiser->clean($data['description'] ?? null),
                 'status' => $data['status'] ?? Product::STATUS_DRAFT,
                 'has_variants' => false,
                 'meta_title' => $data['meta_title'] ?? null,
@@ -82,7 +86,9 @@ class ProductService
             $product->fill([
                 'brand_id' => $data['brand_id'] ?? $product->brand_id,
                 'name' => $data['name'] ?? $product->name,
-                'description' => $data['description'] ?? $product->description,
+                'description' => array_key_exists('description', $data)
+                    ? $this->sanitiser->clean($data['description'])
+                    : $product->description,
                 'status' => $data['status'] ?? $product->status,
                 'meta_title' => $data['meta_title'] ?? $product->meta_title,
                 'meta_description' => $data['meta_description'] ?? $product->meta_description,
