@@ -41,62 +41,7 @@
         </div>
     </div>
 
-    {{-- How ready the shop is --}}
-    <div class="rise rise-1 overflow-hidden rounded-2xl bg-gradient-to-r from-violet-700 via-violet-600 to-indigo-700 p-6 text-white">
-        <div class="flex flex-wrap items-center gap-6">
-            <div class="flex items-center gap-5">
-                <div class="relative h-24 w-24 shrink-0">
-                    <svg viewBox="0 0 36 36" class="h-24 w-24 -rotate-90">
-                        <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="3.4" />
-                        <circle cx="18" cy="18" r="15.5" fill="none" stroke="#a7f3d0" stroke-width="3.4"
-                                stroke-linecap="round"
-                                stroke-dasharray="{{ round($health['percent'] * 0.974, 2) }} 100"
-                                style="transition: stroke-dasharray .8s ease" />
-                    </svg>
-                    <span class="absolute inset-0 flex items-center justify-center text-xl font-bold">{{ $health['percent'] }}%</span>
-                </div>
-
-                <div>
-                    <h2 class="text-lg font-semibold">Shop readiness</h2>
-                    <p class="mt-1 max-w-xs text-sm text-violet-100">
-                        {{ $health['done'] }} of {{ $health['total'] }} things are done.
-                        @if ($health['done'] < $health['total'])
-                            Finish the rest to get the most out of your shop.
-                        @else
-                            Everything on the list is done.
-                        @endif
-                    </p>
-                </div>
-            </div>
-
-            <div class="flex flex-1 flex-wrap gap-x-8 gap-y-3">
-                @foreach ($health['tasks'] as $task)
-                    <div class="flex items-start gap-2">
-                        <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full
-                                     {{ $task['done'] ? 'bg-emerald-300 text-emerald-900' : 'border border-white/40 text-white/60' }}">
-                            @if ($task['done'])
-                                <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="m5 13 4 4L19 7" />
-                                </svg>
-                            @endif
-                        </span>
-                        <span>
-                            <span class="block text-sm font-medium">{{ $task['label'] }}</span>
-                            @unless ($task['done'])
-                                @if ($task['route'])
-                                    <a href="{{ route($task['route']) }}" wire:navigate class="text-xs text-violet-200 underline underline-offset-2">
-                                        {{ $task['hint'] }}
-                                    </a>
-                                @else
-                                    <span class="text-xs text-violet-200">{{ $task['hint'] }}</span>
-                                @endif
-                            @endunless
-                        </span>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
+    @include('livewire.admin.partials.setup-flow')
 
     {{-- The four figures. Each one rolls up to its new value on its own. --}}
     <div class="rise rise-2 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

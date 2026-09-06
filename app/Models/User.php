@@ -21,7 +21,7 @@ class User extends Authenticatable
 
     public const ROLE_STAFF = 'staff';
 
-    protected $fillable = ['tenant_id', 'name', 'email', 'password', 'role', 'is_active'];
+    protected $fillable = ['tenant_id', 'name', 'email', 'password', 'role', 'is_active', 'preferences'];
 
     protected $hidden = ['password', 'remember_token'];
 
@@ -32,7 +32,24 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
+            'preferences' => 'array',
         ];
+    }
+
+    /**
+     * A choice this person has made about their own screens.
+     */
+    public function prefers(string $key, mixed $fallback = null): mixed
+    {
+        return data_get($this->preferences, $key, $fallback);
+    }
+
+    public function setPreference(string $key, mixed $value): void
+    {
+        $preferences = $this->preferences ?? [];
+        data_set($preferences, $key, $value);
+
+        $this->forceFill(['preferences' => $preferences])->save();
     }
 
     public function isOwner(): bool

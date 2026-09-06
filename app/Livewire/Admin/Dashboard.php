@@ -26,6 +26,30 @@ class Dashboard extends Component
     /** Which line the activity chart is showing. */
     public string $series = 'stock';
 
+    /** Whether this person has put the setup steps away. */
+    public bool $setupHidden = false;
+
+    public function mount(): void
+    {
+        $this->setupHidden = (bool) auth()->user()?->prefers('setup_hidden', false);
+    }
+
+    public function hideSetup(): void
+    {
+        $this->setupHidden = true;
+
+        auth()->user()?->setPreference('setup_hidden', true);
+
+        $this->dispatch('toast', ['text' => 'Setup steps put away. Bring them back any time.', 'tone' => 'ok']);
+    }
+
+    public function showSetup(): void
+    {
+        $this->setupHidden = false;
+
+        auth()->user()?->setPreference('setup_hidden', false);
+    }
+
     public function setSeries(string $series): void
     {
         $this->series = in_array($series, ['stock', 'products'], true) ? $series : 'stock';
@@ -107,28 +131,46 @@ class Dashboard extends Component
             ->where('status', Domain::STATUS_VERIFIED)->exists();
 
         $tasks = [
-            ['label' => 'Shop is open', 'done' => $store->isActive(),
-                'hint' => 'Your shop address answers to customers.', 'route' => null],
-            ['label' => 'First product added', 'done' => $productCount > 0,
-                'hint' => 'Add something to sell.', 'route' => 'admin.products.create'],
-            ['label' => 'A product is on sale', 'done' => $published,
-                'hint' => 'Publish a product so customers can see it.', 'route' => 'admin.products.index'],
-            ['label' => 'Photos added', 'done' => $hasPhoto,
-                'hint' => 'Products with a photo sell far better.', 'route' => 'admin.products.index'],
-            ['label' => 'Categories set up', 'done' => $hasCategory,
-                'hint' => 'Arrange your shop so people can find things.', 'route' => 'admin.categories.index'],
-            ['label' => 'Costs entered', 'done' => $withCost,
-                'hint' => 'Enter what you paid so profit can be worked out.', 'route' => 'admin.products.index'],
-            ['label' => 'Your own domain', 'done' => $customDomain,
-                'hint' => 'Point your own web address at the shop.', 'route' => null],
+            ['label' => 'Shop open', 'done' => $store->isActive(), 'icon' => 'shop',
+                'hint' => 'Your address answers to customers.',
+                'todo' => 'Your shop address is not answering.', 'route' => null],
+            ['label' => 'First product', 'done' => $productCount > 0, 'icon' => 'box',
+                'hint' => 'You have something to sell.',
+                'todo' => 'Add the first thing you sell.', 'route' => 'admin.products.create'],
+            ['label' => 'On sale', 'done' => $published, 'icon' => 'eye',
+                'hint' => 'Customers can see it.',
+                'todo' => 'Publish a product so people can buy it.', 'route' => 'admin.products.index'],
+            ['label' => 'Photos', 'done' => $hasPhoto, 'icon' => 'camera',
+                'hint' => 'Your products have pictures.',
+                'todo' => 'Add a photo. Products with one sell far better.', 'route' => 'admin.products.index'],
+            ['label' => 'Categories', 'done' => $hasCategory, 'icon' => 'grid',
+                'hint' => 'Your shop is arranged.',
+                'todo' => 'Group your products so people can find them.', 'route' => 'admin.categories.index'],
+            ['label' => 'Costs', 'done' => $withCost, 'icon' => 'coin',
+                'hint' => 'Profit is being worked out.',
+                'todo' => 'Enter what you paid, to see your profit.', 'route' => 'admin.products.index'],
+            ['label' => 'Own domain', 'done' => $customDomain, 'icon' => 'globe',
+                'hint' => 'Your own web address points here.',
+                'todo' => 'Point your own web address at the shop.', 'route' => null],
         ];
 
         $done = count(array_filter($tasks, fn ($task) => $task['done']));
+
+        // The first thing not done is what to nudge towards.
+        $next = null;
+
+        foreach ($tasks as $index => $task) {
+            if (! $task['done']) {
+                $next = $index;
+                break;
+            }
+        }
 
         return [
             'percent' => (int) round($done / count($tasks) * 100),
             'done' => $done,
             'total' => count($tasks),
+            'next' => $next,
             'tasks' => $tasks,
         ];
     }

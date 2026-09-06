@@ -104,7 +104,7 @@ class LiveUpdateTest extends TestCase
         Livewire::test(Dashboard::class)
             ->assertSee('BDT 6,000.00')
             ->assertSee('BDT 10,000.00')
-            ->assertSee('Shop readiness');
+            ->assertSee('Getting started');
     }
 
     public function test_the_activity_chart_can_be_switched_without_leaving_the_page(): void
@@ -128,14 +128,14 @@ class LiveUpdateTest extends TestCase
 
     public function test_the_readiness_figure_counts_what_is_actually_done(): void
     {
-        Livewire::test(Dashboard::class)->assertSee('of 7 things are done');
+        Livewire::test(Dashboard::class)->assertSee('of 7 done');
 
         app(ProductService::class)->create([
             'name' => 'First', 'regular_price' => '100', 'status' => Product::STATUS_ACTIVE, 'cost_price' => '50',
         ]);
 
         Livewire::test(Dashboard::class)
-            ->assertSee('A product is on sale')
-            ->assertSee('Photos added');
+            ->assertSee('On sale')
+            ->assertSee('Photos');
     }
 }
