@@ -1,12 +1,20 @@
 <?php
 
 use App\Facades\Tenancy;
+use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Internal\DomainCheckController;
 use App\Http\Controllers\Super\LoginController;
 use App\Http\Middleware\EnsureCentralDomain;
+use App\Http\Middleware\EnsureStoreDomain;
+use App\Livewire\Admin\BrandIndex;
+use App\Livewire\Admin\CategoryIndex;
+use App\Livewire\Admin\Dashboard as AdminDashboard;
+use App\Livewire\Admin\ProductForm;
+use App\Livewire\Admin\ProductIndex;
+use App\Livewire\Admin\StockIndex;
 use App\Livewire\Super\Dashboard;
-use App\Livewire\Super\PackageForm;
-use App\Livewire\Super\PackageIndex;
+use App\Livewire\Super\PackageForm as SuperPackageForm;
+use App\Livewire\Super\PackageIndex as SuperPackageIndex;
 use App\Livewire\Super\StoreIndex;
 use Illuminate\Support\Facades\Route;
 
@@ -40,10 +48,34 @@ Route::prefix('super')->name('super.')->middleware(EnsureCentralDomain::class)->
 
         Route::get('/', Dashboard::class)->name('dashboard');
 
-        Route::get('plans', PackageIndex::class)->name('packages.index');
-        Route::get('plans/new', PackageForm::class)->name('packages.create');
-        Route::get('plans/{package}/edit', PackageForm::class)->name('packages.edit');
+        Route::get('plans', SuperPackageIndex::class)->name('packages.index');
+        Route::get('plans/new', SuperPackageForm::class)->name('packages.create');
+        Route::get('plans/{package}/edit', SuperPackageForm::class)->name('packages.edit');
 
         Route::get('shops', StoreIndex::class)->name('stores.index');
+    });
+});
+
+/*
+ * A merchant's own admin, on their shop address only.
+ */
+Route::prefix('admin')->name('admin.')->middleware(EnsureStoreDomain::class)->group(function () {
+    Route::middleware('guest:web')->group(function () {
+        Route::get('login', [AdminLoginController::class, 'show'])->name('login');
+        Route::post('login', [AdminLoginController::class, 'store'])->name('login.store');
+    });
+
+    Route::middleware('auth:web')->group(function () {
+        Route::post('logout', [AdminLoginController::class, 'destroy'])->name('logout');
+
+        Route::get('/', AdminDashboard::class)->name('dashboard');
+
+        Route::get('products', ProductIndex::class)->name('products.index');
+        Route::get('products/new', ProductForm::class)->name('products.create');
+        Route::get('products/{product}/edit', ProductForm::class)->name('products.edit');
+
+        Route::get('stock', StockIndex::class)->name('stock.index');
+        Route::get('categories', CategoryIndex::class)->name('categories.index');
+        Route::get('brands', BrandIndex::class)->name('brands.index');
     });
 });

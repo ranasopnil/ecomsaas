@@ -1,6 +1,8 @@
 <?php
 
+use App\Facades\Tenancy;
 use App\Http\Middleware\EnsureCentralDomain;
+use App\Http\Middleware\EnsureStoreDomain;
 use App\Http\Middleware\IdentifyTenant;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -21,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'tenant' => IdentifyTenant::class,
             'central' => EnsureCentralDomain::class,
+            'store' => EnsureStoreDomain::class,
         ]);
 
         // Which shop a request belongs to must be settled before anything
@@ -37,8 +40,16 @@ return Application::configure(basePath: dirname(__DIR__))
             prepend: EnsureCentralDomain::class,
         );
 
-        // Staff who are not signed in land on the staff sign-in page.
-        $middleware->redirectGuestsTo(fn () => route('super.login'));
+        $middleware->prependToPriorityList(
+            before: AuthenticatesRequests::class,
+            prepend: EnsureStoreDomain::class,
+        );
+
+        // Send someone who is not signed in to the right sign-in page: the
+        // shop's own when they are on a shop address, the staff one otherwise.
+        $middleware->redirectGuestsTo(fn () => Tenancy::check()
+            ? route('admin.login')
+            : route('super.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

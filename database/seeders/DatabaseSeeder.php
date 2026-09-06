@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -18,9 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call(PackageSeeder::class);
         // User::factory(10)->create();
 
-        User::factory()->firstOrCreate(
-            ['email' => 'test@example.com'],
-            ['name' => 'Test User'],
-        );
+        // Shop staff belong to a shop, so they are created with the shop
+        // (see the ProvisionStore service), not seeded on their own.
     }
 }

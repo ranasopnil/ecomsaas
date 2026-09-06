@@ -65,7 +65,8 @@ class AccessTest extends TestCase
 
     public function test_a_merchant_account_cannot_sign_in_as_staff(): void
     {
-        $user = User::factory()->create();
+        $store = Tenant::factory()->create();
+        $user = Tenancy::run($store, fn () => User::factory()->create(['tenant_id' => $store->id]));
 
         $this->post('/super/login', [
             'email' => $user->email,
