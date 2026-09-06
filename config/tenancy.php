@@ -26,6 +26,15 @@ return [
     ],
 
     /*
+     * Where a merchant points their own domain. Shown to them as the A record
+     * to create, and what a domain has to resolve to before we believe it.
+     */
+    'server_ips' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('TENANCY_SERVER_IPS', '46.224.138.153')),
+    ))),
+
+    /*
      * Only these callers may ask the internal domain-check endpoint.
      * Caddy runs on the same machine.
      */

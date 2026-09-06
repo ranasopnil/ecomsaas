@@ -239,7 +239,7 @@ class Dashboard extends Component
                 'todo' => 'Enter what you paid, to see your profit.', 'route' => 'admin.products.index'],
             ['label' => 'Own domain', 'done' => $customDomain, 'icon' => 'globe',
                 'hint' => 'Your own web address points here.',
-                'todo' => 'Point your own web address at the shop.', 'route' => null],
+                'todo' => 'Point your own web address at the shop.', 'route' => 'admin.domains.index'],
         ];
 
         $done = count(array_filter($tasks, fn ($task) => $task['done']));

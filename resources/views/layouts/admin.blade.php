@@ -10,6 +10,9 @@
             ['route' => 'admin.brands.index', 'label' => 'Brands', 'icon' => 'tag'],
             ['route' => 'admin.stock.index', 'label' => 'Stock', 'icon' => 'layers'],
         ],
+        'Settings' => [
+            ['route' => 'admin.domains.index', 'label' => 'Web address', 'icon' => 'globe'],
+        ],
     ];
 
     $icons = [
@@ -18,6 +21,7 @@
         'grid' => 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
         'tag' => 'M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9zM7.5 7.5h.01',
         'layers' => 'M12 3 3 8l9 5 9-5zM3 13l9 5 9-5M3 17l9 5 9-5',
+        'globe' => 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3.5 9h17M3.5 15h17M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18',
     ];
 @endphp
 <!DOCTYPE html>

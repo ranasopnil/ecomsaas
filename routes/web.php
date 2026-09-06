@@ -10,6 +10,7 @@ use App\Http\Middleware\EnsureStoreDomain;
 use App\Livewire\Admin\BrandIndex;
 use App\Livewire\Admin\CategoryIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
+use App\Livewire\Admin\DomainIndex;
 use App\Livewire\Admin\ProductForm;
 use App\Livewire\Admin\ProductIndex;
 use App\Livewire\Admin\StockIndex;
@@ -85,5 +86,6 @@ Route::prefix('admin')->name('admin.')->middleware(EnsureStoreDomain::class)->gr
         Route::get('stock', StockIndex::class)->name('stock.index');
         Route::get('categories', CategoryIndex::class)->name('categories.index');
         Route::get('brands', BrandIndex::class)->name('brands.index');
+        Route::get('web-address', DomainIndex::class)->name('domains.index');
     });
 });
