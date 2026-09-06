@@ -57,6 +57,17 @@ class SetupFlowTest extends TestCase
             ->assertSee('steps to go');
     }
 
+    public function test_an_unfinished_step_is_a_link_to_where_it_gets_done(): void
+    {
+        $html = Livewire::test(Dashboard::class)->html();
+
+        // The step itself is a link, carrying the words for what to do.
+        $this->assertMatchesRegularExpression(
+            '~<a href="'.preg_quote(route('admin.products.create'), '~').'"[^>]*>.*?Add the first thing you sell~s',
+            $html,
+        );
+    }
+
     public function test_the_next_step_moves_along_as_work_is_done(): void
     {
         Livewire::test(Dashboard::class)->assertSee('Add the first thing you sell.');
