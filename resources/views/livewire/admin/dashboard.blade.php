@@ -45,6 +45,8 @@
 
     @include('livewire.admin.partials.sales-boxes')
 
+    <livewire:admin.visitor-stats />
+
     {{-- The four figures. Each one rolls up to its new value on its own. --}}
     <div class="rise rise-3 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @php

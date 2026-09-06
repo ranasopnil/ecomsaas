@@ -16,3 +16,12 @@ Schedule::command('domains:check')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->runInBackground();
+
+/*
+ * The "here right now" figure leaves a short-lived fingerprint per visitor.
+ * This throws away the ones that are more than a day old.
+ */
+Schedule::command('visits:tidy')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground();

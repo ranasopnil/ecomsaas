@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Internal\DomainCheckController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Super\LoginController;
+use App\Http\Middleware\CountVisit;
 use App\Http\Middleware\EnsureCentralDomain;
 use App\Http\Middleware\EnsureStoreDomain;
 use App\Livewire\Admin\BrandIndex;
@@ -30,12 +31,12 @@ Route::get('/', function () {
     }
 
     return view('welcome');
-});
+})->middleware(CountVisit::class);
 
 /*
  * The shop itself.
  */
-Route::middleware(EnsureStoreDomain::class)->group(function () {
+Route::middleware([EnsureStoreDomain::class, CountVisit::class])->group(function () {
     Route::get('/products/{slug}', [ProductController::class, 'show'])->name('storefront.product');
 });
 
