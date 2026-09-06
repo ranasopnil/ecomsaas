@@ -19,6 +19,7 @@
                             'super.dashboard' => 'Overview',
                             'super.packages.index' => 'Plans',
                             'super.stores.index' => 'Shops',
+                            'super.gateways.index' => 'Gateways',
                         ] as $route => $label)
                             <a href="{{ route($route) }}" wire:navigate
                                class="rounded px-2 py-1 {{ request()->routeIs($route) ? 'bg-slate-700 text-white' : 'text-slate-300 hover:text-white' }}">

@@ -12,12 +12,15 @@ use App\Livewire\Admin\CategoryIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\DomainIndex;
 use App\Livewire\Admin\MailSettingsForm;
+use App\Livewire\Admin\PaymentMethodsIndex;
 use App\Livewire\Admin\ProductForm;
 use App\Livewire\Admin\ProductIndex;
 use App\Livewire\Admin\StockIndex;
 use App\Livewire\Super\Dashboard;
+use App\Livewire\Super\GatewayMatrix;
 use App\Livewire\Super\PackageForm as SuperPackageForm;
 use App\Livewire\Super\PackageIndex as SuperPackageIndex;
+use App\Livewire\Super\ShopPayments;
 use App\Livewire\Super\StoreIndex;
 use Illuminate\Support\Facades\Route;
 
@@ -63,6 +66,8 @@ Route::prefix('super')->name('super.')->middleware(EnsureCentralDomain::class)->
         Route::get('plans/{package}/edit', SuperPackageForm::class)->name('packages.edit');
 
         Route::get('shops', StoreIndex::class)->name('stores.index');
+        Route::get('shops/{tenant}/payments', ShopPayments::class)->name('stores.payments');
+        Route::get('payment-gateways', GatewayMatrix::class)->name('gateways.index');
     });
 });
 
@@ -89,5 +94,6 @@ Route::prefix('admin')->name('admin.')->middleware(EnsureStoreDomain::class)->gr
         Route::get('brands', BrandIndex::class)->name('brands.index');
         Route::get('web-address', DomainIndex::class)->name('domains.index');
         Route::get('email', MailSettingsForm::class)->name('mail.edit');
+        Route::get('payments', PaymentMethodsIndex::class)->name('payments.index');
     });
 });

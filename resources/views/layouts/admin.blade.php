@@ -13,6 +13,7 @@
         'Settings' => [
             ['route' => 'admin.domains.index', 'label' => 'Web address', 'icon' => 'globe'],
             ['route' => 'admin.mail.edit', 'label' => 'Email', 'icon' => 'mail'],
+            ['route' => 'admin.payments.index', 'label' => 'Payments', 'icon' => 'card'],
         ],
     ];
 
@@ -24,6 +25,7 @@
         'layers' => 'M12 3 3 8l9 5 9-5zM3 13l9 5 9-5M3 17l9 5 9-5',
         'globe' => 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3.5 9h17M3.5 15h17M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18',
         'mail' => 'M3 6h18v12H3zM3 7l9 6 9-6',
+        'card' => 'M3 6h18v12H3zM3 10h18M7 15h3',
     ];
 @endphp
 <!DOCTYPE html>

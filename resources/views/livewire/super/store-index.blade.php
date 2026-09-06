@@ -46,6 +46,8 @@
                         </td>
                         <td class="px-5 py-3">
                             <div class="flex items-center gap-2">
+                                <a href="{{ route('super.stores.payments', $store) }}" wire:navigate
+                                   class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">Payments</a>
                                 <select wire:model="planChoice.{{ $store->id }}"
                                         class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none">
                                     <option value="">Choose…</option>
