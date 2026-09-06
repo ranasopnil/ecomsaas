@@ -7,6 +7,7 @@ use App\Facades\Entitlements;
 use App\Facades\Tenancy;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\InventoryLevel;
 use App\Models\Package;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -157,6 +158,49 @@ class ProductTest extends TestCase
 
             $product = $service->setOptions($product, [['name' => 'Size', 'values' => ['38', '39']]]);
             $this->assertCount(2, $product->variants);
+        });
+    }
+
+    public function test_adding_choices_keeps_what_the_product_cost(): void
+    {
+        $store = $this->shop();
+
+        Tenancy::run($store, function () {
+            $service = app(ProductService::class);
+
+            $product = $service->create([
+                'name' => 'Costed Shirt',
+                'regular_price' => '1000',
+                'cost_price' => '600',
+                'weight_grams' => 320,
+            ]);
+
+            $product = $service->setOptions($product, [['name' => 'Size', 'values' => ['M', 'L']]]);
+
+            foreach ($product->variants as $variant) {
+                $this->assertSame(60000, $variant->cost_price_minor, 'The cost must carry onto each combination.');
+                $this->assertSame(320, $variant->weight_grams);
+            }
+        });
+    }
+
+    public function test_a_withdrawn_combination_stops_being_counted_as_sold_out(): void
+    {
+        $store = $this->shop();
+
+        Tenancy::run($store, function () {
+            $service = app(ProductService::class);
+
+            $product = $service->create(['name' => 'Shrinking Range', 'regular_price' => '500']);
+            $product = $service->setOptions($product, [['name' => 'Size', 'values' => ['S', 'M', 'L']]]);
+
+            $this->assertSame(3, InventoryLevel::live()->count());
+
+            $service->setOptions($product, [['name' => 'Size', 'values' => ['S', 'M']]]);
+
+            // The withdrawn size leaves its history but not a stock row that
+            // would sit there for ever reading as sold out.
+            $this->assertSame(2, InventoryLevel::live()->count());
         });
     }
 

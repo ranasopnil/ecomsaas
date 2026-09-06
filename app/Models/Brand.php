@@ -11,7 +11,7 @@ class Brand extends Model
 {
     use BelongsToTenant, HasFactory;
 
-    protected $fillable = ['tenant_id', 'name', 'slug', 'description', 'is_active'];
+    protected $fillable = ['tenant_id', 'name', 'slug', 'description', 'is_active', 'demo_batch'];
 
     protected function casts(): array
     {

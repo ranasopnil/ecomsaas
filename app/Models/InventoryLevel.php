@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,6 +32,17 @@ class InventoryLevel extends Model
             'allow_backorder' => 'boolean',
             'low_stock_threshold' => 'integer',
         ];
+    }
+
+    /**
+     * Stock that still belongs to something the shop sells and counts.
+     *
+     * A combination that was withdrawn leaves its history behind but must not
+     * keep being counted as sold out.
+     */
+    public function scopeLive(Builder $query): Builder
+    {
+        return $query->where('track_inventory', true)->whereHas('variant');
     }
 
     public function variant(): BelongsTo

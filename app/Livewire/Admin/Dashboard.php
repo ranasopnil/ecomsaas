@@ -42,9 +42,9 @@ class Dashboard extends Component
             'onSaleCount' => Product::onSale()->count(),
             'productAllowance' => Entitlements::limit('products'),
             'productsLeft' => Entitlements::remaining('products', $productCount),
-            'stockUnits' => (int) InventoryLevel::where('track_inventory', true)->sum('available'),
-            'outOfStock' => InventoryLevel::where('track_inventory', true)->where('available', '<=', 0)->count(),
-            'lowStock' => InventoryLevel::where('track_inventory', true)
+            'stockUnits' => (int) InventoryLevel::live()->sum('available'),
+            'outOfStock' => InventoryLevel::live()->where('available', '<=', 0)->count(),
+            'lowStock' => InventoryLevel::live()
                 ->whereNotNull('low_stock_threshold')
                 ->whereColumn('available', '<=', 'low_stock_threshold')
                 ->where('available', '>', 0)
@@ -191,9 +191,8 @@ class Dashboard extends Component
 
     protected function alerts(): Collection
     {
-        return InventoryLevel::query()
+        return InventoryLevel::live()
             ->with(['variant.product'])
-            ->where('track_inventory', true)
             ->where(fn ($query) => $query
                 ->where('available', '<=', 0)
                 ->orWhere(fn ($inner) => $inner

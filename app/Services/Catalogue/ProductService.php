@@ -4,6 +4,7 @@ namespace App\Services\Catalogue;
 
 use App\Facades\Entitlements;
 use App\Facades\Tenancy;
+use App\Models\InventoryLevel;
 use App\Models\Product;
 use App\Models\ProductOption;
 use App\Models\ProductVariant;
@@ -271,6 +272,18 @@ class ProductService
                 'price' => $template
                     ? (new Money($template->price_minor, $template->currency, $template->currency_exponent))->toDecimal()
                     : '0',
+                'compare_at_price' => $template?->compare_at_price_minor === null
+                    ? null
+                    : (new Money($template->compare_at_price_minor, $template->currency, $template->currency_exponent))->toDecimal(),
+                // What it costs, what it weighs and how big it is carry over.
+                // Losing the cost here would quietly wreck the profit figures.
+                'cost_price' => $template?->cost_price_minor === null
+                    ? null
+                    : (new Money($template->cost_price_minor, $template->currency, $template->currency_exponent))->toDecimal(),
+                'weight_grams' => $template?->weight_grams,
+                'length_mm' => $template?->length_mm,
+                'width_mm' => $template?->width_mm,
+                'height_mm' => $template?->height_mm,
                 'sku' => null,
                 'position' => $position,
                 'is_default' => $position === 0,
@@ -287,8 +300,13 @@ class ProductService
             $keep[] = $variant->id;
         }
 
-        // Combinations the shopkeeper no longer offers.
-        $product->variants()->whereNotIn('id', $keep)->get()->each->delete();
+        // Combinations the shopkeeper no longer offers. Their stock row goes
+        // too, or it would sit there for ever counting as sold out. The
+        // history stays, because history is never rewritten.
+        $product->variants()->whereNotIn('id', $keep)->get()->each(function (ProductVariant $gone) {
+            InventoryLevel::where('product_variant_id', $gone->getKey())->delete();
+            $gone->delete();
+        });
     }
 
     /**

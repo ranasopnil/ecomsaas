@@ -25,6 +25,7 @@ class Product extends Model
         'tenant_id', 'brand_id', 'name', 'slug', 'description', 'short_description',
         'status', 'has_variants', 'meta_title', 'meta_description', 'tags',
         'video_url', 'shipping_charge_minor', 'published_at',
+        'demo_batch',
     ];
 
     protected function casts(): array

@@ -13,7 +13,7 @@ class Category extends Model
 {
     use BelongsToTenant, HasFactory;
 
-    protected $fillable = ['tenant_id', 'parent_id', 'name', 'slug', 'description', 'position', 'is_active'];
+    protected $fillable = ['tenant_id', 'parent_id', 'name', 'slug', 'description', 'position', 'is_active', 'demo_batch'];
 
     protected function casts(): array
     {
