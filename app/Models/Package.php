@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -49,6 +50,49 @@ class Package extends Model
     public function entitlements(): HasMany
     {
         return $this->hasMany(PackageEntitlement::class);
+    }
+
+    public function prices(): HasMany
+    {
+        return $this->hasMany(PackagePrice::class);
+    }
+
+    /**
+     * What this plan costs in one currency, or null if it is not sold there.
+     */
+    public function priceIn(string $currency): ?Money
+    {
+        $price = $this->relationLoaded('prices')
+            ? $this->prices->firstWhere('currency', $currency)
+            : $this->prices()->where('currency', $currency)->first();
+
+        return $price?->price;
+    }
+
+    /**
+     * Currencies this plan is not yet priced in, so the admin can be told.
+     *
+     * @return array<int, string>
+     */
+    public function missingCurrencies(): array
+    {
+        return array_values(array_diff(
+            array_keys(config('currencies')),
+            $this->prices()->pluck('currency')->all(),
+        ));
+    }
+
+    /**
+     * The ceiling this plan puts on a counted feature, or null for no ceiling.
+     */
+    public function limitFor(string $feature): ?int
+    {
+        return $this->entitlements->firstWhere('feature', $feature)?->limit_value;
+    }
+
+    public function allowsFeature(string $feature): bool
+    {
+        return (bool) $this->entitlements->firstWhere('feature', $feature)?->enabled;
     }
 
     public function subscriptions(): HasMany

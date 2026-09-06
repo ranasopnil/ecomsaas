@@ -30,6 +30,23 @@ class PackageFactory extends Factory
     }
 
     /**
+     * Every plan needs a price somewhere, or no shop can be put on it.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (Package $package) {
+            if ($package->prices()->count() === 0) {
+                $package->prices()->create([
+                    'currency' => $package->currency,
+                    'currency_exponent' => $package->currency_exponent,
+                    'price_minor' => $package->price_minor,
+                    'billing_period' => $package->billing_period,
+                ]);
+            }
+        });
+    }
+
+    /**
      * @param  array<string, int|bool|null>  $entitlements  feature => ceiling, or feature => on/off
      */
     public function allowing(array $entitlements): static

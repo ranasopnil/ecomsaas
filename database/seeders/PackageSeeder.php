@@ -21,6 +21,14 @@ class PackageSeeder extends Seeder
                 'price_minor' => 99000,
                 'trial_days' => 14,
                 'sort_order' => 1,
+                'prices' => [
+                    'BDT' => 99000,
+                    'MYR' => 3900,
+                    'IDR' => 149000,
+                    'AED' => 3900,
+                    'SAR' => 3900,
+                    'USD' => 1000,
+                ],
                 'entitlements' => [
                     'products' => 50,
                     'staff_accounts' => 1,
@@ -40,6 +48,14 @@ class PackageSeeder extends Seeder
                 'price_minor' => 249000,
                 'trial_days' => 14,
                 'sort_order' => 2,
+                'prices' => [
+                    'BDT' => 249000,
+                    'MYR' => 9900,
+                    'IDR' => 399000,
+                    'AED' => 9900,
+                    'SAR' => 9900,
+                    'USD' => 2500,
+                ],
                 'entitlements' => [
                     'products' => 1000,
                     'staff_accounts' => 3,
@@ -59,6 +75,14 @@ class PackageSeeder extends Seeder
                 'price_minor' => 599000,
                 'trial_days' => 14,
                 'sort_order' => 3,
+                'prices' => [
+                    'BDT' => 599000,
+                    'MYR' => 23900,
+                    'IDR' => 949000,
+                    'AED' => 23900,
+                    'SAR' => 23900,
+                    'USD' => 5900,
+                ],
                 'entitlements' => [
                     'products' => null,
                     'staff_accounts' => 10,
@@ -75,7 +99,8 @@ class PackageSeeder extends Seeder
 
         foreach ($packages as $definition) {
             $entitlements = $definition['entitlements'];
-            unset($definition['entitlements']);
+            $prices = $definition['prices'];
+            unset($definition['entitlements'], $definition['prices']);
 
             $package = Package::updateOrCreate(
                 ['slug' => $definition['slug']],
@@ -87,6 +112,17 @@ class PackageSeeder extends Seeder
                     'is_active' => true,
                 ],
             );
+
+            foreach ($prices as $currency => $minor) {
+                $package->prices()->updateOrCreate(
+                    ['currency' => $currency],
+                    [
+                        'price_minor' => $minor,
+                        'currency_exponent' => config("currencies.{$currency}.exponent"),
+                        'billing_period' => $package->billing_period,
+                    ],
+                );
+            }
 
             foreach ($entitlements as $feature => $value) {
                 $package->entitlements()->updateOrCreate(

@@ -2,6 +2,7 @@
 
 namespace App\Services\Billing;
 
+use App\Exceptions\PlanNotPricedInCurrency;
 use App\Facades\Entitlements;
 use App\Facades\Tenancy;
 use App\Models\Package;
@@ -24,7 +25,13 @@ class SubscribeToPackage
     {
         $startsAt = $startsAt ?? now();
 
-        return DB::transaction(fn () => Tenancy::run($tenant, function () use ($tenant, $package, $startsAt) {
+        $price = $package->priceIn($tenant->currency);
+
+        if ($price === null) {
+            throw PlanNotPricedInCurrency::make($package->name, $tenant->currency);
+        }
+
+        return DB::transaction(fn () => Tenancy::run($tenant, function () use ($tenant, $package, $price, $startsAt) {
             $isFirstEver = ! Subscription::query()->exists();
 
             $this->endCurrent($startsAt);
@@ -37,9 +44,9 @@ class SubscribeToPackage
                 'tenant_id' => $tenant->id,
                 'package_id' => $package->id,
                 'status' => $trialEndsAt ? Subscription::STATUS_TRIALING : Subscription::STATUS_ACTIVE,
-                'price_minor' => $package->price_minor,
-                'currency' => $package->currency,
-                'currency_exponent' => $package->currency_exponent,
+                'price_minor' => $price->minor,
+                'currency' => $price->currency,
+                'currency_exponent' => $price->exponent,
                 'billing_period' => $package->billing_period,
                 'starts_at' => $startsAt,
                 'trial_ends_at' => $trialEndsAt,
