@@ -254,7 +254,8 @@ class CustomDomainTest extends TestCase
     {
         Livewire::test(DomainIndex::class)
             ->assertSee('46.224.138.153')
-            ->assertSee('How to point your domain here')
+            ->assertSee('Pointing your domain here')
+            ->assertSee('What not to do')
             ->assertSee('DNS only');
     }
 
@@ -268,7 +269,7 @@ class CustomDomainTest extends TestCase
             $this->actingAs(User::factory()->create(['tenant_id' => $basic->id]));
 
             Livewire::test(DomainIndex::class)
-                ->assertSee('does not include your own domain')
+                ->assertSee('Not included in your plan')
                 ->set('hostname', 'myshop.com')
                 ->call('add')
                 ->assertHasErrors('hostname');

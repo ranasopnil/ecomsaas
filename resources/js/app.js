@@ -126,6 +126,29 @@ document.addEventListener('alpine:init', () => {
         },
     }));
 
+    /** A value with a button that copies it, so nobody mistypes an address. */
+    window.Alpine.data('copyable', (value) => ({
+        value,
+        copied: false,
+
+        async copy() {
+            try {
+                await navigator.clipboard.writeText(this.value);
+            } catch (error) {
+                // Older browsers, or a page not served over https.
+                const field = document.createElement('textarea');
+                field.value = this.value;
+                document.body.appendChild(field);
+                field.select();
+                document.execCommand('copy');
+                field.remove();
+            }
+
+            this.copied = true;
+            setTimeout(() => { this.copied = false; }, 1600);
+        },
+    }));
+
     /** Short messages that appear in the corner and fade out on their own. */
     window.Alpine.data('toasts', () => ({
         items: [],
