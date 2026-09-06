@@ -101,6 +101,15 @@ final readonly class Money implements JsonSerializable, Stringable
     }
 
     /**
+     * Grouped for reading: "1,450.50". Use this wherever a shopper or a
+     * shopkeeper reads an amount, so every figure on a page matches.
+     */
+    public function toDisplay(): string
+    {
+        return number_format($this->minor / (10 ** $this->exponent), $this->exponent);
+    }
+
+    /**
      * For display only, in the shopper's language.
      */
     public function format(?string $locale = null): string

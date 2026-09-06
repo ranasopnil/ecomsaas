@@ -42,7 +42,7 @@
                             @endif
                         </td>
                         <td class="px-5 py-3 tabular-nums">
-                            {{ $subscription ? $subscription->currency.' '.$subscription->price->toDecimal() : '—' }}
+                            {{ $subscription ? $subscription->currency.' '.$subscription->price->toDisplay() : '—' }}
                         </td>
                         <td class="px-5 py-3">
                             <div class="flex items-center gap-2">

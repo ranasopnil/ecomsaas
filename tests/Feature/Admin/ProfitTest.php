@@ -47,7 +47,7 @@ class ProfitTest extends TestCase
     {
         Livewire::test(ProductForm::class)
             ->set('name', 'Panjabi')
-            ->set('price', '1450')
+            ->set('regular_price', '1450')
             ->set('cost_price', '900')
             ->set('stock', '10')
             ->call('save')

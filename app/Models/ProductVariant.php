@@ -24,7 +24,8 @@ class ProductVariant extends Model
         'tenant_id', 'product_id', 'name', 'sku', 'barcode',
         'price_minor', 'currency', 'currency_exponent',
         'compare_at_price_minor', 'cost_price_minor',
-        'weight_grams', 'position', 'is_default',
+        'weight_grams', 'length_mm', 'width_mm', 'height_mm',
+        'position', 'is_default',
     ];
 
     protected function casts(): array
@@ -102,6 +103,44 @@ class ProductVariant extends Model
     /**
      * "Large / Red", built from the choices this variant stands for.
      */
+    /**
+     * "30 × 20 × 5 cm", or nothing when the shopkeeper has not measured it.
+     */
+    public function dimensionsLabel(): ?string
+    {
+        if (! $this->length_mm || ! $this->width_mm || ! $this->height_mm) {
+            return null;
+        }
+
+        return implode(' × ', array_map(
+            fn (int $mm) => rtrim(rtrim(number_format($mm / 10, 1), '0'), '.'),
+            [$this->length_mm, $this->width_mm, $this->height_mm],
+        )).' cm';
+    }
+
+    /**
+     * "1.2 kg" or "450 g".
+     */
+    public function weightLabel(): ?string
+    {
+        if (! $this->weight_grams) {
+            return null;
+        }
+
+        return $this->weight_grams >= 1000
+            ? rtrim(rtrim(number_format($this->weight_grams / 1000, 2), '0'), '.').' kg'
+            : $this->weight_grams.' g';
+    }
+
+    /**
+     * True when this is being sold for less than its normal price.
+     */
+    public function isDiscounted(): bool
+    {
+        return $this->compare_at_price_minor !== null
+            && $this->compare_at_price_minor > $this->price_minor;
+    }
+
     public function choiceLabel(): string
     {
         if ($this->name) {

@@ -61,6 +61,12 @@ class MoneyTest extends TestCase
         Money::fromDecimal('1,000.00', 'BDT');
     }
 
+    public function test_big_amounts_are_grouped_for_reading(): void
+    {
+        $this->assertSame('1,450.50', Money::fromDecimal('1450.50', 'BDT')->toDisplay());
+        $this->assertSame('1,250,000', Money::fromDecimal('1250000', 'IDR', 0)->toDisplay());
+    }
+
     public function test_negative_amounts_survive_the_round_trip(): void
     {
         $refund = Money::fromDecimal('-45.75', 'BDT');

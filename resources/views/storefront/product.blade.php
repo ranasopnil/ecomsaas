@@ -12,8 +12,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $product->meta_title ?: $product->name }} — {{ $store->name }}</title>
-    @if ($product->meta_description)
-        <meta name="description" content="{{ $product->meta_description }}">
+    @if ($product->meta_description || $product->short_description)
+        <meta name="description" content="{{ $product->meta_description ?: $product->short_description }}">
+    @endif
+    @if ($product->tags)
+        <meta name="keywords" content="{{ implode(', ', $product->tags) }}">
+    @endif
+    <meta property="og:title" content="{{ $product->name }}">
+    @if ($product->short_description)
+        <meta property="og:description" content="{{ $product->short_description }}">
+    @endif
+    @if ($mainImage ?? null)
+        <meta property="og:image" content="{{ $mainImage->url() }}">
     @endif
     @if ($isPreview)
         <meta name="robots" content="noindex">
@@ -68,15 +78,21 @@
 
                 <h1 class="mt-1 text-3xl font-semibold">{{ $product->name }}</h1>
 
+                @if ($product->short_description)
+                    <p class="mt-2 text-slate-600">{{ $product->short_description }}</p>
+                @endif
+
                 @if ($first)
                     <div class="mt-4 flex items-baseline gap-3">
                         <span class="text-2xl font-semibold tabular-nums">
-                            {{ $first->currency }} {{ $first->price->toDecimal() }}
+                            {{ $first->currency }} {{ $first->price->toDisplay() }}
                         </span>
-                        @if ($first->compare_at_price_minor && $first->compare_at_price_minor > $first->price_minor)
+                        @if ($first->isDiscounted())
                             <span class="text-lg text-slate-400 line-through tabular-nums">
                                 {{ $first->currency }} {{ number_format($first->compare_at_price_minor / (10 ** $first->currency_exponent), $first->currency_exponent) }}
                             </span>
+                            @php($off = round(($first->compare_at_price_minor - $first->price_minor) / $first->compare_at_price_minor * 100))
+                            <span class="rounded-full bg-rose-100 px-2 py-0.5 text-sm font-medium text-rose-800">{{ $off }}% off</span>
                         @endif
                     </div>
                 @endif
@@ -106,6 +122,17 @@
                     @endif
                 </p>
 
+                @if ($product->shipping_charge_minor !== null && $first)
+                    <p class="mt-2 text-sm text-slate-600">
+                        @if ($product->shipping_charge_minor === 0)
+                            <span class="font-medium text-emerald-700">Free delivery</span>
+                        @else
+                            Delivery {{ $first->currency }}
+                            {{ number_format($product->shipping_charge_minor / (10 ** $first->currency_exponent), $first->currency_exponent) }}
+                        @endif
+                    </p>
+                @endif
+
                 <button type="button" disabled
                         class="mt-6 w-full cursor-not-allowed rounded-lg bg-slate-300 px-5 py-3 text-sm font-medium text-slate-600">
                     Add to basket
@@ -117,8 +144,49 @@
                         {!! $product->description !!}
                     </div>
                 @endif
+
+                @php($details = array_filter([
+                    'Weight' => $first?->weightLabel(),
+                    'Size' => $first?->dimensionsLabel(),
+                    'Code' => $first?->sku,
+                ]))
+
+                @if ($details !== [])
+                    <dl class="mt-8 border-t border-slate-200 pt-4 text-sm">
+                        @foreach ($details as $label => $value)
+                            <div class="flex justify-between border-b border-slate-100 py-2">
+                                <dt class="text-slate-500">{{ $label }}</dt>
+                                <dd class="font-medium">{{ $value }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                @endif
+
+                @if ($product->tags)
+                    <div class="mt-6 flex flex-wrap gap-2">
+                        @foreach ($product->tags as $tag)
+                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">{{ $tag }}</span>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </div>
+        @php($videoId = $product->youtubeId())
+        @if ($videoId)
+            <section class="mt-12">
+                <h2 class="mb-4 text-lg font-semibold">Watch it</h2>
+                {{-- Built from the video's id alone, never from the link that was pasted in. --}}
+                <div class="aspect-video overflow-hidden rounded-xl bg-slate-100">
+                    <iframe class="h-full w-full"
+                            src="https://www.youtube-nocookie.com/embed/{{ $videoId }}"
+                            title="{{ $product->name }}"
+                            loading="lazy"
+                            referrerpolicy="strict-origin-when-cross-origin"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen></iframe>
+                </div>
+            </section>
+        @endif
     </main>
 
     <footer class="border-t border-slate-200 py-8 text-center text-sm text-slate-500">

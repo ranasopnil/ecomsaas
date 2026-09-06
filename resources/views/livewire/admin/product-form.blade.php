@@ -35,6 +35,35 @@
                     @error('description') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
 
+                <div class="sm:col-span-2">
+                    <label class="mb-1 block text-sm font-medium">Short description</label>
+                    <textarea wire:model.blur="short_description" rows="2" maxlength="500"
+                              placeholder="One or two sentences. Shown under the name and used by Google."
+                              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"></textarea>
+                    <p class="mt-1 text-xs text-slate-500">
+                        This is what people read in search results. Keep it under about 160 characters.
+                    </p>
+                    @error('short_description') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="mb-1 block text-sm font-medium">Search words</label>
+                    <input type="text" wire:model.blur="tags" placeholder="panjabi, cotton, eid, menswear"
+                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none">
+                    <p class="mt-1 text-xs text-slate-500">
+                        Words a customer might type when looking for this. Separate them with commas.
+                    </p>
+                    @error('tags') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label class="mb-1 block text-sm font-medium">YouTube video (optional)</label>
+                    <input type="url" wire:model.blur="video_url" placeholder="https://www.youtube.com/watch?v=..."
+                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none">
+                    <p class="mt-1 text-xs text-slate-500">Shown on the product page under the photos.</p>
+                    @error('video_url') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+                </div>
+
                 <div>
                     <label class="mb-1 block text-sm font-medium">Brand</label>
                     <select wire:model="brand_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none">
@@ -46,12 +75,23 @@
                 </div>
 
                 <div>
-                    <label class="mb-1 block text-sm font-medium">State</label>
-                    <select wire:model="status" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none">
-                        <option value="draft">Still writing</option>
-                        <option value="active">On sale</option>
-                        <option value="archived">Put away</option>
-                    </select>
+                    <label class="mb-1 block text-sm font-medium">Publish this product</label>
+                    <div class="flex items-center gap-4 rounded-lg border border-slate-300 px-3 py-2">
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="radio" wire:model="is_published" value="1" class="border-slate-300">
+                            Yes — customers can see it
+                        </label>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="radio" wire:model="is_published" value="0" class="border-slate-300">
+                            No — only you
+                        </label>
+                    </div>
+                    @if ($status === 'archived')
+                        <p class="mt-1 text-xs text-amber-700">
+                            This product is put away. Publishing it here will not bring it back —
+                            use "Put back" on the products list.
+                        </p>
+                    @endif
                 </div>
 
                 @if ($categories->isNotEmpty())
@@ -77,24 +117,26 @@
 
             <div class="grid gap-4 sm:grid-cols-3">
                 <div>
-                    <label class="mb-1 block text-sm font-medium">Price</label>
+                    <label class="mb-1 block text-sm font-medium">Regular price</label>
                     <div class="flex items-center rounded-lg border border-slate-300 focus-within:border-slate-500">
                         <span class="px-3 text-sm text-slate-500">{{ $currency }}</span>
-                        <input type="text" inputmode="decimal" wire:model="price"
+                        <input type="text" inputmode="decimal" wire:model.blur="regular_price"
                                class="w-full rounded-e-lg border-0 px-2 py-2 text-sm focus:outline-none">
                     </div>
-                    @error('price') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+                    @error('regular_price') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="mb-1 block text-sm font-medium">Was (optional)</label>
+                    <label class="mb-1 block text-sm font-medium">Discount price (optional)</label>
                     <div class="flex items-center rounded-lg border border-slate-300 focus-within:border-slate-500">
                         <span class="px-3 text-sm text-slate-500">{{ $currency }}</span>
-                        <input type="text" inputmode="decimal" wire:model="compare_at_price"
+                        <input type="text" inputmode="decimal" wire:model.blur="discount_price"
                                class="w-full rounded-e-lg border-0 px-2 py-2 text-sm focus:outline-none">
                     </div>
-                    <p class="mt-1 text-xs text-slate-500">Shown crossed out next to the price.</p>
-                    @error('compare_at_price') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+                    <p class="mt-1 text-xs text-slate-500">
+                        Fill this in for a sale. Customers pay this, with the regular price crossed out beside it.
+                    </p>
+                    @error('discount_price') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -145,9 +187,10 @@
                 </div>
             </div>
 
-            @if (is_numeric($price) && is_numeric($cost_price) && (float) $price > 0)
-                @php($profit = (float) $price - (float) $cost_price)
-                @php($margin = round($profit / (float) $price * 100, 1))
+            @php($selling = is_numeric($discount_price) && (float) $discount_price > 0 ? $discount_price : $regular_price)
+            @if (is_numeric($selling) && is_numeric($cost_price) && (float) $selling > 0)
+                @php($profit = (float) $selling - (float) $cost_price)
+                @php($margin = round($profit / (float) $selling * 100, 1))
                 <p class="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm {{ $profit < 0 ? 'text-rose-700' : 'text-slate-700' }}">
                     You make <strong>{{ $currency }} {{ number_format($profit, 2) }}</strong> on each one,
                     which is {{ $margin }}% of the price.
@@ -156,6 +199,52 @@
             @endif
         </div>
 
+
+
+        <div class="rounded-xl bg-white p-6 shadow-sm">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Delivery</h2>
+            <p class="mt-1 mb-4 text-sm text-slate-500">
+                Size and weight are optional, but couriers price on them, so filling them in means the
+                delivery charge can be worked out properly later.
+            </p>
+
+            <div class="grid gap-4 sm:grid-cols-3">
+                <div>
+                    <label class="mb-1 block text-sm font-medium">Delivery charge</label>
+                    <div class="flex items-center rounded-lg border border-slate-300 focus-within:border-slate-500">
+                        <span class="px-3 text-sm text-slate-500">{{ $currency }}</span>
+                        <input type="text" inputmode="decimal" wire:model.blur="shipping_charge" placeholder="Shop's usual"
+                               class="w-full rounded-e-lg border-0 px-2 py-2 text-sm focus:outline-none">
+                    </div>
+                    <p class="mt-1 text-xs text-slate-500">Leave empty for the shop's usual charge. Put 0 for free delivery.</p>
+                    @error('shipping_charge') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium">Weight (grams)</label>
+                    <input type="number" min="0" wire:model.blur="weight_grams" placeholder="450"
+                           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none">
+                    @error('weight_grams') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium">Size (millimetres)</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" min="0" wire:model.blur="length_mm" placeholder="Length"
+                               class="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-slate-500 focus:outline-none">
+                        <span class="text-slate-400">×</span>
+                        <input type="number" min="0" wire:model.blur="width_mm" placeholder="Width"
+                               class="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-slate-500 focus:outline-none">
+                        <span class="text-slate-400">×</span>
+                        <input type="number" min="0" wire:model.blur="height_mm" placeholder="Height"
+                               class="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-slate-500 focus:outline-none">
+                    </div>
+                    @error('length_mm') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+                    @error('width_mm') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+                    @error('height_mm') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+                </div>
+            </div>
+        </div>
 
     @if ($product)
         <div class="rounded-xl bg-white p-6 shadow-sm">
@@ -236,25 +325,27 @@
 
         <div class="rounded-xl bg-white p-6 shadow-sm">
             <div class="mb-2 flex items-center justify-between">
-                <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Choices</h2>
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Variants</h2>
                 <button type="button" wire:click="addOption"
-                        class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">Add a choice</button>
+                        class="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800">
+                    + Add variant
+                </button>
             </div>
             <p class="mb-4 text-sm text-slate-500">
-                Sizes, colours and so on. Separate the options with commas — for example
-                <span class="rounded bg-slate-100 px-1">Small, Medium, Large</span>.
-                Every combination becomes something you can price and count on its own.
+                Give the variant a name, such as <span class="rounded bg-slate-100 px-1">Size</span>, then list what it
+                can be, separated by commas: <span class="rounded bg-slate-100 px-1">Small, Medium, Large</span>.
+                Every combination becomes something you can price, count and photograph on its own.
             </p>
 
             @forelse ($options as $index => $option)
                 <div class="mb-3 flex flex-wrap items-end gap-3">
                     <div>
-                        <label class="mb-1 block text-xs font-medium text-slate-500">Kind of choice</label>
+                        <label class="mb-1 block text-xs font-medium text-slate-500">Variant name</label>
                         <input type="text" wire:model="options.{{ $index }}.name" placeholder="Size"
                                class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none">
                     </div>
                     <div class="flex-1">
-                        <label class="mb-1 block text-xs font-medium text-slate-500">The options</label>
+                        <label class="mb-1 block text-xs font-medium text-slate-500">What it can be</label>
                         <input type="text" wire:model="options.{{ $index }}.values" placeholder="Small, Medium, Large"
                                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none">
                     </div>
@@ -262,7 +353,7 @@
                             class="rounded-lg border border-rose-200 px-3 py-2 text-sm text-rose-700 hover:bg-rose-50">Remove</button>
                 </div>
             @empty
-                <p class="text-sm text-slate-500">This product is sold as one thing, with no choices.</p>
+                <p class="text-sm text-slate-500">This product is sold as one thing, with no variants.</p>
             @endforelse
         </div>
 
@@ -277,16 +368,18 @@
 
     @if ($product?->has_variants && count($variantRows) > 0)
         <div class="rounded-xl bg-white p-6 shadow-sm">
-            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">Each combination</h2>
+            <h2 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">Each variant combination</h2>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead class="text-xs uppercase tracking-wide text-slate-400">
                         <tr>
                             <th class="py-2 text-start font-semibold">Combination</th>
-                            <th class="py-2 text-start font-semibold">Price</th>
+                            <th class="py-2 text-start font-semibold">Regular price</th>
+                            <th class="py-2 text-start font-semibold">Discount price</th>
                             <th class="py-2 text-start font-semibold">Costs you</th>
                             <th class="py-2 text-start font-semibold">You make</th>
+                            <th class="py-2 text-start font-semibold">Weight (g)</th>
                             <th class="py-2 text-start font-semibold">Code</th>
                             <th class="py-2 text-start font-semibold">How many</th>
                         </tr>
@@ -296,9 +389,14 @@
                             <tr>
                                 <td class="py-2 pe-4 font-medium">{{ $variant->choiceLabel() }}</td>
                                 <td class="py-2 pe-4">
-                                    <input type="text" inputmode="decimal" wire:model="variantRows.{{ $variant->id }}.price"
+                                    <input type="text" inputmode="decimal" wire:model="variantRows.{{ $variant->id }}.regular"
                                            class="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none">
-                                    @error('variantRows.'.$variant->id.'.price') <p class="text-xs text-rose-700">{{ $message }}</p> @enderror
+                                    @error('variantRows.'.$variant->id.'.regular') <p class="text-xs text-rose-700">{{ $message }}</p> @enderror
+                                </td>
+                                <td class="py-2 pe-4">
+                                    <input type="text" inputmode="decimal" wire:model="variantRows.{{ $variant->id }}.discount"
+                                           class="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none">
+                                    @error('variantRows.'.$variant->id.'.discount') <p class="text-xs text-rose-700">{{ $message }}</p> @enderror
                                 </td>
                                 <td class="py-2 pe-4">
                                     <input type="text" inputmode="decimal" wire:model.blur="variantRows.{{ $variant->id }}.cost"
@@ -306,11 +404,16 @@
                                 </td>
                                 <td class="py-2 pe-4 tabular-nums text-slate-600">
                                     @php($row = $variantRows[$variant->id] ?? null)
-                                    @if ($row && is_numeric($row['price']) && is_numeric($row['cost']))
-                                        {{ number_format((float) $row['price'] - (float) $row['cost'], 2) }}
+                                    @php($sells = $row && is_numeric($row['discount'] ?? '') && (float) $row['discount'] > 0 ? $row['discount'] : ($row['regular'] ?? null))
+                                    @if ($row && is_numeric($sells) && is_numeric($row['cost']))
+                                        {{ number_format((float) $sells - (float) $row['cost'], 2) }}
                                     @else
                                         —
                                     @endif
+                                </td>
+                                <td class="py-2 pe-4">
+                                    <input type="number" min="0" wire:model="variantRows.{{ $variant->id }}.weight"
+                                           class="w-24 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none">
                                 </td>
                                 <td class="py-2 pe-4">
                                     <input type="text" wire:model="variantRows.{{ $variant->id }}.sku"

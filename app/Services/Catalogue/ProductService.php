@@ -39,25 +39,30 @@ class ProductService
                 'name' => $data['name'],
                 'slug' => $this->uniqueSlug($data['slug'] ?? $data['name']),
                 'description' => $this->sanitiser->clean($data['description'] ?? null),
+                'short_description' => $this->plainText($data['short_description'] ?? null, 500),
                 'status' => $data['status'] ?? Product::STATUS_DRAFT,
                 'has_variants' => false,
                 'meta_title' => $data['meta_title'] ?? null,
                 'meta_description' => $data['meta_description'] ?? null,
+                'tags' => $this->cleanTags($data['tags'] ?? null),
+                'video_url' => ($data['video_url'] ?? null) ?: null,
+                'shipping_charge_minor' => $this->shippingMinor($data['shipping_charge'] ?? null),
                 'published_at' => ($data['status'] ?? null) === Product::STATUS_ACTIVE ? now() : null,
             ]);
 
             $this->syncCategories($product, $data['category_ids'] ?? []);
 
-            $variant = $this->createVariant($product, [
-                'price' => $data['price'] ?? '0',
-                'compare_at_price' => $data['compare_at_price'] ?? null,
+            $variant = $this->createVariant($product, array_merge($this->pricing($data), [
                 'cost_price' => $data['cost_price'] ?? null,
                 'sku' => $data['sku'] ?? null,
                 'barcode' => $data['barcode'] ?? null,
                 'weight_grams' => $data['weight_grams'] ?? null,
+                'length_mm' => $data['length_mm'] ?? null,
+                'width_mm' => $data['width_mm'] ?? null,
+                'height_mm' => $data['height_mm'] ?? null,
                 'is_default' => true,
                 'position' => 0,
-            ]);
+            ]));
 
             $level = $this->inventory->levelFor($variant);
             $level->update([
@@ -92,6 +97,18 @@ class ProductService
                 'status' => $data['status'] ?? $product->status,
                 'meta_title' => $data['meta_title'] ?? $product->meta_title,
                 'meta_description' => $data['meta_description'] ?? $product->meta_description,
+                'short_description' => array_key_exists('short_description', $data)
+                    ? $this->plainText($data['short_description'], 500)
+                    : $product->short_description,
+                'tags' => array_key_exists('tags', $data)
+                    ? $this->cleanTags($data['tags'])
+                    : $product->tags,
+                'video_url' => array_key_exists('video_url', $data)
+                    ? ($data['video_url'] ?: null)
+                    : $product->video_url,
+                'shipping_charge_minor' => array_key_exists('shipping_charge', $data)
+                    ? $this->shippingMinor($data['shipping_charge'])
+                    : $product->shipping_charge_minor,
             ]);
 
             if (array_key_exists('slug', $data) && $data['slug'] !== $product->slug) {
@@ -149,7 +166,10 @@ class ProductService
             'cost_price_minor' => isset($data['cost_price']) && $data['cost_price'] !== '' && $data['cost_price'] !== null
                 ? $this->toMinor($data['cost_price'], $currency, $exponent)
                 : null,
-            'weight_grams' => $data['weight_grams'] ?? null,
+            'weight_grams' => ($data['weight_grams'] ?? null) ?: null,
+            'length_mm' => ($data['length_mm'] ?? null) ?: null,
+            'width_mm' => ($data['width_mm'] ?? null) ?: null,
+            'height_mm' => ($data['height_mm'] ?? null) ?: null,
             'position' => $data['position'] ?? 0,
             'is_default' => $data['is_default'] ?? false,
         ]);
@@ -269,6 +289,82 @@ class ProductService
 
         // Combinations the shopkeeper no longer offers.
         $product->variants()->whereNotIn('id', $keep)->get()->each->delete();
+    }
+
+    /**
+     * Work out what is actually charged.
+     *
+     * The shopkeeper enters a regular price and, if they are having a sale, a
+     * discount price. What is charged is the discount when there is one, and
+     * the regular price is then shown crossed out beside it.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{price: string, compare_at_price: string|null}
+     */
+    public function pricing(array $data): array
+    {
+        if (! array_key_exists('regular_price', $data)) {
+            return [
+                'price' => (string) ($data['price'] ?? '0'),
+                'compare_at_price' => $data['compare_at_price'] ?? null,
+            ];
+        }
+
+        $currency = Tenancy::current()->currency;
+        $exponent = Tenancy::current()->currency_exponent;
+
+        $regular = (string) ($data['regular_price'] === '' || $data['regular_price'] === null ? '0' : $data['regular_price']);
+        $discount = $data['discount_price'] ?? null;
+
+        $hasDiscount = $discount !== null
+            && $discount !== ''
+            && is_numeric($discount)
+            && $this->toMinor($discount, $currency, $exponent) > 0
+            && $this->toMinor($discount, $currency, $exponent) < $this->toMinor($regular, $currency, $exponent);
+
+        return $hasDiscount
+            ? ['price' => (string) $discount, 'compare_at_price' => $regular]
+            : ['price' => $regular, 'compare_at_price' => null];
+    }
+
+    /**
+     * @param  array<int, string>|string|null  $tags
+     * @return array<int, string>|null
+     */
+    protected function cleanTags(array|string|null $tags): ?array
+    {
+        if ($tags === null) {
+            return null;
+        }
+
+        $list = is_string($tags) ? explode(',', $tags) : $tags;
+
+        $clean = collect($list)
+            ->map(fn ($tag) => trim(strip_tags((string) $tag)))
+            ->filter()
+            ->map(fn (string $tag) => mb_substr($tag, 0, 40))
+            ->unique()
+            ->take(20)
+            ->values()
+            ->all();
+
+        return $clean === [] ? null : $clean;
+    }
+
+    protected function plainText(?string $value, int $limit): ?string
+    {
+        $clean = trim(preg_replace('/\s+/', ' ', strip_tags((string) $value)) ?? '');
+
+        return $clean === '' ? null : mb_substr($clean, 0, $limit);
+    }
+
+    protected function shippingMinor(string|int|float|null $charge): ?int
+    {
+        if ($charge === null || $charge === '' || ! is_numeric($charge)) {
+            return null;
+        }
+
+        return $this->toMinor($charge, Tenancy::current()->currency, Tenancy::current()->currency_exponent);
     }
 
     protected function toMinor(string|int|float $amount, string $currency, int $exponent): int

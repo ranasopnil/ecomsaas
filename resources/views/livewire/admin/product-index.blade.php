@@ -62,7 +62,7 @@
                             </span>
                         </td>
                         <td class="px-5 py-3 tabular-nums">
-                            {{ $variant ? $variant->currency.' '.$variant->price->toDecimal() : '—' }}
+                            {{ $variant ? $variant->currency.' '.$variant->price->toDisplay() : '—' }}
                         </td>
                         <td class="px-5 py-3 tabular-nums">
                             @if ($variant?->marginPercent() !== null)

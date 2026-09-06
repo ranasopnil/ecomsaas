@@ -22,8 +22,9 @@ class Product extends Model
     public const STATUS_ARCHIVED = 'archived';
 
     protected $fillable = [
-        'tenant_id', 'brand_id', 'name', 'slug', 'description', 'status',
-        'has_variants', 'meta_title', 'meta_description', 'published_at',
+        'tenant_id', 'brand_id', 'name', 'slug', 'description', 'short_description',
+        'status', 'has_variants', 'meta_title', 'meta_description', 'tags',
+        'video_url', 'shipping_charge_minor', 'published_at',
     ];
 
     protected function casts(): array
@@ -31,6 +32,8 @@ class Product extends Model
         return [
             'has_variants' => 'boolean',
             'published_at' => 'datetime',
+            'tags' => 'array',
+            'shipping_charge_minor' => 'integer',
         ];
     }
 
@@ -57,6 +60,34 @@ class Product extends Model
     public function images(): HasMany
     {
         return $this->hasMany(ProductImage::class)->orderByDesc('is_primary')->orderBy('position');
+    }
+
+    /**
+     * The YouTube id on its own, taken out of whatever link was pasted in.
+     *
+     * Only this id is ever used to show the video, so nothing a shopkeeper
+     * types reaches the page as a web address.
+     */
+    public function youtubeId(): ?string
+    {
+        if (! $this->video_url) {
+            return null;
+        }
+
+        $patterns = [
+            '~youtu\.be/([A-Za-z0-9_-]{11})~',
+            '~youtube\.com/watch\?(?:.*&)?v=([A-Za-z0-9_-]{11})~',
+            '~youtube\.com/embed/([A-Za-z0-9_-]{11})~',
+            '~youtube\.com/shorts/([A-Za-z0-9_-]{11})~',
+        ];
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $this->video_url, $matches) === 1) {
+                return $matches[1];
+            }
+        }
+
+        return null;
     }
 
     public function primaryImage(): ?ProductImage

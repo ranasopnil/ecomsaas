@@ -52,10 +52,10 @@ class ProductScreenTest extends TestCase
         Livewire::test(ProductForm::class)
             ->set('name', 'Cotton Panjabi')
             ->set('description', 'Soft cotton, made in Dhaka.')
-            ->set('price', '1450.50')
+            ->set('regular_price', '1450.50')
             ->set('sku', 'PANJ-1')
             ->set('stock', '12')
-            ->set('status', Product::STATUS_ACTIVE)
+            ->set('is_published', true)
             ->call('save')
             ->assertHasNoErrors();
 
@@ -76,7 +76,7 @@ class ProductScreenTest extends TestCase
 
         Livewire::test(ProductForm::class)
             ->set('name', 'Four')
-            ->set('price', '10')
+            ->set('regular_price', '10')
             ->call('save')
             ->assertHasErrors('name');
 
@@ -88,9 +88,9 @@ class ProductScreenTest extends TestCase
         $product = app(ProductService::class)->create(['name' => 'Mug', 'price' => '250', 'stock' => 5]);
 
         Livewire::test(ProductForm::class, ['product' => $product])
-            ->assertSet('price', '250.00')
+            ->assertSet('regular_price', '250.00')
             ->assertSet('stock', '5')
-            ->set('price', '299.99')
+            ->set('regular_price', '299.99')
             ->set('stock', '20')
             ->call('save')
             ->assertHasNoErrors();
@@ -130,9 +130,9 @@ class ProductScreenTest extends TestCase
         $variants = $product->variants;
 
         Livewire::test(ProductForm::class, ['product' => $product])
-            ->set("variantRows.{$variants[0]->id}.price", '950')
+            ->set("variantRows.{$variants[0]->id}.regular", '950')
             ->set("variantRows.{$variants[0]->id}.stock", '4')
-            ->set("variantRows.{$variants[1]->id}.price", '975.50')
+            ->set("variantRows.{$variants[1]->id}.regular", '975.50')
             ->set("variantRows.{$variants[1]->id}.stock", '2')
             ->call('saveVariants')
             ->assertHasNoErrors();
@@ -187,7 +187,7 @@ class ProductScreenTest extends TestCase
 
         Livewire::test(ProductForm::class)
             ->set('name', 'Linen Shirt')
-            ->set('price', '1200')
+            ->set('regular_price', '1200')
             ->set('category_ids', [$category->id])
             ->call('save')
             ->assertHasNoErrors();

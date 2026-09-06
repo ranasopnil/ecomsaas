@@ -65,7 +65,7 @@ class ProductPageTest extends TestCase
         $this->get($this->url($product))
             ->assertOk()
             ->assertSee('Cotton Panjabi')
-            ->assertSee('1450.50')
+            ->assertSee('1,450.50')
             ->assertSee('In stock');
     }
 
