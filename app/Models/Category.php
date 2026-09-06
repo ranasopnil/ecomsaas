@@ -40,17 +40,34 @@ class Category extends Model
 
     /**
      * "Menswear › Shirts", for showing a category in a list.
+     *
+     * Walks up to the top on its own if the chain was not loaded, so a page
+     * showing a category can never fail because of how it was fetched. The
+     * depth is capped in case a category ever ends up inside itself.
      */
     public function path(): string
     {
         $names = [$this->name];
-        $parent = $this->parent;
+        $ancestor = $this->ancestorOf($this);
+        $depth = 0;
 
-        while ($parent !== null) {
-            array_unshift($names, $parent->name);
-            $parent = $parent->parent;
+        while ($ancestor !== null && $depth < 10) {
+            array_unshift($names, $ancestor->name);
+            $ancestor = $this->ancestorOf($ancestor);
+            $depth++;
         }
 
         return implode(' › ', $names);
+    }
+
+    protected function ancestorOf(self $category): ?self
+    {
+        if ($category->parent_id === null) {
+            return null;
+        }
+
+        return $category->relationLoaded('parent')
+            ? $category->parent
+            : $category->parent()->first();
     }
 }

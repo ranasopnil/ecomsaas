@@ -500,7 +500,7 @@ class ProductForm extends Component
 
         return view('livewire.admin.product-form', [
             'brands' => Brand::orderBy('name')->get(),
-            'categories' => Category::orderBy('name')->get(),
+            'categories' => Category::with('parent.parent.parent')->orderBy('name')->get(),
             'currency' => Tenancy::current()->currency,
             'images' => $images,
             'editorImages' => $images->map(fn ($image) => [

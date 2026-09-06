@@ -102,7 +102,7 @@ class CategoryIndex extends Component
     public function render()
     {
         return view('livewire.admin.category-index', [
-            'categories' => Category::with('parent')->withCount('products')->orderBy('name')->get(),
+            'categories' => Category::with('parent.parent.parent')->withCount('products')->orderBy('name')->get(),
         ]);
     }
 }
