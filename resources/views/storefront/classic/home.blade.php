@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $store->name }}</title>
     <meta property="og:title" content="{{ $store->name }}">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/storefront.js'])
 </head>
 <body class="min-h-full bg-white text-slate-900 antialiased">
 

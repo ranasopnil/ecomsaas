@@ -21,6 +21,7 @@ document.addEventListener('alpine:init', () => {
         searching: false,
         locating: false,
         refused: false,
+        blocked: false,
         timer: null,
 
         init() {
@@ -65,9 +66,12 @@ document.addEventListener('alpine:init', () => {
 
             navigator.geolocation.getCurrentPosition(
                 (position) => this.submit(position.coords.latitude, position.coords.longitude, ''),
-                () => {
+                (error) => {
                     this.locating = false
                     this.refused = true
+                    // PERMISSION_DENIED: the browser will not even ask again
+                    // until the customer changes the site's setting.
+                    this.blocked = error.code === 1
 
                     if (quiet) {
                         this.rememberRefusal()

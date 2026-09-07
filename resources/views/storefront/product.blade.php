@@ -28,7 +28,7 @@
     @if ($isPreview)
         <meta name="robots" content="noindex">
     @endif
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/storefront.js'])
 </head>
 <body class="min-h-full bg-white text-slate-900 antialiased">
     @if ($isPreview)

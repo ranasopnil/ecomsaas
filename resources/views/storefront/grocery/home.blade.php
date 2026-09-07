@@ -10,7 +10,7 @@
     <title>{{ $store->name }} — fresh groceries delivered</title>
     <meta name="description" content="Order groceries and daily needs from {{ $store->name }}, delivered to your door.">
     <meta property="og:title" content="{{ $store->name }}">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css', 'resources/js/storefront.js'])
 </head>
 <body class="min-h-full bg-slate-50 text-slate-900 antialiased">
 

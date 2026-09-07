@@ -97,7 +97,13 @@
 
             {{-- Only shown if the browser refused, so nobody is left stuck --}}
             <p x-show="refused" x-cloak class="mt-3 text-xs text-slate-500">
-                Your browser would not share where you are. Type your area above instead.
+                <span x-show="blocked">
+                    Location is switched off for this site in your browser. Click the lock or
+                    settings icon in the address bar to allow it, then press the target button again.
+                </span>
+                <span x-show="! blocked">
+                    We could not find where you are. Type your area above instead.
+                </span>
             </p>
 
             @if ($location->isSet())
