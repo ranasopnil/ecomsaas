@@ -201,7 +201,14 @@ class SampleShop
             }
 
             Category::where('demo_batch', self::BATCH)->get()
-                ->each(fn (Category $category) => $category->products()->count() === 0 ? $category->delete() : null);
+                ->each(function (Category $category) {
+                    if ($category->products()->count() > 0) {
+                        return;
+                    }
+
+                    $this->images->deleteCategoryImage($category);
+                    $category->delete();
+                });
 
             Brand::where('demo_batch', self::BATCH)->get()
                 ->each(fn (Brand $brand) => $brand->products()->count() === 0 ? $brand->delete() : null);
@@ -217,6 +224,8 @@ class SampleShop
     {
         $made = [];
 
+        $seed = 0;
+
         foreach (self::CATEGORIES as $name => $parent) {
             $made[$name] = Category::firstOrCreate(
                 ['slug' => str($name)->slug()->value()],
@@ -227,6 +236,10 @@ class SampleShop
                     'demo_batch' => self::BATCH,
                 ],
             );
+
+            if (! $made[$name]->hasImage()) {
+                $this->categoryPhoto($made[$name], ++$seed * 7);
+            }
         }
 
         return $made;
@@ -338,11 +351,48 @@ class SampleShop
      */
     protected function photo(Product $product, int $seed): void
     {
-        if (! function_exists('imagecreatetruecolor')) {
+        $path = $this->paintSquare($seed, $product->name, 1000);
+
+        if ($path === null) {
             return;
         }
 
-        $size = 1000;
+        $this->images->store($product, new UploadedFile($path, str($product->name)->slug().'.jpg', 'image/jpeg', null, true));
+
+        @unlink($path);
+    }
+
+    /**
+     * The same plain picture, for a category. Some shop fronts show a row of
+     * these, and a demo shop with empty holes in it looks broken rather than
+     * empty.
+     */
+    protected function categoryPhoto(Category $category, int $seed): void
+    {
+        $path = $this->paintSquare($seed, $category->name, 600);
+
+        if ($path === null) {
+            return;
+        }
+
+        $this->images->storeForCategory(
+            $category,
+            new UploadedFile($path, str($category->name)->slug().'.jpg', 'image/jpeg', null, true),
+        );
+
+        @unlink($path);
+    }
+
+    /**
+     * A soft coloured square with some initials on it, written to a temporary
+     * file. Returns null where the server cannot draw at all.
+     */
+    protected function paintSquare(int $seed, string $label, int $size): ?string
+    {
+        if (! function_exists('imagecreatetruecolor')) {
+            return null;
+        }
+
         $canvas = imagecreatetruecolor($size, $size);
 
         $hue = ($seed * 37) % 360;
@@ -361,19 +411,17 @@ class SampleShop
             imageline($canvas, 0, $y, $size, $y, $line);
         }
 
-        // The product's initials, quietly.
-        $initials = collect(explode(' ', $product->name))->take(2)
+        // The initials, quietly.
+        $initials = collect(explode(' ', $label))->take(2)
             ->map(fn (string $word) => mb_strtoupper(mb_substr($word, 0, 1)))->implode('');
 
         $ink = imagecolorallocatealpha($canvas, 255, 255, 255, 40);
         imagestring($canvas, 5, (int) ($size / 2) - 20, (int) ($size / 2) - 8, $initials, $ink);
 
-        $path = sys_get_temp_dir().'/sample-'.$product->id.'.jpg';
+        $path = sys_get_temp_dir().'/sample-'.$seed.'-'.uniqid().'.jpg';
         imagejpeg($canvas, $path, 88);
 
-        $this->images->store($product, new UploadedFile($path, str($product->name)->slug().'.jpg', 'image/jpeg', null, true));
-
-        @unlink($path);
+        return $path;
     }
 
     /**

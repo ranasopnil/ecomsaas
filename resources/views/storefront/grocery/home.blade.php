@@ -63,9 +63,14 @@
                     @foreach ($categories as $category)
                         <a href="{{ route('storefront.home') }}?category={{ $category->slug }}"
                            class="group flex w-24 shrink-0 flex-col items-center gap-2 text-center">
-                            <span class="flex h-20 w-20 items-center justify-center rounded-full text-2xl transition group-hover:scale-105"
+                            <span class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full text-2xl transition group-hover:scale-105"
                                   style="background: {{ $accent }}1a; color: {{ $accent }}">
-                                {{ mb_substr($category->name, 0, 1) }}
+                                @if ($category->hasImage())
+                                    <img src="{{ $category->thumbnailUrl() }}" alt="{{ $category->name }}"
+                                         loading="lazy" class="h-full w-full object-cover">
+                                @else
+                                    {{ mb_substr($category->name, 0, 1) }}
+                                @endif
                             </span>
                             <span class="line-clamp-2 text-xs font-medium text-slate-600">{{ $category->name }}</span>
                         </a>

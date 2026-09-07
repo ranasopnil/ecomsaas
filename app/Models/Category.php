@@ -8,19 +8,50 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Category extends Model
 {
     use BelongsToTenant, HasFactory;
 
-    protected $fillable = ['tenant_id', 'parent_id', 'name', 'slug', 'description', 'position', 'is_active', 'demo_batch'];
+    protected $fillable = [
+        'tenant_id', 'parent_id', 'name', 'slug', 'description', 'position', 'is_active', 'demo_batch',
+        'image_disk', 'image_path', 'image_thumbnail_path', 'image_size_bytes',
+    ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
             'position' => 'integer',
+            'image_size_bytes' => 'integer',
         ];
+    }
+
+    public function hasImage(): bool
+    {
+        return $this->image_path !== null;
+    }
+
+    /**
+     * The full-size picture, or null if the shopkeeper has not added one.
+     * Templates that show category pictures fall back to the first letter.
+     */
+    public function imageUrl(): ?string
+    {
+        return $this->image_path === null
+            ? null
+            : Storage::disk($this->image_disk ?? 'public')->url($this->image_path);
+    }
+
+    /**
+     * The small one, for the rows of circles a grocery front page shows.
+     */
+    public function thumbnailUrl(): ?string
+    {
+        return $this->image_path === null
+            ? null
+            : Storage::disk($this->image_disk ?? 'public')->url($this->image_thumbnail_path ?? $this->image_path);
     }
 
     public function parent(): BelongsTo

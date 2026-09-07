@@ -5,6 +5,7 @@ namespace App\Services\Catalogue;
 use App\Exceptions\LimitReached;
 use App\Facades\Entitlements;
 use App\Facades\Tenancy;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use Illuminate\Http\UploadedFile;
@@ -24,11 +25,88 @@ class ImageService
 
     public const THUMBNAIL_EDGE = 400;
 
+    /** A category picture is only ever shown small, so it is kept smaller. */
+    public const CATEGORY_EDGE = 800;
+
     public function store(Product $product, UploadedFile $file, ?int $variantId = null): ProductImage
     {
         $this->assertWithinStorageAllowance($file->getSize());
 
-        $directory = 'shops/'.Tenancy::id().'/products/'.$product->getKey();
+        $saved = $this->saveFile('shops/'.Tenancy::id().'/products/'.$product->getKey(), $file, self::MAX_EDGE);
+
+        return ProductImage::create([
+            'product_id' => $product->getKey(),
+            'product_variant_id' => $variantId,
+            'disk' => $saved['disk'],
+            'path' => $saved['path'],
+            'thumbnail_path' => $saved['thumbnail_path'],
+            'original_name' => $file->getClientOriginalName(),
+            'size_bytes' => $saved['size_bytes'],
+            'width' => $saved['width'],
+            'height' => $saved['height'],
+            'position' => (int) ProductImage::where('product_id', $product->getKey())->max('position') + 1,
+            'is_primary' => ! ProductImage::where('product_id', $product->getKey())->where('is_primary', true)->exists(),
+        ]);
+    }
+
+    /**
+     * The one picture a category shows.
+     *
+     * A category has at most one, so putting a new one on replaces the old and
+     * deletes the file, rather than quietly filling the shop's storage.
+     */
+    public function storeForCategory(Category $category, UploadedFile $file): Category
+    {
+        $this->assertWithinStorageAllowance($file->getSize());
+
+        $saved = $this->saveFile('shops/'.Tenancy::id().'/categories/'.$category->getKey(), $file, self::CATEGORY_EDGE);
+
+        $this->deleteCategoryImage($category, keepRecord: true);
+
+        $category->forceFill([
+            'image_disk' => $saved['disk'],
+            'image_path' => $saved['path'],
+            'image_thumbnail_path' => $saved['thumbnail_path'],
+            'image_size_bytes' => $saved['size_bytes'],
+        ])->save();
+
+        return $category;
+    }
+
+    /**
+     * Take a category's picture away, files and all.
+     *
+     * $keepRecord is for replacing one picture with another: the old files go,
+     * but the columns are about to be overwritten anyway.
+     */
+    public function deleteCategoryImage(Category $category, bool $keepRecord = false): void
+    {
+        if ($category->image_path === null) {
+            return;
+        }
+
+        Storage::disk($category->image_disk ?? 'public')
+            ->delete(array_filter([$category->image_path, $category->image_thumbnail_path]));
+
+        if ($keepRecord) {
+            return;
+        }
+
+        $category->forceFill([
+            'image_disk' => null,
+            'image_path' => null,
+            'image_thumbnail_path' => null,
+            'image_size_bytes' => null,
+        ])->save();
+    }
+
+    /**
+     * Shrink a picture, write it and its small version, and say where they went.
+     *
+     * @return array{disk: string, path: string, thumbnail_path: string|null, size_bytes: int, width: int|null, height: int|null}
+     */
+    protected function saveFile(string $directory, UploadedFile $file, int $mainEdge): array
+    {
         $name = Str::random(24);
         $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
 
@@ -38,7 +116,7 @@ class ImageService
         $original = file_get_contents($file->getRealPath());
         [$width, $height] = $this->dimensions($original);
 
-        $main = $this->resized($original, self::MAX_EDGE) ?? $original;
+        $main = $this->resized($original, $mainEdge, skipWhenAlreadySmaller: true) ?? $original;
         $thumbnail = $this->resized($original, self::THUMBNAIL_EDGE);
 
         Storage::disk('public')->put($path, $main);
@@ -49,19 +127,14 @@ class ImageService
 
         [$storedWidth, $storedHeight] = $this->dimensions($main) ?: [$width, $height];
 
-        return ProductImage::create([
-            'product_id' => $product->getKey(),
-            'product_variant_id' => $variantId,
+        return [
             'disk' => 'public',
             'path' => $path,
             'thumbnail_path' => $thumbnail !== null ? $thumbnailPath : null,
-            'original_name' => $file->getClientOriginalName(),
             'size_bytes' => strlen($main) + strlen((string) $thumbnail),
             'width' => $storedWidth,
             'height' => $storedHeight,
-            'position' => (int) ProductImage::where('product_id', $product->getKey())->max('position') + 1,
-            'is_primary' => ! ProductImage::where('product_id', $product->getKey())->where('is_primary', true)->exists(),
-        ]);
+        ];
     }
 
     public function delete(ProductImage $image): void
@@ -94,7 +167,9 @@ class ImageService
      */
     public function storageUsedMb(): float
     {
-        return round(((int) ProductImage::sum('size_bytes')) / 1048576, 2);
+        $bytes = (int) ProductImage::sum('size_bytes') + (int) Category::sum('image_size_bytes');
+
+        return round($bytes / 1048576, 2);
     }
 
     protected function assertWithinStorageAllowance(int $incomingBytes): void
@@ -129,9 +204,10 @@ class ImageService
 
     /**
      * Shrink so the longest side is at most $edge. Returns null when the
-     * picture is already small enough or cannot be read.
+     * picture cannot be read, or — if asked — when it is already small enough
+     * and the original bytes are worth keeping.
      */
-    protected function resized(string $contents, int $edge): ?string
+    protected function resized(string $contents, int $edge, bool $skipWhenAlreadySmaller = false): ?string
     {
         if (! function_exists('imagecreatefromstring')) {
             return null;
@@ -145,7 +221,10 @@ class ImageService
 
         [$width, $height] = $info;
 
-        if ($width <= $edge && $height <= $edge && $edge === self::MAX_EDGE) {
+        // Already small enough for its purpose: keep the original bytes.
+        // A thumbnail is always made, however small the picture, so every
+        // template has one size it can rely on.
+        if ($skipWhenAlreadySmaller && $width <= $edge && $height <= $edge) {
             return null;
         }
 

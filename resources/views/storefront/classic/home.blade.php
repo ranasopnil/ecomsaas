@@ -27,7 +27,11 @@
             <nav class="mb-8 flex flex-wrap gap-2">
                 @foreach ($categories as $category)
                     <a href="{{ route('storefront.home') }}?category={{ $category->slug }}"
-                       class="rounded-full bg-slate-100 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-200">
+                       class="flex items-center gap-2 rounded-full bg-slate-100 py-1.5 pe-3 text-sm text-slate-700 hover:bg-slate-200 {{ $category->hasImage() ? 'ps-1.5' : 'ps-3' }}">
+                        @if ($category->hasImage())
+                            <img src="{{ $category->thumbnailUrl() }}" alt="" loading="lazy"
+                                 class="h-6 w-6 rounded-full object-cover">
+                        @endif
                         {{ $category->name }}
                     </a>
                 @endforeach
