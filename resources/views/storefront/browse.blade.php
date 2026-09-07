@@ -153,7 +153,7 @@
                     </div>
                     <div class="-mx-5 flex gap-4 overflow-x-auto px-5 pb-2">
                         @foreach ($deals as $product)
-                            <div class="w-44 shrink-0 sm:w-48">
+                            <div class="w-36 shrink-0 sm:w-40">
                                 <x-storefront.product-card :product="$product" :accent="$accent" />
                             </div>
                         @endforeach
@@ -193,7 +193,7 @@
                            style="background: {{ $accent }}">See everything</a>
                     </div>
                 @else
-                    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                         @foreach ($products as $product)
                             <x-storefront.product-card :product="$product" :accent="$accent" />
                         @endforeach

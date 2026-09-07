@@ -108,7 +108,7 @@
                     @endif
                 </div>
             @else
-                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+                <div class="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                     @foreach ($products as $product)
                         <x-storefront.product-card :product="$product" :accent="$accent" />
                     @endforeach
