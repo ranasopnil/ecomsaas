@@ -138,6 +138,19 @@ ask which point to return to, then use `git revert` — never `git reset`.
 Git holds code only. The database and uploads are backed up separately. Never
 tell the owner their data is safe because it is "in git".
 
+## Pages
+
+Every page a customer sees goes through `<x-layouts.storefront>`, and every
+page behind the counter through `layouts/admin` or `layouts/super`. Those
+layouts carry the top bar, the basket, the notes in the corner and the grey
+outline shown while the next page loads, so a new page gets all of it without
+being asked to.
+
+Never write `<html>` or `@vite` into a page. If a page needs a new outline
+shape, add a `<template data-skeleton="...">` to
+`components/skeleton/shapes.blade.php` and a rule in `resources/js/skeleton.js`;
+anything unnamed falls back to a plain shape rather than to nothing.
+
 ## Other rules
 
 - Before any migration, run `/usr/local/bin/backup-db.sh`.

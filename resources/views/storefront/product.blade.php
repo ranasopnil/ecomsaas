@@ -4,43 +4,37 @@
     $mainImage = $product->primaryImage();
     $tracked = $first?->inventory?->track_inventory ?? true;
     $available = (int) ($first?->inventory?->available ?? 0);
-    $rtl = in_array(app()->getLocale(), ['ar', 'he', 'fa', 'ur']);
     $accent = $template['accent'];
     $sellable = collect($variants)->filter(fn ($v) => \App\Services\Storefront\Basket::canSell($v));
 @endphp
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ $rtl ? 'rtl' : 'ltr' }}" class="h-full">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $product->meta_title ?: $product->name }} — {{ $store->name }}</title>
-    @if ($product->meta_description || $product->short_description)
-        <meta name="description" content="{{ $product->meta_description ?: $product->short_description }}">
-    @endif
-    @if ($product->tags)
-        <meta name="keywords" content="{{ implode(', ', $product->tags) }}">
-    @endif
-    <meta property="og:title" content="{{ $product->name }}">
-    @if ($product->short_description)
-        <meta property="og:description" content="{{ $product->short_description }}">
-    @endif
-    @if ($mainImage ?? null)
-        <meta property="og:image" content="{{ $mainImage->url() }}">
-    @endif
-    @if ($isPreview)
-        <meta name="robots" content="noindex">
-    @endif
-    @vite(['resources/css/app.css', 'resources/js/storefront.js'])
-</head>
-<body class="min-h-full bg-white text-slate-900 antialiased">
-    @if ($isPreview)
-        <div class="bg-amber-100 px-4 py-2 text-center text-sm text-amber-900">
-            You are looking at this as a customer would. It is not on sale yet, so nobody else can see it.
-            <a href="{{ route('admin.products.edit', $product) }}" class="underline">Back to editing</a>
-        </div>
-    @endif
 
-    <x-storefront.shop-header :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent" />
+<x-layouts.storefront :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent"
+                      :title="($product->meta_title ?: $product->name).' — '.$store->name"
+                      :description="$product->meta_description ?: $product->short_description"
+                      :robots="$isPreview ? 'noindex' : null"
+                      body-class="bg-white">
+
+    <x-slot:head>
+        @if ($product->tags)
+            <meta name="keywords" content="{{ implode(', ', $product->tags) }}">
+        @endif
+        <meta property="og:title" content="{{ $product->name }}">
+        @if ($product->short_description)
+            <meta property="og:description" content="{{ $product->short_description }}">
+        @endif
+        @if ($mainImage)
+            <meta property="og:image" content="{{ $mainImage->url() }}">
+        @endif
+    </x-slot:head>
+
+    @if ($isPreview)
+        <x-slot:above>
+            <div class="bg-amber-100 px-4 py-2 text-center text-sm text-amber-900">
+                You are looking at this as a customer would. It is not on sale yet, so nobody else can see it.
+                <a href="{{ route('admin.products.edit', $product) }}" class="underline">Back to editing</a>
+            </div>
+        </x-slot:above>
+    @endif
 
     <main class="mx-auto max-w-5xl px-4 py-10">
         <div class="grid gap-10 md:grid-cols-2">
@@ -215,9 +209,4 @@
             </section>
         @endif
     </main>
-
-    <footer class="border-t border-slate-200 py-8 text-center text-sm text-slate-500">
-        {{ $store->name }}
-    </footer>
-</body>
-</html>
+</x-layouts.storefront>

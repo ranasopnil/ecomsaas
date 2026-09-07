@@ -1,20 +1,9 @@
 @php
-    $rtl = in_array(app()->getLocale(), ['ar', 'he', 'fa', 'ur']);
     $accent = $template['accent'];
     $symbol = $subtotal ? config('currencies.'.$subtotal->currency.'.symbol', $subtotal->currency.' ') : '';
 @endphp
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ $rtl ? 'rtl' : 'ltr' }}" class="h-full">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Your basket — {{ $store->name }}</title>
-    <meta name="robots" content="noindex">
-    @vite(['resources/css/app.css', 'resources/js/storefront.js'])
-</head>
-<body class="min-h-full bg-slate-50 text-slate-900 antialiased">
-
-    <x-storefront.shop-header :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent" />
+<x-layouts.storefront :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent"
+                      :title="'Your basket — '.$store->name" robots="noindex">
 
     <main class="mx-auto max-w-5xl px-4 py-8">
         <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -103,5 +92,4 @@
             </div>
         @endif
     </main>
-</body>
-</html>
+</x-layouts.storefront>

@@ -9,6 +9,7 @@
 import Alpine from 'alpinejs'
 import './shopper-location'
 import './basket'
+import './skeleton'
 
 window.Alpine = Alpine
 Alpine.start()

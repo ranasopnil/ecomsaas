@@ -143,7 +143,7 @@
                 </div>
             </header>
 
-            <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+            <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8" data-page-body>
                 @if (session('status'))
                     <div class="rise mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
                         {{ session('status') }}
@@ -173,5 +173,6 @@
     </div>
 
     @livewireScripts
+    <x-skeleton.shapes />
 </body>
 </html>

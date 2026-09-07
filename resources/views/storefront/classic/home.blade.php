@@ -1,26 +1,11 @@
 @php
-    $rtl = in_array(app()->getLocale(), ['ar', 'he', 'fa', 'ur']);
     $accent = $template['accent'];
 @endphp
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ $rtl ? 'rtl' : 'ltr' }}" class="h-full">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $store->name }}</title>
-    <meta property="og:title" content="{{ $store->name }}">
-    @vite(['resources/css/app.css', 'resources/js/storefront.js'])
-</head>
-<body class="min-h-full bg-white text-slate-900 antialiased">
 
-    <header class="border-b border-slate-100">
-        <div class="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-4 py-5">
-            <a href="{{ route('storefront.home') }}" class="text-xl font-bold">{{ $store->name }}</a>
-            <div class="ms-auto">
-                <x-storefront.location-bar :location="$location" :search-url="$searchUrl" :accent="$accent" />
-            </div>
-        </div>
-    </header>
+<x-layouts.storefront :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent"
+                      :title="$store->name"
+                      :description="'Shop at '.$store->name.'.'"
+                      body-class="bg-white">
 
     <main class="mx-auto max-w-5xl px-4 py-10">
         @if ($categories->isNotEmpty())
@@ -76,11 +61,10 @@
         @endif
     </main>
 
-    <footer class="mt-10 border-t border-slate-100">
-        <div class="mx-auto max-w-5xl px-4 py-8 text-sm text-slate-500">
-            {{ $store->name }}
-            @if ($store->email) — <a href="mailto:{{ $store->email }}" class="hover:text-slate-900">{{ $store->email }}</a> @endif
-        </div>
-    </footer>
-</body>
-</html>
+    <x-slot:footer>
+        <p class="font-semibold text-slate-900">{{ $store->name }}</p>
+        @if ($store->email)
+            <a href="mailto:{{ $store->email }}" class="mt-1 block hover:text-slate-900">{{ $store->email }}</a>
+        @endif
+    </x-slot:footer>
+</x-layouts.storefront>

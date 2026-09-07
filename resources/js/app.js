@@ -1,4 +1,5 @@
 import './area-picker'
+import './skeleton'
 import './shopper-location'
 
 /**

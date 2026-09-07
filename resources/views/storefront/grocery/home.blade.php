@@ -1,20 +1,14 @@
 @php
-    $rtl = in_array(app()->getLocale(), ['ar', 'he', 'fa', 'ur']);
     $accent = $template['accent'];
 @endphp
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ $rtl ? 'rtl' : 'ltr' }}" class="h-full">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $store->name }} — fresh groceries delivered</title>
-    <meta name="description" content="Order groceries and daily needs from {{ $store->name }}, delivered to your door.">
-    <meta property="og:title" content="{{ $store->name }}">
-    @vite(['resources/css/app.css', 'resources/js/storefront.js'])
-</head>
-<body class="min-h-full bg-slate-50 text-slate-900 antialiased">
 
-    <x-storefront.shop-header :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent" />
+<x-layouts.storefront :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent"
+                      :title="$store->name.' — fresh groceries delivered'"
+                      :description="'Order groceries and daily needs from '.$store->name.', delivered to your door.'">
+
+    <x-slot:head>
+        <meta property="og:title" content="{{ $store->name }}">
+    </x-slot:head>
 
     {{-- Where the customer is, and what reaches them --}}
     <x-storefront.discover-hero :store="$store" :location="$location"
@@ -117,24 +111,21 @@
         </section>
     </main>
 
-    <footer class="mt-10 border-t border-slate-100 bg-white">
-        <div class="mx-auto max-w-6xl px-4 py-8 text-sm text-slate-500">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <p class="font-semibold text-slate-900">{{ $store->name }}</p>
-                    <p class="mt-1">
-                        @if ($areas->isEmpty())
-                            Delivering everywhere.
-                        @else
-                            Delivering to {{ $areas->pluck('name')->join(', ', ' and ') }}.
-                        @endif
-                    </p>
-                </div>
-                @if ($store->email)
-                    <a href="mailto:{{ $store->email }}" class="hover:text-slate-900">{{ $store->email }}</a>
-                @endif
+    <x-slot:footer>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <p class="font-semibold text-slate-900">{{ $store->name }}</p>
+                <p class="mt-1">
+                    @if ($areas->isEmpty())
+                        Delivering everywhere.
+                    @else
+                        Delivering to {{ $areas->pluck('name')->join(', ', ' and ') }}.
+                    @endif
+                </p>
             </div>
+            @if ($store->email)
+                <a href="mailto:{{ $store->email }}" class="hover:text-slate-900">{{ $store->email }}</a>
+            @endif
         </div>
-    </footer>
-</body>
-</html>
+    </x-slot:footer>
+</x-layouts.storefront>

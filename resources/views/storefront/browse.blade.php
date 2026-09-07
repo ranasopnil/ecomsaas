@@ -6,18 +6,10 @@
     $title = $wanted !== '' ? 'Results for “'.$wanted.'”'
         : ($current?->name ?? ($offersOnly ? 'On offer' : ($freeDeliveryOnly ? 'Free delivery' : 'Everything')));
 @endphp
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ $rtl ? 'rtl' : 'ltr' }}" class="h-full">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title }} — {{ $store->name }}</title>
-    <meta name="description" content="Browse {{ $store->name }}: {{ $title }}.">
-    @vite(['resources/css/app.css', 'resources/js/storefront.js'])
-</head>
-<body class="min-h-full bg-slate-50 text-slate-900 antialiased">
-
-    <x-storefront.shop-header :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent" />
+<x-layouts.storefront :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent"
+                      :title="$title.' — '.$store->name"
+                      :description="'Browse '.$store->name.': '.$title.'.'"
+                      wide>
 
     <div class="mx-auto max-w-7xl px-4 py-6 lg:flex lg:gap-6">
 
@@ -202,14 +194,4 @@
             </section>
         </main>
     </div>
-
-    <footer class="mt-10 border-t border-slate-100 bg-white">
-        <div class="mx-auto max-w-7xl px-4 py-8 text-sm text-slate-500">
-            <p class="font-semibold text-slate-900">{{ $store->name }}</p>
-            @if ($store->email)
-                <a href="mailto:{{ $store->email }}" class="mt-1 block hover:text-slate-900">{{ $store->email }}</a>
-            @endif
-        </div>
-    </footer>
-</body>
-</html>
+</x-layouts.storefront>
