@@ -30,8 +30,8 @@ final readonly class BasketLine
     /** "Basmati rice" or "Basmati rice — 5 kg" when the product comes in sizes. */
     public function title(): string
     {
-        return $this->product->has_variants && $this->variant->name
-            ? $this->product->name.' — '.$this->variant->name
+        return $this->product->has_variants
+            ? $this->product->name.' — '.$this->variant->choiceLabel()
             : $this->product->name;
     }
 }

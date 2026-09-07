@@ -10,6 +10,7 @@ import Alpine from 'alpinejs'
 import './shopper-location'
 import './basket'
 import './product-search'
+import './product-page'
 import './skeleton'
 import './panel-swap'
 

@@ -40,6 +40,8 @@ class BasketController extends Controller
         $data = $request->validate([
             'variant_id' => ['required', 'integer'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:'.Basket::MAX_PER_LINE],
+            // "Buy now": put it in and go straight to the till.
+            'then' => ['nullable', 'in:checkout'],
         ]);
 
         $variant = $this->sellable((int) $data['variant_id']);
@@ -62,7 +64,12 @@ class BasketController extends Controller
                 'ok' => true,
                 'name' => $variant->product->name,
                 'count' => $basket->count(),
+                'checkout' => ($data['then'] ?? null) === 'checkout' ? route('storefront.checkout') : null,
             ]);
+        }
+
+        if (($data['then'] ?? null) === 'checkout') {
+            return redirect()->route('storefront.checkout');
         }
 
         return back()->with('basket.added', $variant->product->name);

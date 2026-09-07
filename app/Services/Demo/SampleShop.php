@@ -202,6 +202,23 @@ class SampleShop
                         ->all());
                 }
 
+                // A bigger pack costs more than a small one. Without this every
+                // choice on a product costs the same, which reads as broken.
+                if (isset($definition['variant_prices'])) {
+                    foreach ($product->fresh(['variants.optionValues'])->variants as $variant) {
+                        $price = $definition['variant_prices'][$variant->choiceLabel()] ?? null;
+
+                        if ($price !== null) {
+                            $variant->forceFill([
+                                'price_minor' => \App\Support\Money::fromDecimal(
+                                    $price, $variant->currency, $variant->currency_exponent
+                                )->minor,
+                                'compare_at_price_minor' => null,
+                            ])->save();
+                        }
+                    }
+                }
+
                 foreach ($product->fresh('variants')->variants as $index => $variant) {
                     $variants++;
                     $movements += $this->stockHistory($variant, $definition, $index);

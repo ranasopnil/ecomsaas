@@ -155,8 +155,9 @@ class GroceryCatalogue
 
             // ------------------------------------------------- rice & cooking
             ['name' => 'Basmati Rice', 'category' => 'Rice & Cooking', 'brand' => 'Dhaka Mills',
-                'regular' => '620', 'discount' => '560', 'cost' => '460', 'stock' => 44, 'low' => 10,
+                'regular' => '135', 'discount' => '125', 'cost' => '95', 'stock' => 44, 'low' => 10,
                 'options' => ['Pack' => ['1 kg', '5 kg']],
+                'variant_prices' => ['1 kg' => '135', '5 kg' => '620'],
                 'photo' => 'Basmati Rice.jpg', 'unit' => 'per pack',
                 'tags' => 'rice, basmati, staple', 'short' => 'Long grain basmati, aged for a year.',
                 'body' => '<h2>Aged a year</h2><p>Aged rice cooks up dry and separate instead of sticking together.</p>'],

@@ -47,6 +47,13 @@ document.addEventListener('alpine:init', () => {
 
                 this.count = Number(answer.count ?? this.count)
 
+                // "Buy now" asked to go on to the till.
+                if (answer.ok && answer.checkout) {
+                    window.location.href = answer.checkout
+
+                    return
+                }
+
                 this.note(
                     answer.ok ? `${answer.name} is in your basket` : (answer.message || 'That could not be added.'),
                     answer.ok ? 'ok' : 'no',

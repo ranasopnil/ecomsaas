@@ -429,10 +429,27 @@ class BrowsingAndBasketTest extends TestCase
 
         $this->postJson($url.'/basket/add', ['variant_id' => $rice->variants->first()->id, 'quantity' => 2])
             ->assertOk()
-            ->assertExactJson(['ok' => true, 'name' => 'Basmati rice', 'count' => 2]);
+            ->assertExactJson(['ok' => true, 'name' => 'Basmati rice', 'count' => 2, 'checkout' => null]);
 
         // Nothing was flashed for a banner, because no page is being reloaded.
         $this->assertNull(session('basket.added'));
+    }
+
+    public function test_buy_now_puts_it_in_and_goes_straight_to_the_till(): void
+    {
+        $rice = $this->sell('Basmati rice');
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        // Without javascript: an ordinary post that redirects to checkout.
+        $this->post($url.'/basket/add', ['variant_id' => $rice->variants->first()->id, 'then' => 'checkout'])
+            ->assertRedirect($url.'/checkout');
+
+        // With it: the same answer, saying where to go next.
+        $this->postJson($url.'/basket/add', ['variant_id' => $rice->variants->first()->id, 'then' => 'checkout'])
+            ->assertOk()
+            ->assertJsonPath('checkout', $url.'/checkout');
     }
 
     public function test_a_refusal_comes_back_the_same_quiet_way(): void

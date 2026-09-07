@@ -90,7 +90,7 @@ class PlaceOrder
                     'product_id' => $line->product->id,
                     'product_variant_id' => $line->variant->id,
                     'name' => $line->product->name,
-                    'variant_name' => $line->product->has_variants ? $line->variant->name : null,
+                    'variant_name' => $line->product->has_variants ? $line->variant->choiceLabel() : null,
                     'unit' => $line->product->unit,
                     'unit_price_minor' => $line->unit()->minor,
                     'quantity' => $line->quantity,
