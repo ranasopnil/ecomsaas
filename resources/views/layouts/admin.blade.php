@@ -5,6 +5,7 @@
     $sections = [
         'Shop' => [
             ['route' => 'admin.dashboard', 'label' => 'Dashboard', 'icon' => 'home'],
+            ['route' => 'admin.orders.index', 'label' => 'Orders', 'icon' => 'receipt'],
             ['route' => 'admin.products.index', 'label' => 'Products', 'icon' => 'box'],
             ['route' => 'admin.categories.index', 'label' => 'Categories', 'icon' => 'grid'],
             ['route' => 'admin.brands.index', 'label' => 'Brands', 'icon' => 'tag'],
@@ -28,6 +29,7 @@
         'globe' => 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3.5 9h17M3.5 15h17M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18',
         'mail' => 'M3 6h18v12H3zM3 7l9 6 9-6',
         'card' => 'M3 6h18v12H3zM3 10h18M7 15h3',
+        'receipt' => 'M5 3h14v18l-3-2-2 2-2-2-2 2-3-2zM8 8h8M8 12h8M8 16h5',
     ];
 @endphp
 <!DOCTYPE html>

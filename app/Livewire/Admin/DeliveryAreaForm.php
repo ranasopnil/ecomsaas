@@ -7,6 +7,7 @@ use App\Models\DeliveryArea;
 use App\Models\Product;
 use App\Services\Storefront\MapProviders;
 use App\Support\GeoPoint;
+use App\Support\Money;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -34,9 +35,12 @@ class DeliveryAreaForm extends Component
 
     public float $radius = 5;
 
+    /** What the shop charges to deliver to this area, as the shopkeeper types it. */
+    public string $charge = '';
+
     public function add(): void
     {
-        $this->reset(['editingId', 'name', 'latitude', 'longitude']);
+        $this->reset(['editingId', 'name', 'latitude', 'longitude', 'charge']);
         $this->resetErrorBag();
 
         $this->adding = true;
@@ -53,12 +57,13 @@ class DeliveryAreaForm extends Component
         $this->latitude = $area->latitude;
         $this->longitude = $area->longitude;
         $this->radius = (float) $area->radius_km;
+        $this->charge = $area->deliveryCharge()->toDecimal();
         $this->resetErrorBag();
     }
 
     public function cancel(): void
     {
-        $this->reset(['editingId', 'adding', 'name', 'latitude', 'longitude', 'radius']);
+        $this->reset(['editingId', 'adding', 'name', 'latitude', 'longitude', 'radius', 'charge']);
         $this->resetErrorBag();
     }
 
@@ -67,6 +72,7 @@ class DeliveryAreaForm extends Component
         $this->validate([
             'name' => ['required', 'string', 'max:60'],
             'radius' => ['required', 'numeric', 'min:0.1', 'max:1000'],
+            'charge' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         if (GeoPoint::tryFrom($this->latitude, $this->longitude) === null) {
@@ -93,6 +99,11 @@ class DeliveryAreaForm extends Component
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
             'radius_km' => $this->radius,
+            'delivery_charge_minor' => Money::fromDecimal(
+                $this->charge === '' ? '0' : $this->charge,
+                Tenancy::current()->currency,
+                Tenancy::current()->currency_exponent,
+            )->minor,
         ]);
 
         if (! $area->exists) {
@@ -136,6 +147,7 @@ class DeliveryAreaForm extends Component
             'areas' => $areas,
             'provider' => $maps->forShop($shop),
             'mapName' => $maps->nameFor($shop),
+            'currency' => $shop->currency,
             'googleKey' => $maps->key($maps->forShop($shop)) ?? '',
             'centre' => config("countries.{$shop->country_code}.centre", [23.8103, 90.4125]),
             'zoom' => config("countries.{$shop->country_code}.zoom", 11),

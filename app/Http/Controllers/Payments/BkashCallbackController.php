@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Payments;
 
 use App\Facades\Tenancy;
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
+use App\Services\Orders\SettleOrder;
 use App\Services\Payments\Gateways\Bkash;
 use App\Services\Payments\PaymentProcessor;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -18,7 +21,7 @@ use Illuminate\View\View;
  */
 class BkashCallbackController extends Controller
 {
-    public function __invoke(Request $request, PaymentProcessor $processor): View
+    public function __invoke(Request $request, PaymentProcessor $processor, SettleOrder $orders): View|RedirectResponse
     {
         $gatewayPaymentId = (string) $request->query('paymentID', '');
         $outcome = strtolower((string) $request->query('status', 'failure'));
@@ -35,8 +38,24 @@ class BkashCallbackController extends Controller
             return view('payments.result', ['payment' => null, 'store' => Tenancy::current()]);
         }
 
+        $payment = $processor->settle($payment, $method, $outcome);
+
+        // An order is waiting on this. Finish it here rather than leaving it
+        // to a worker: the customer is standing in front of the answer.
+        $order = $payment->order_id === null ? null : Order::find($payment->order_id);
+
+        if ($order !== null) {
+            $order = $payment->isPaid()
+                ? $orders->paid($order, $payment)
+                : $orders->cancelled($order, $payment->failure_reason ?: 'The payment did not go through.');
+
+            return redirect()->to(
+                route('storefront.order', ['reference' => $order->reference]).'?token='.$order->view_token
+            );
+        }
+
         return view('payments.result', [
-            'payment' => $processor->settle($payment, $method, $outcome),
+            'payment' => $payment,
             'store' => Tenancy::current(),
         ]);
     }

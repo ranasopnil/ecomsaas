@@ -86,11 +86,11 @@
                     </dl>
                     <p class="mt-2 text-xs text-slate-500">Delivery is worked out at checkout.</p>
 
-                    <button type="button" disabled
-                            class="mt-5 w-full cursor-not-allowed rounded-xl bg-slate-200 px-5 py-3 text-sm font-medium text-slate-500">
+                    <a href="{{ route('storefront.checkout') }}"
+                       class="mt-5 block w-full rounded-xl px-5 py-3 text-center text-sm font-semibold text-white transition hover:opacity-95"
+                       style="background: {{ $accent }}">
                         Checkout
-                    </button>
-                    <p class="mt-2 text-center text-xs text-slate-500">Checkout is being built next.</p>
+                    </a>
                 </aside>
             </div>
         @endif

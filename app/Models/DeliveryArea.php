@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Facades\Tenancy;
 use App\Support\GeoPoint;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -18,7 +20,10 @@ class DeliveryArea extends Model
 {
     use BelongsToTenant, HasFactory;
 
-    protected $fillable = ['tenant_id', 'name', 'latitude', 'longitude', 'radius_km', 'position'];
+    protected $fillable = [
+        'tenant_id', 'name', 'latitude', 'longitude', 'radius_km', 'position',
+        'delivery_charge_minor',
+    ];
 
     protected function casts(): array
     {
@@ -27,12 +32,25 @@ class DeliveryArea extends Model
             'longitude' => 'float',
             'radius_km' => 'float',
             'position' => 'integer',
+            'delivery_charge_minor' => 'integer',
         ];
     }
 
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class)->withPivot('tenant_id');
+    }
+
+    /** What the shop charges to reach here. Zero is free. */
+    public function deliveryCharge(): Money
+    {
+        $shop = $this->relationLoaded('tenant') ? $this->tenant : Tenancy::current();
+
+        return new Money(
+            (int) ($this->delivery_charge_minor ?? 0),
+            $shop?->currency ?? 'BDT',
+            (int) ($shop?->currency_exponent ?? 2),
+        );
     }
 
     public function point(): ?GeoPoint

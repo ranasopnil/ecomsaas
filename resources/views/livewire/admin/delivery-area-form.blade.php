@@ -80,6 +80,19 @@
                 @error('name') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
             </div>
 
+            <div class="mb-4">
+                <label class="mb-1 block text-sm font-medium">What do you charge to deliver here?</label>
+                <div class="flex max-w-[12rem] items-center rounded-xl border border-slate-200 focus-within:border-violet-400">
+                    <span class="px-3 text-sm text-slate-500">{{ $currency }}</span>
+                    <input type="text" inputmode="decimal" wire:model="charge" placeholder="0"
+                           class="w-full rounded-e-xl border-0 px-2 py-2 text-sm focus:outline-none">
+                </div>
+                <p class="mt-1 text-xs text-slate-500">
+                    Charged once per order going to this area. Leave it at 0 for free delivery.
+                </p>
+                @error('charge') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+            </div>
+
             <div class="mb-3 flex items-center justify-between gap-3">
                 <h3 class="text-sm font-semibold">Where is it?</h3>
                 <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{{ $mapName }}</span>

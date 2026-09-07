@@ -73,3 +73,41 @@ document.addEventListener('alpine:init', () => {
         },
     })
 })
+
+/**
+ * The checkout summary, so the delivery charge follows the area a customer
+ * picks instead of waiting for the page to be sent again.
+ *
+ * This is only what is shown. The shop works the real total out again when the
+ * order is placed, from its own prices, and that is what is charged.
+ */
+document.addEventListener('alpine:init', () => {
+    window.Alpine.data('checkout', (config) => ({
+        charges: config.charges || {},
+        floor: Number(config.floor) || 0,
+        usesShopCharge: !! config.usesShopCharge,
+        goods: Number(config.goods) || 0,
+        exponent: Number(config.exponent) || 0,
+        symbol: config.symbol || '',
+        area: config.area ?? null,
+
+        get deliveryMinor() {
+            const forArea = this.usesShopCharge ? Number(this.charges[this.area] ?? 0) : 0
+
+            return Math.max(this.floor, forArea)
+        },
+
+        get totalMinor() {
+            return this.goods + this.deliveryMinor
+        },
+
+        money(minor) {
+            const value = minor / Math.pow(10, this.exponent)
+
+            return this.symbol + new Intl.NumberFormat(undefined, {
+                minimumFractionDigits: this.exponent,
+                maximumFractionDigits: this.exponent,
+            }).format(value)
+        },
+    }))
+})

@@ -7,7 +7,9 @@ use App\Http\Controllers\Internal\DomainCheckController;
 use App\Http\Controllers\Payments\BkashCallbackController;
 use App\Http\Controllers\Storefront\BasketController;
 use App\Http\Controllers\Storefront\BrowseController;
+use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\HomeController;
+use App\Http\Controllers\Storefront\OrderController;
 use App\Http\Controllers\Storefront\LocationController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\SearchController;
@@ -21,6 +23,8 @@ use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\DeliveryAreaForm;
 use App\Livewire\Admin\DomainIndex;
 use App\Livewire\Admin\MailSettingsForm;
+use App\Livewire\Admin\OrderIndex;
+use App\Livewire\Admin\OrderShow;
 use App\Livewire\Admin\PaymentMethodsIndex;
 use App\Livewire\Admin\ProductForm;
 use App\Livewire\Admin\ProductIndex;
@@ -51,6 +55,8 @@ Route::middleware([EnsureStoreDomain::class, CountVisit::class])->group(function
     Route::get('/browse', BrowseController::class)->name('storefront.browse');
     Route::get('/products/{slug}', [ProductController::class, 'show'])->name('storefront.product');
     Route::get('/basket', [BasketController::class, 'show'])->name('storefront.basket');
+    Route::get('/checkout', [CheckoutController::class, 'show'])->name('storefront.checkout');
+    Route::get('/orders/{reference}', [OrderController::class, 'show'])->name('storefront.order');
 });
 
 /*
@@ -60,6 +66,11 @@ Route::middleware(EnsureStoreDomain::class)->group(function () {
     Route::post('/basket/add', [BasketController::class, 'add'])->name('storefront.basket.add');
     Route::post('/basket/update', [BasketController::class, 'update'])->name('storefront.basket.update');
     Route::post('/basket/remove', [BasketController::class, 'remove'])->name('storefront.basket.remove');
+
+    // Placing the order. Throttled: this takes stock off the shelf.
+    Route::post('/checkout', [CheckoutController::class, 'store'])
+        ->middleware('throttle:20,1')
+        ->name('storefront.checkout.place');
 });
 
 /*
@@ -135,6 +146,9 @@ Route::prefix('admin')->name('admin.')->middleware(EnsureStoreDomain::class)->gr
         Route::post('logout', [AdminLoginController::class, 'destroy'])->name('logout');
 
         Route::get('/', AdminDashboard::class)->name('dashboard');
+
+        Route::get('orders', OrderIndex::class)->name('orders.index');
+        Route::get('orders/{order}', OrderShow::class)->name('orders.show');
 
         Route::get('products', ProductIndex::class)->name('products.index');
         Route::get('products/new', ProductForm::class)->name('products.create');
