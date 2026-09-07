@@ -10,6 +10,7 @@ use App\Http\Controllers\Storefront\BrowseController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\LocationController;
 use App\Http\Controllers\Storefront\ProductController;
+use App\Http\Controllers\Storefront\SearchController;
 use App\Http\Controllers\Super\LoginController;
 use App\Http\Middleware\CountVisit;
 use App\Http\Middleware\EnsureCentralDomain;
@@ -71,6 +72,12 @@ Route::middleware(EnsureStoreDomain::class)->group(function () {
     Route::get('/places', [LocationController::class, 'search'])
         ->middleware('throttle:30,1')
         ->name('storefront.places');
+
+    // What to offer while somebody is still typing. Throttled: it is asked
+    // once every few keystrokes and answers from this shop only.
+    Route::get('/search/suggestions', [SearchController::class, 'suggest'])
+        ->middleware('throttle:120,1')
+        ->name('storefront.search.suggest');
 });
 
 /*

@@ -5,6 +5,7 @@ namespace Tests\Feature\Storefront;
 use App\Facades\Entitlements;
 use App\Facades\Tenancy;
 use App\Models\Category;
+use App\Models\DeliveryArea;
 use App\Models\Domain;
 use App\Models\Package;
 use App\Models\PackageTemplate;
@@ -56,12 +57,19 @@ class BrowsingAndBasketTest extends TestCase
 
     protected function sell(string $name, array $with = []): Product
     {
+        $availability = $with['availability'] ?? null;
+        unset($with['availability']);
+
         $created = app(ProductService::class)->create(array_merge([
             'name' => $name, 'regular_price' => '120', 'stock' => 5,
             'status' => Product::STATUS_ACTIVE,
         ], $with));
 
         $product = $created instanceof Product ? $created : $created->product;
+
+        if ($availability !== null) {
+            $product->forceFill(['availability' => $availability])->save();
+        }
 
         return $product->fresh(['variants.inventory']);
     }
@@ -99,7 +107,7 @@ class BrowsingAndBasketTest extends TestCase
 
         $this->get($url.'/browse')
             ->assertOk()
-            ->assertSee('Search fresh essentials now')
+            ->assertSee('Search fresh essentials')
             ->assertSee('Shop by categories')
             ->assertSee('Spices')
             ->assertSee('Dairy')
@@ -184,6 +192,101 @@ class BrowsingAndBasketTest extends TestCase
             ->assertSee('Fresh milk')
             ->assertSee('1 item')
             ->assertDontSee('/products/basmati-rice');
+    }
+
+    /*
+     * --------------------------------------------------- suggesting as you type
+     */
+
+    public function test_typing_brings_up_what_matches(): void
+    {
+        $this->sell('Basmati rice');
+        $this->sell('Brown rice');
+        $this->sell('Fresh milk');
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        $answer = $this->getJson($url.'/search/suggestions?q=rice')
+            ->assertOk()
+            ->assertJsonPath('total', 2)
+            ->assertJsonCount(2, 'results')
+            ->json();
+
+        $names = array_column($answer['results'], 'name');
+
+        sort($names);
+        $this->assertSame(['Basmati rice', 'Brown rice'], $names);
+
+        // Enough to show a row: something to tap, and what it costs.
+        $this->assertStringContainsString('/products/', $answer['results'][0]['url']);
+        $this->assertSame('৳120.00', $answer['results'][0]['price']);
+    }
+
+    public function test_one_letter_is_not_worth_asking_about(): void
+    {
+        $this->sell('Basmati rice');
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        $this->getJson($url.'/search/suggestions?q=r')
+            ->assertOk()
+            ->assertExactJson(['results' => [], 'total' => 0]);
+    }
+
+    public function test_it_never_suggests_something_that_cannot_reach_the_customer(): void
+    {
+        DeliveryArea::create([
+            'tenant_id' => $this->store->id,
+            'name' => 'Dhaka city', 'latitude' => 23.8103, 'longitude' => 90.4125, 'radius_km' => 10,
+        ]);
+
+        $this->sell('Basmati rice');
+        $this->sell('Brown rice', ['availability' => Product::AVAILABLE_ANYWHERE]);
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        // Somebody in Chittagong: only the one that goes anywhere.
+        $answer = $this->withSession(['shopper.location' => [
+            'latitude' => 22.3569, 'longitude' => 91.7832, 'label' => 'Chittagong',
+        ]])
+            ->getJson($url.'/search/suggestions?q=rice')
+            ->assertOk()
+            ->json();
+
+        $this->assertSame(['Brown rice'], array_column($answer['results'], 'name'));
+        $this->assertSame(1, $answer['total']);
+    }
+
+    public function test_the_count_is_of_everything_that_matches_not_of_what_is_shown(): void
+    {
+        foreach (range(1, 9) as $number) {
+            $this->sell("Rice number {$number}");
+        }
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        $this->getJson($url.'/search/suggestions?q=rice')
+            ->assertOk()
+            ->assertJsonPath('total', 9)
+            ->assertJsonCount(7, 'results');
+    }
+
+    public function test_the_box_still_searches_with_no_javascript(): void
+    {
+        $this->sell('Basmati rice');
+        $this->sell('Fresh milk');
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        $this->get($url.'/browse?q=rice')
+            ->assertOk()
+            ->assertSee('/products/basmati-rice')
+            ->assertDontSee('/products/fresh-milk');
     }
 
     /*

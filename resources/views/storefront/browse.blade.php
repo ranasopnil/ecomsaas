@@ -78,21 +78,17 @@
         <main class="min-w-0 flex-1">
 
             {{-- Looking for something --}}
-            <section class="rounded-2xl bg-white px-5 py-10 text-center shadow-sm ring-1 ring-slate-100 sm:px-10">
-                <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">Search fresh essentials now</h1>
-                <p class="mt-2 text-sm text-slate-500 sm:text-base">Quickly find fresh items and get them delivered to your door.</p>
-                <form action="{{ route('storefront.browse') }}" method="GET" class="relative mx-auto mt-6 max-w-3xl">
-                    @if ($current)
-                        <input type="hidden" name="category" value="{{ $current->slug }}">
-                    @endif
-                    <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-slate-400">
-                        <x-storefront.icon name="search" class="h-5 w-5" />
-                    </span>
-                    <input type="search" name="q" value="{{ $wanted }}" aria-label="Search the shop"
-                           placeholder="Search for {{ $example ? '“'.$example.'”' : 'anything' }}"
-                           class="w-full rounded-full border-0 bg-slate-100 py-3.5 pe-5 ps-12 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2"
-                           style="--tw-ring-color: {{ $accent }}">
-                </form>
+            <section class="rounded-2xl bg-white px-5 py-5 shadow-sm ring-1 ring-slate-100 sm:px-6">
+                <div class="mx-auto flex max-w-3xl flex-wrap items-center gap-x-6 gap-y-3">
+                    <div class="min-w-0">
+                        <h1 class="text-lg font-bold tracking-tight text-slate-900">Search fresh essentials</h1>
+                        <p class="text-xs text-slate-500">Find what you need and have it brought to your door.</p>
+                    </div>
+                    <div class="min-w-56 flex-1">
+                        <x-storefront.search-box :accent="$accent" :value="$wanted"
+                                                 :category="$current?->slug" :example="$example" />
+                    </div>
+                </div>
             </section>
 
             {{-- Categories as a row of circles --}}

@@ -228,10 +228,12 @@ class FindingTheCustomerTest extends TestCase
         $url = $this->shopUrl();
         Tenancy::forget();
 
+        // Links, not names: the search box shows a real product name as its
+        // example, so a name can appear on a page that does not list it.
         $this->get($url.'?q=milk')
             ->assertOk()
-            ->assertSee('Fresh milk')
-            ->assertDontSee('Basmati rice');
+            ->assertSee('/products/fresh-milk')
+            ->assertDontSee('/products/basmati-rice');
     }
 
     public function test_a_search_that_finds_nothing_says_so_plainly(): void

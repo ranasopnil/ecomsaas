@@ -9,6 +9,7 @@
 import Alpine from 'alpinejs'
 import './shopper-location'
 import './basket'
+import './product-search'
 import './skeleton'
 
 window.Alpine = Alpine

@@ -17,19 +17,9 @@
     <main class="mx-auto max-w-6xl px-4 py-8 sm:py-10">
 
         {{-- Looking for one thing in particular --}}
-        <form action="{{ route('storefront.browse') }}" method="GET" class="mb-8">
-            <div class="relative">
-                <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-slate-400">
-                    <x-storefront.icon name="search" class="h-5 w-5" />
-                </span>
-                <input type="search" name="q" value="{{ request('q') }}"
-                       placeholder="Search for rice, eggs, milk…" aria-label="Search the shop"
-                       class="w-full rounded-xl border-0 bg-white py-3 pe-28 ps-12 text-sm text-slate-900 shadow-sm ring-1 ring-slate-100 focus:outline-none">
-                <button type="submit"
-                        class="absolute inset-y-1 end-1 rounded-lg px-5 text-sm font-medium text-white"
-                        style="background: {{ $accent }}">Search</button>
-            </div>
-        </form>
+        <div class="mb-8">
+            <x-storefront.search-box :accent="$accent" :value="request('q', '')" :example="$example" />
+        </div>
 
         {{-- Categories --}}
         @if ($categories->isNotEmpty())
