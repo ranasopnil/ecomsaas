@@ -11,6 +11,7 @@ import './shopper-location'
 import './basket'
 import './product-search'
 import './skeleton'
+import './panel-swap'
 
 window.Alpine = Alpine
 Alpine.start()

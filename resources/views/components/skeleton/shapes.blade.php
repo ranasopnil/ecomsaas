@@ -176,6 +176,21 @@
     </div>
 </template>
 
+{{-- Just the shelf, for when only the category changed --}}
+<template data-skeleton="results">
+    <div class="animate-pulse pt-8">
+        <div class="mb-4 flex items-end justify-between gap-3">
+            <x-skeleton.bar w="w-40" h="h-5" round="rounded-lg" />
+            <x-skeleton.bar w="w-16" h="h-3" />
+        </div>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            @for ($i = 0; $i < 10; $i++)
+                <x-skeleton.product-card />
+            @endfor
+        </div>
+    </div>
+</template>
+
 {{-- A list behind the counter --}}
 <template data-skeleton="admin-list">
     <div class="animate-pulse space-y-6">

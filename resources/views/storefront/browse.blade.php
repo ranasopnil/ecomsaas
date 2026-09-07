@@ -14,20 +14,20 @@
     <div class="mx-auto max-w-7xl px-4 py-6 lg:flex lg:gap-6">
 
         {{-- Down the side: quick ways in, then every category --}}
-        <aside class="mb-6 lg:mb-0 lg:w-64 lg:shrink-0">
+        <aside class="mb-6 lg:mb-0 lg:w-64 lg:shrink-0" data-swap="side">
             <div class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 lg:sticky lg:top-20">
                 <nav class="border-b border-slate-100 p-3">
-                    <a href="{{ $browse(['offers' => 1]) }}"
+                    <a href="{{ $browse(['offers' => 1]) }}" data-swap-link data-no-skeleton
                        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium {{ $offersOnly ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50' }}">
                         <x-storefront.icon name="tag" class="h-5 w-5 text-amber-500" /> Offers
                     </a>
                     @if ($hasFreeDelivery)
-                        <a href="{{ $browse(['free-delivery' => 1]) }}"
+                        <a href="{{ $browse(['free-delivery' => 1]) }}" data-swap-link data-no-skeleton
                            class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium {{ $freeDeliveryOnly ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50' }}">
                             <x-storefront.icon name="bike" class="h-5 w-5 text-sky-500" /> Free delivery
                         </a>
                     @endif
-                    <a href="{{ $browse() }}"
+                    <a href="{{ $browse() }}" data-swap-link data-no-skeleton
                        class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium {{ ($current === null && ! $offersOnly && ! $freeDeliveryOnly && $wanted === '') ? 'bg-slate-100 text-slate-900' : 'text-slate-700 hover:bg-slate-50' }}">
                         <x-storefront.icon name="pin" class="h-5 w-5" style="color: {{ $accent }}" />
                         {{ $location->isSet() ? 'Near you' : 'Everything' }}
@@ -42,7 +42,7 @@
                                 @php($openHere = $current !== null && ($current->id === $category->id || $current->parent_id === $category->id))
                                 <li x-data="{ open: @js($openHere) }" class="border-t border-slate-100 first:border-0">
                                     <div class="flex items-center">
-                                        <a href="{{ $browse(['category' => $category->slug]) }}"
+                                        <a href="{{ $browse(['category' => $category->slug]) }}" data-swap-link data-no-skeleton
                                            class="flex-1 px-3 py-2.5 text-sm {{ $current?->id === $category->id ? 'font-semibold text-slate-900' : 'text-slate-700 hover:text-slate-900' }}">
                                             {{ $category->name }}
                                         </a>
@@ -59,7 +59,7 @@
                                         <ul x-show="open" x-cloak class="mb-2 ms-3 border-s border-slate-100">
                                             @foreach ($category->children as $child)
                                                 <li>
-                                                    <a href="{{ $browse(['category' => $child->slug]) }}"
+                                                    <a href="{{ $browse(['category' => $child->slug]) }}" data-swap-link data-no-skeleton
                                                        class="block px-3 py-1.5 text-sm {{ $current?->id === $child->id ? 'font-semibold text-slate-900' : 'text-slate-600 hover:text-slate-900' }}">
                                                         {{ $child->name }}
                                                     </a>
@@ -91,13 +91,16 @@
                 </div>
             </section>
 
+            {{-- Everything below the search box changes with the category --}}
+            <div data-swap="main">
+
             {{-- Categories as a row of circles --}}
             @if ($categories->isNotEmpty() && $wanted === '')
                 <section class="mt-8">
                     <h2 class="mb-4 text-xl font-bold">Shop by categories</h2>
                     <div class="-mx-4 flex gap-5 overflow-x-auto px-4 pb-2">
                         @foreach ($categories as $category)
-                            <a href="{{ $browse(['category' => $category->slug]) }}"
+                            <a href="{{ $browse(['category' => $category->slug]) }}" data-swap-link data-no-skeleton
                                class="group flex w-28 shrink-0 flex-col items-center gap-2 text-center">
                                 <span class="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full text-2xl font-semibold transition group-hover:scale-105 {{ $current?->id === $category->id ? 'ring-2 ring-offset-2' : '' }}"
                                       style="background: {{ $tints[$loop->index % count($tints)] }}; color: {{ $accent }}; --tw-ring-color: {{ $accent }}">
@@ -116,7 +119,7 @@
 
             {{-- The strip about savings, only when there really are some --}}
             @if ($biggestSaving > 0 && ! $offersOnly)
-                <a href="{{ $browse(['offers' => 1]) }}"
+                <a href="{{ $browse(['offers' => 1]) }}" data-swap-link data-no-skeleton
                    class="mt-6 flex items-center gap-4 rounded-2xl bg-amber-50 px-5 py-4 ring-1 ring-amber-100 transition hover:bg-amber-100/70">
                     <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-amber-400 text-white">
                         <x-storefront.icon name="tag" class="h-5 w-5" />
@@ -137,7 +140,7 @@
                             <h2 class="text-2xl font-bold text-amber-700">Today's deals</h2>
                             <p class="text-sm text-amber-800/80">Reduced for now — while they last.</p>
                         </div>
-                        <a href="{{ $browse(['offers' => 1]) }}" class="text-sm font-medium text-amber-800 underline-offset-4 hover:underline">See all</a>
+                        <a href="{{ $browse(['offers' => 1]) }}" data-swap-link data-no-skeleton class="text-sm font-medium text-amber-800 underline-offset-4 hover:underline">See all</a>
                     </div>
                     <div class="-mx-5 flex gap-4 overflow-x-auto px-5 pb-2">
                         @foreach ($deals as $product)
@@ -155,7 +158,7 @@
                     <div>
                         @if ($current?->parent)
                             <p class="text-xs text-slate-500">
-                                <a href="{{ $browse(['category' => $current->parent->slug]) }}" class="hover:underline">{{ $current->parent->name }}</a> ›
+                                <a href="{{ $browse(['category' => $current->parent->slug]) }}" data-swap-link data-no-skeleton class="hover:underline">{{ $current->parent->name }}</a> ›
                             </p>
                         @endif
                         <h2 class="text-xl font-bold">{{ $title }}</h2>
@@ -177,7 +180,7 @@
                                 Nothing has been put in here yet.
                             @endif
                         </p>
-                        <a href="{{ $browse() }}" class="mt-5 inline-block rounded-xl px-4 py-2 text-sm font-medium text-white"
+                        <a href="{{ $browse() }}" data-swap-link data-no-skeleton class="mt-5 inline-block rounded-xl px-4 py-2 text-sm font-medium text-white"
                            style="background: {{ $accent }}">See everything</a>
                     </div>
                 @else
@@ -188,6 +191,7 @@
                     </div>
                 @endif
             </section>
+            </div>
         </main>
     </div>
 </x-layouts.storefront>

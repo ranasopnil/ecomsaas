@@ -12,7 +12,7 @@
     whether or not javascript is running. With it, a few letters bring up what
     matches, with pictures and prices, and picking one goes straight to it.
 --}}
-<form action="{{ route('storefront.browse') }}" method="GET" data-no-skeleton
+<form action="{{ route('storefront.browse') }}" method="GET" data-no-skeleton data-swap-form
       x-data="productSearch(@js([
           'url' => route('storefront.search.suggest'),
           'query' => $value,

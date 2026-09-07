@@ -84,6 +84,21 @@ export function showSkeleton(url) {
     timer = setTimeout(() => hideSkeleton(), PATIENCE)
 }
 
+/**
+ * The same grey outline, but inside one part of the page rather than all of
+ * it — for when only the shelf is being replaced.
+ */
+export function showRegionSkeleton(region, name) {
+    const template = templateFor(name)
+
+    if (! region || ! template) {
+        return
+    }
+
+    region.replaceChildren(template.content.cloneNode(true))
+    region.setAttribute('aria-busy', 'true')
+}
+
 export function hideSkeleton() {
     if (! showing) {
         return

@@ -195,6 +195,46 @@ class BrowsingAndBasketTest extends TestCase
     }
 
     /*
+     * ------------------------------------------------- changing only the shelf
+     */
+
+    public function test_the_page_marks_out_the_parts_that_change_with_the_category(): void
+    {
+        $this->category('Dairy');
+        $this->sell('Fresh milk');
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        $this->get($url.'/browse')
+            ->assertOk()
+            // The two regions the script swaps, and the outline it shows
+            // while it waits for them.
+            ->assertSee('data-swap="side"', false)
+            ->assertSee('data-swap="main"', false)
+            ->assertSee('data-skeleton="results"', false)
+            // Category links say they only change the shelf.
+            ->assertSee('data-swap-link', false);
+    }
+
+    public function test_a_category_link_is_still_a_plain_link(): void
+    {
+        $dairy = $this->category('Dairy');
+        $this->sell('Fresh milk', ['category_ids' => [$dairy->id]]);
+        $this->sell('Basmati rice');
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        // Opened directly, with no script at all, it is a whole working page.
+        $this->get($url.'/browse?category=dairy')
+            ->assertOk()
+            ->assertSee('<!DOCTYPE html>', false)
+            ->assertSee('/products/fresh-milk')
+            ->assertDontSee('/products/basmati-rice');
+    }
+
+    /*
      * ------------------------------------------- what the price is the price of
      */
 
