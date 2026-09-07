@@ -33,6 +33,9 @@ class ProductForm extends Component
 
     public string $short_description = '';
 
+    /** What the price is the price of: 'per kg', 'dozen', '500 g pack'. */
+    public string $unit = '';
+
     public string $tags = '';
 
     public string $video_url = '';
@@ -109,6 +112,7 @@ class ProductForm extends Component
         $this->status = $product->status;
         $this->is_published = $product->status === Product::STATUS_ACTIVE;
         $this->short_description = (string) $product->short_description;
+        $this->unit = (string) $product->unit;
         $this->tags = implode(', ', $product->tags ?? []);
         $this->video_url = (string) $product->video_url;
         $this->shipping_charge = $product->shipping_charge_minor === null
@@ -184,6 +188,7 @@ class ProductForm extends Component
             'category_ids.*' => ['integer'],
             'status' => ['required', Rule::in([Product::STATUS_DRAFT, Product::STATUS_ACTIVE, Product::STATUS_ARCHIVED])],
             'short_description' => ['nullable', 'string', 'max:500'],
+            'unit' => ['nullable', 'string', 'max:40'],
             'tags' => ['nullable', 'string', 'max:500'],
             'video_url' => ['nullable', 'string', 'max:255'],
             'regular_price' => ['required', 'numeric', 'min:0'],
@@ -260,6 +265,7 @@ class ProductForm extends Component
             'name' => $this->name,
             'description' => $this->description ?: null,
             'short_description' => $this->short_description ?: null,
+            'unit' => $this->unit ?: null,
             'brand_id' => $this->brand_id ?: null,
             'category_ids' => $this->category_ids,
             'status' => $status,

@@ -34,6 +34,7 @@ class Product extends Model
 
     protected $fillable = [
         'tenant_id', 'brand_id', 'name', 'slug', 'description', 'short_description',
+        'unit',
         'status', 'has_variants', 'meta_title', 'meta_description', 'tags',
         'video_url', 'shipping_charge_minor', 'published_at',
         'demo_batch',

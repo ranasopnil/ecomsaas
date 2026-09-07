@@ -125,6 +125,51 @@ class ProductDetailsTest extends TestCase
         $this->assertSame(['panjabi', 'cotton', 'eid'], $product->tags);
     }
 
+    public function test_the_shopkeeper_says_what_the_price_is_the_price_of(): void
+    {
+        Livewire::test(ProductForm::class)
+            ->set('name', 'Basmati rice')
+            ->set('regular_price', '620')
+            ->set('unit', 'per kg')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('per kg', Product::firstOrFail()->unit);
+    }
+
+    public function test_the_unit_can_be_changed_and_taken_away_again(): void
+    {
+        $created = app(ProductService::class)->create([
+            'name' => 'Farm eggs', 'regular_price' => '155', 'unit' => 'per dozen',
+        ]);
+        $product = $created instanceof Product ? $created : $created->product;
+
+        $this->assertSame('per dozen', $product->unit);
+
+        Livewire::test(ProductForm::class, ['product' => $product])
+            ->set('unit', 'per tray')
+            ->call('save');
+
+        $this->assertSame('per tray', $product->fresh()->unit);
+
+        Livewire::test(ProductForm::class, ['product' => $product->fresh()])
+            ->set('unit', '')
+            ->call('save');
+
+        $this->assertNull($product->fresh()->unit);
+    }
+
+    public function test_markup_typed_into_the_unit_is_reduced_to_words(): void
+    {
+        Livewire::test(ProductForm::class)
+            ->set('name', 'Safe')
+            ->set('regular_price', '100')
+            ->set('unit', '<b>per kg</b>')
+            ->call('save');
+
+        $this->assertSame('per kg', Product::firstOrFail()->unit);
+    }
+
     public function test_markup_typed_into_the_short_description_is_reduced_to_words(): void
     {
         Livewire::test(ProductForm::class)

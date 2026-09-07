@@ -42,6 +42,7 @@ class ProductService
                 'slug' => $this->uniqueSlug($data['slug'] ?? $data['name']),
                 'description' => $this->sanitiser->clean($data['description'] ?? null),
                 'short_description' => $this->plainText($data['short_description'] ?? null, 500),
+                'unit' => $this->plainText($data['unit'] ?? null, 40),
                 'status' => $data['status'] ?? Product::STATUS_DRAFT,
                 'has_variants' => false,
                 'meta_title' => $data['meta_title'] ?? null,
@@ -104,6 +105,9 @@ class ProductService
                 'short_description' => array_key_exists('short_description', $data)
                     ? $this->plainText($data['short_description'], 500)
                     : $product->short_description,
+                'unit' => array_key_exists('unit', $data)
+                    ? $this->plainText($data['unit'], 40)
+                    : $product->unit,
                 'tags' => array_key_exists('tags', $data)
                     ? $this->cleanTags($data['tags'])
                     : $product->tags,

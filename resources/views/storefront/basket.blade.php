@@ -40,7 +40,10 @@
                             <div class="min-w-0 flex-1">
                                 <a href="{{ route('storefront.product', $line->product->slug) }}"
                                    class="line-clamp-2 text-sm font-medium text-slate-900 hover:underline">{{ $line->title() }}</a>
-                                <p class="mt-1 text-xs text-slate-500">{{ $symbol }}{{ $line->unit()->toDisplay() }} each</p>
+                                <p class="mt-1 text-xs text-slate-500">
+                                    {{ $symbol }}{{ $line->unit()->toDisplay() }}
+                                    {{ $line->product->unit ?: 'each' }}
+                                </p>
 
                                 <div class="mt-3 flex flex-wrap items-center gap-3">
                                     <form method="POST" action="{{ route('storefront.basket.update') }}" class="flex items-center rounded-full bg-slate-100">

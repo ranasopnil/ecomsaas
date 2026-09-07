@@ -72,7 +72,7 @@ class BrowseController extends Controller
         // A real thing from this shop, so the box shows what is worth typing.
         // Settled rather than random: a search box whose example changes on
         // every reload reads as a fault.
-        $example = Product::query()->onSale()->latest('published_at')->value('name');
+        $example = Product::query()->onSale()->latest('published_at')->orderByDesc('id')->value('name');
 
         return view('storefront.browse', [
             'store' => $shop,

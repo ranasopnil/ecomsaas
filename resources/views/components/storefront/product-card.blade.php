@@ -75,6 +75,10 @@
             <div class="mt-auto flex flex-wrap items-baseline gap-x-1.5 gap-y-1 pt-0.5">
                 <span class="text-[15px] font-bold text-slate-900">{{ $symbol }}{{ $variant->price->toDisplay() }}</span>
 
+                @if ($product->unit)
+                    <span class="text-xs text-slate-500">{{ $product->unit }}</span>
+                @endif
+
                 @if ($discounted)
                     <span class="text-xs text-slate-400 line-through">{{ $symbol }}{{ $variant->compareAtPrice->toDisplay() }}</span>
                 @endif

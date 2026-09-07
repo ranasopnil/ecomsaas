@@ -271,8 +271,8 @@ class ShopTemplateTest extends TestCase
         ]])
             ->get($url)
             ->assertOk()
-            ->assertSee('Dried lentils')
-            ->assertDontSee('Fresh milk')
+            ->assertSee('/products/dried-lentils')
+            ->assertDontSee('/products/fresh-milk')
             ->assertSee('not delivered to');
     }
 

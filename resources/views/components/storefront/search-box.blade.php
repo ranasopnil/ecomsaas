@@ -75,7 +75,12 @@
                             </template>
                         </span>
                         <span class="min-w-0 flex-1 truncate text-sm text-slate-800" x-text="result.name"></span>
-                        <span class="shrink-0 text-sm font-semibold" style="color: {{ $accent }}" x-text="result.price"></span>
+                        <span class="shrink-0 text-end">
+                            <span class="block text-sm font-semibold" style="color: {{ $accent }}" x-text="result.price"></span>
+                            <template x-if="result.unit">
+                                <span class="block text-[11px] text-slate-400" x-text="result.unit"></span>
+                            </template>
+                        </span>
                     </a>
                 </li>
             </template>

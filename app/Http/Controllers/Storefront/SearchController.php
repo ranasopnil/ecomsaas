@@ -52,6 +52,7 @@ class SearchController extends Controller
                     'name' => $product->name,
                     'url' => route('storefront.product', $product->slug),
                     'price' => $variant ? $symbol.$variant->price->toDisplay() : null,
+                    'unit' => $product->unit,
                     'was' => $variant?->isDiscounted() ? $symbol.$variant->compareAtPrice->toDisplay() : null,
                     'image' => $product->primaryImage()?->thumbnailUrl(),
                 ];

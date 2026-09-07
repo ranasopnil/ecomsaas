@@ -67,7 +67,7 @@ class HomeController extends Controller
             'areas' => $reach->areas(),
             'figures' => $figures->forFront(),
             // A real thing from this shop, to show in the search box.
-            'example' => Product::query()->onSale()->latest('published_at')->value('name'),
+            'example' => Product::query()->onSale()->latest('published_at')->orderByDesc('id')->value('name'),
             'searching' => $wanted,
             // How much of the shop the customer cannot see from where they are.
             // Only counted on the plain front page: a search or a category

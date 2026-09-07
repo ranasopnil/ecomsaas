@@ -79,6 +79,9 @@
                         <span class="text-2xl font-semibold tabular-nums">
                             {{ $first->currency }} {{ $first->price->toDisplay() }}
                         </span>
+                        @if ($product->unit)
+                            <span class="text-sm text-slate-500">{{ $product->unit }}</span>
+                        @endif
                         @if ($first->isDiscounted())
                             <span class="text-lg text-slate-400 line-through tabular-nums">
                                 {{ $first->currency }} {{ number_format($first->compare_at_price_minor / (10 ** $first->currency_exponent), $first->currency_exponent) }}

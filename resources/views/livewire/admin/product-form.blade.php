@@ -111,6 +111,23 @@
                 Price and stock @if ($product?->has_variants) <span class="normal-case text-slate-400">(the starting point for each choice)</span> @endif
             </h2>
 
+            <div class="mb-4">
+                <label class="mb-1 block text-sm font-medium">What the price is for</label>
+                <input type="text" wire:model.blur="unit" list="unit-suggestions" maxlength="40"
+                       placeholder="per kg"
+                       class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none sm:max-w-xs">
+                <datalist id="unit-suggestions">
+                    @foreach (['per kg', 'per 500 g', 'per piece', 'per dozen', 'per bunch', 'per litre', 'per pack', 'per bottle', 'per box'] as $suggestion)
+                        <option value="{{ $suggestion }}"></option>
+                    @endforeach
+                </datalist>
+                <p class="mt-1 text-xs text-slate-500">
+                    Shown next to the price everywhere, so a customer knows what they are paying for.
+                    Leave it empty if the price is simply for one of the thing.
+                </p>
+                @error('unit') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+            </div>
+
             <div class="grid gap-4 sm:grid-cols-3">
                 <div>
                     <label class="mb-1 block text-sm font-medium">Regular price</label>

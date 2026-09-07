@@ -195,6 +195,53 @@ class BrowsingAndBasketTest extends TestCase
     }
 
     /*
+     * ------------------------------------------- what the price is the price of
+     */
+
+    public function test_a_price_says_what_it_is_the_price_of(): void
+    {
+        $this->sell('Basmati rice', ['unit' => 'per kg']);
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        // On the shelf,
+        $this->get($url.'/browse')->assertOk()->assertSee('per kg');
+
+        // on the product itself,
+        $this->get($url.'/products/basmati-rice')->assertOk()->assertSee('per kg');
+
+        // and while typing.
+        $this->getJson($url.'/search/suggestions?q=rice')
+            ->assertOk()
+            ->assertJsonPath('results.0.unit', 'per kg');
+    }
+
+    public function test_the_basket_says_it_too(): void
+    {
+        $rice = $this->sell('Basmati rice', ['unit' => 'per kg']);
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        $this->post($url.'/basket/add', ['variant_id' => $rice->variants->first()->id]);
+
+        $this->get($url.'/basket')->assertOk()->assertSee('per kg');
+    }
+
+    public function test_a_product_with_nothing_to_say_falls_back_to_each(): void
+    {
+        $rice = $this->sell('Basmati rice');
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        $this->post($url.'/basket/add', ['variant_id' => $rice->variants->first()->id]);
+
+        $this->get($url.'/basket')->assertOk()->assertSee('each');
+    }
+
+    /*
      * --------------------------------------------------- suggesting as you type
      */
 

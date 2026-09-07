@@ -180,9 +180,8 @@ class SampleShop
                 $product = $this->products->create([
                     'name' => $definition['name'],
                     'description' => $definition['body'],
-                    'short_description' => isset($definition['unit'])
-                        ? $definition['short'].' ('.$definition['unit'].')'
-                        : $definition['short'],
+                    'short_description' => $definition['short'],
+                    'unit' => $definition['unit'] ?? null,
                     'tags' => $definition['tags'],
                     'brand_id' => $brands[$definition['brand']]->id,
                     'category_ids' => [$categories[$definition['category']]->id],
