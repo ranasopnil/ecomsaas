@@ -69,7 +69,10 @@ class BrowseController extends Controller
                 ->get()
             : collect();
 
-        $example = Product::query()->onSale()->inRandomOrder()->value('name');
+        // A real thing from this shop, so the box shows what is worth typing.
+        // Settled rather than random: a search box whose example changes on
+        // every reload reads as a fault.
+        $example = Product::query()->onSale()->latest('published_at')->value('name');
 
         return view('storefront.browse', [
             'store' => $shop,

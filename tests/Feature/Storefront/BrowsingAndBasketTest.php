@@ -149,10 +149,12 @@ class BrowsingAndBasketTest extends TestCase
             ->assertSee('Save up to 25% today')
             ->assertSee("Today's deals", false);
 
+        // Links, not names: the search box shows a real product name as its
+        // example, so a name can appear on a page that does not stock it.
         $this->get($url.'/browse?offers=1')
             ->assertOk()
-            ->assertSee('Basmati rice')
-            ->assertDontSee('Fresh milk');
+            ->assertSee('/products/basmati-rice')
+            ->assertDontSee('/products/fresh-milk');
     }
 
     public function test_a_shop_with_nothing_reduced_makes_no_promises_about_savings(): void

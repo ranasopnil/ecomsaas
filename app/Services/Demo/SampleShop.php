@@ -116,24 +116,63 @@ class SampleShop
     public function __construct(
         protected ProductService $products,
         protected ImageService $images,
+        protected StockPhotos $photos,
     ) {}
+
+    /**
+     * The two kinds of demo shop this can build.
+     *
+     * @return array<int, string>
+     */
+    public static function kinds(): array
+    {
+        return ['grocery', 'fashion'];
+    }
+
+    /**
+     * What goes on the shelves for one kind of shop.
+     *
+     * @return array{categories: array<string, array{parent: string|null, photo: string|null}>, brands: array<int, string>, products: array<int, array<string, mixed>>}
+     */
+    protected function definitions(string $kind): array
+    {
+        if ($kind === 'grocery') {
+            return [
+                'categories' => GroceryCatalogue::categories(),
+                'brands' => GroceryCatalogue::brands(),
+                'products' => GroceryCatalogue::products(),
+            ];
+        }
+
+        return [
+            // The clothes shop names a parent and nothing else, so give every
+            // category the same shape and no photograph of its own.
+            'categories' => collect(self::CATEGORIES)
+                ->map(fn (?string $parent) => ['parent' => $parent, 'photo' => null])
+                ->all(),
+            'brands' => self::BRANDS,
+            'products' => self::CATALOGUE,
+        ];
+    }
 
     /**
      * @return array{products: int, variants: int, movements: int}
      */
-    public function fill(Tenant $store, bool $withPhotos = true): array
+    public function fill(Tenant $store, bool $withPhotos = true, string $kind = 'grocery'): array
     {
-        return Tenancy::run($store, function () use ($withPhotos) {
+        $definitions = $this->definitions($kind);
+
+        return Tenancy::run($store, function () use ($withPhotos, $definitions) {
             mt_srand(20260906);
 
-            $categories = $this->categories();
-            $brands = $this->brands();
+            $categories = $this->categories($definitions['categories'], $withPhotos);
+            $brands = $this->brands($definitions['brands']);
 
             $made = 0;
             $variants = 0;
             $movements = 0;
 
-            foreach (self::CATALOGUE as $definition) {
+            foreach ($definitions['products'] as $definition) {
                 if (Product::where('name', $definition['name'])->exists()) {
                     continue;
                 }
@@ -141,7 +180,9 @@ class SampleShop
                 $product = $this->products->create([
                     'name' => $definition['name'],
                     'description' => $definition['body'],
-                    'short_description' => $definition['short'],
+                    'short_description' => isset($definition['unit'])
+                        ? $definition['short'].' ('.$definition['unit'].')'
+                        : $definition['short'],
                     'tags' => $definition['tags'],
                     'brand_id' => $brands[$definition['brand']]->id,
                     'category_ids' => [$categories[$definition['category']]->id],
@@ -168,7 +209,7 @@ class SampleShop
                 }
 
                 if ($withPhotos) {
-                    $this->photo($product, $made);
+                    $this->photo($product, $made, $definition['photo'] ?? null);
                 }
 
                 $made++;
@@ -218,15 +259,18 @@ class SampleShop
     }
 
     /**
+     * @param  array<string, array{parent: string|null, photo: string|null}>  $definitions
      * @return array<string, Category>
      */
-    protected function categories(): array
+    protected function categories(array $definitions, bool $withPhotos): array
     {
         $made = [];
 
         $seed = 0;
 
-        foreach (self::CATEGORIES as $name => $parent) {
+        foreach ($definitions as $name => $definition) {
+            $parent = $definition['parent'];
+
             $made[$name] = Category::firstOrCreate(
                 ['slug' => str($name)->slug()->value()],
                 [
@@ -237,8 +281,8 @@ class SampleShop
                 ],
             );
 
-            if (! $made[$name]->hasImage()) {
-                $this->categoryPhoto($made[$name], ++$seed * 7);
+            if ($withPhotos && ! $made[$name]->hasImage()) {
+                $this->categoryPhoto($made[$name], ++$seed * 7, $definition['photo'] ?? null);
             }
         }
 
@@ -246,13 +290,14 @@ class SampleShop
     }
 
     /**
+     * @param  array<int, string>  $names
      * @return array<string, Brand>
      */
-    protected function brands(): array
+    protected function brands(array $names): array
     {
         $made = [];
 
-        foreach (self::BRANDS as $name) {
+        foreach ($names as $name) {
             $made[$name] = Brand::firstOrCreate(
                 ['slug' => str($name)->slug()->value()],
                 ['name' => $name, 'is_active' => true, 'demo_batch' => self::BATCH],
@@ -347,40 +392,59 @@ class SampleShop
     }
 
     /**
-     * A plain, tidy picture made here rather than fetched from anywhere.
+     * A real photograph of the thing where we have one, and a plain painted
+     * square where we do not.
+     *
+     * The photographs are freely licensed pictures from Wikimedia Commons,
+     * listed in database/demo/photo-credits.md. A shop that cannot reach
+     * Wikimedia still gets a shop with pictures in it, just duller ones.
      */
-    protected function photo(Product $product, int $seed): void
+    protected function photo(Product $product, int $seed, ?string $file = null): void
     {
-        $path = $this->paintSquare($seed, $product->name, 1000);
+        [$path, $name] = $this->picture($file, $seed, $product->name, 1000);
 
         if ($path === null) {
             return;
         }
 
-        $this->images->store($product, new UploadedFile($path, str($product->name)->slug().'.jpg', 'image/jpeg', null, true));
+        $this->images->store($product, new UploadedFile($path, $name, 'image/jpeg', null, true));
 
         @unlink($path);
     }
 
     /**
-     * The same plain picture, for a category. Some shop fronts show a row of
-     * these, and a demo shop with empty holes in it looks broken rather than
-     * empty.
+     * The same, for a category. Some shop fronts show a row of these, and a
+     * demo shop with empty holes in it looks broken rather than empty.
      */
-    protected function categoryPhoto(Category $category, int $seed): void
+    protected function categoryPhoto(Category $category, int $seed, ?string $file = null): void
     {
-        $path = $this->paintSquare($seed, $category->name, 600);
+        [$path, $name] = $this->picture($file, $seed, $category->name, 600);
 
         if ($path === null) {
             return;
         }
 
-        $this->images->storeForCategory(
-            $category,
-            new UploadedFile($path, str($category->name)->slug().'.jpg', 'image/jpeg', null, true),
-        );
+        $this->images->storeForCategory($category, new UploadedFile($path, $name, 'image/jpeg', null, true));
 
         @unlink($path);
+    }
+
+    /**
+     * @return array{0: string|null, 1: string} the file on disk, and what to call it
+     */
+    protected function picture(?string $file, int $seed, string $label, int $size): array
+    {
+        if ($file !== null) {
+            $fetched = $this->photos->fetch($file);
+
+            if ($fetched !== null) {
+                // Keeping the Commons file name means the credit for a picture
+                // can still be traced from the shop it ended up in.
+                return [$fetched, $file];
+            }
+        }
+
+        return [$this->paintSquare($seed, $label, $size), str($label)->slug().'.jpg'];
     }
 
     /**
