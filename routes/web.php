@@ -3,6 +3,7 @@
 use App\Facades\Tenancy;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Internal\DomainCheckController;
+use App\Http\Controllers\Payments\BkashCallbackController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Super\LoginController;
 use App\Http\Middleware\CountVisit;
@@ -38,6 +39,14 @@ Route::get('/', function () {
  */
 Route::middleware([EnsureStoreDomain::class, CountVisit::class])->group(function () {
     Route::get('/products/{slug}', [ProductController::class, 'show'])->name('storefront.product');
+});
+
+/*
+ * Where a gateway sends the customer back to. On the shop's own address, so
+ * the shop is already known, and never counted as a visit.
+ */
+Route::middleware(EnsureStoreDomain::class)->group(function () {
+    Route::get('/payments/bkash/callback', BkashCallbackController::class)->name('payments.bkash.callback');
 });
 
 /*

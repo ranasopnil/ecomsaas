@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Admin;
 
+use App\Exceptions\GatewayFailed;
 use App\Facades\Tenancy;
 use App\Models\PaymentMethod;
 use App\Services\Payments\GatewayCatalogue;
+use App\Services\Payments\GatewayFactory;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -131,12 +133,47 @@ class PaymentMethodsIndex extends Component
         ]);
     }
 
+    /**
+     * Prove the saved details actually work, by asking the gateway for a token
+     * and nothing else. It moves no money and changes nothing.
+     */
+    public function test(string $gateway): void
+    {
+        $method = PaymentMethod::where('gateway', $gateway)->first();
+
+        if ($method === null || ! app(GatewayFactory::class)->isDriven($gateway)) {
+            return;
+        }
+
+        if (! $method->isComplete()) {
+            $this->dispatch('toast', ['text' => 'Fill in every detail first, then test.', 'tone' => 'bad']);
+
+            return;
+        }
+
+        try {
+            app(GatewayFactory::class)->for($method)->testConnection();
+        } catch (GatewayFailed $e) {
+            $this->dispatch('toast', ['text' => $e->getMessage(), 'tone' => 'bad']);
+
+            return;
+        }
+
+        $this->justChanged = $gateway;
+        $this->dispatch('toast', [
+            'text' => $method->name().' accepted your details'
+                .(($method->settings['sandbox'] ?? false) ? ' on the test system.' : '.'),
+            'tone' => 'ok',
+        ]);
+    }
+
     public function render()
     {
         return view('livewire.admin.payment-methods-index', [
             'available' => app(GatewayCatalogue::class)->availableFor(Tenancy::current()),
             'methods' => PaymentMethod::query()->get()->keyBy('gateway'),
             'definition' => $this->editing ? app(GatewayCatalogue::class)->find($this->editing) : null,
+            'factory' => app(GatewayFactory::class),
         ]);
     }
 }

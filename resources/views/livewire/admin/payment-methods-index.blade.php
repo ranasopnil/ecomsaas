@@ -115,11 +115,29 @@
                         </div>
                     </form>
                 @else
-                    <div class="mt-4">
+                    <div class="mt-4 flex flex-wrap items-center gap-2">
                         <button type="button" wire:click="edit('{{ $key }}')" class="btn btn-quiet !px-3 !py-1.5">
                             {{ $method ? 'Change details' : ($gateway['fields'] === [] ? 'Set up' : 'Enter your details') }}
                         </button>
+
+                        @if ($method && $factory->isDriven($key))
+                            <button type="button" wire:click="test('{{ $key }}')"
+                                    wire:loading.attr="disabled" wire:target="test('{{ $key }}')"
+                                    class="btn btn-quiet !px-3 !py-1.5">
+                                <span wire:loading.remove wire:target="test('{{ $key }}')">Test connection</span>
+                                <span wire:loading wire:target="test('{{ $key }}')">Checking…</span>
+                            </button>
+                            @if ($method->settings['sandbox'] ?? false)
+                                <span class="rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-800">Test system</span>
+                            @endif
+                        @endif
                     </div>
+
+                    @if ($method && $factory->isDriven($key))
+                        <p class="mt-2 text-xs text-slate-500">
+                            Testing asks {{ $gateway['name'] }} whether your details work. It moves no money.
+                        </p>
+                    @endif
                 @endif
             </div>
         @endforeach
