@@ -413,6 +413,45 @@ class BkashTest extends TestCase
         $this->assertSame(1, OutboxEvent::where('type', 'payment.refunded')->count());
     }
 
+    /*
+     * ---------------------------------------------------------------
+     * Filling a dev shop in with bKash's practice details
+     * ---------------------------------------------------------------
+     */
+
+    public function test_the_practice_details_can_be_put_into_a_shop(): void
+    {
+        Http::fake();
+
+        config()->set('services.bkash_sandbox', [
+            'app_key' => 'practice-key', 'app_secret' => 'practice-secret',
+            'username' => 'sandboxTester', 'password' => 'practice-password',
+        ]);
+
+        $this->artisan('payments:sandbox-bkash', ['--shop' => $this->store->slug])
+            ->assertSuccessful();
+
+        $method = PaymentMethod::where('gateway', 'bkash')->firstOrFail();
+
+        $this->assertTrue($method->is_enabled);
+        $this->assertTrue($method->settings['sandbox']);
+        $this->assertTrue($method->isComplete());
+        $this->assertSame('••••••••-key', $method->maskedSecret('app_key'));
+
+        // Nothing was asked of bKash: filling a form in is not a payment.
+        Http::assertNothingSent();
+    }
+
+    public function test_it_will_not_fill_a_shop_in_with_details_it_does_not_have(): void
+    {
+        config()->set('services.bkash_sandbox', ['app_key' => '', 'app_secret' => '', 'username' => '', 'password' => '']);
+
+        $this->artisan('payments:sandbox-bkash', ['--shop' => $this->store->slug])
+            ->assertFailed();
+
+        $this->assertNull(PaymentMethod::where('gateway', 'bkash')->first());
+    }
+
     public function test_a_shop_cannot_refund_more_than_it_took(): void
     {
         Http::fake(['*/token/grant' => Http::response($this->token())]);

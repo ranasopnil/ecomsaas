@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    /*
+     * bKash's practice system. Only ever the public sandbox details, so a
+     * shop on the dev server can be filled in with something that works.
+     * Empty on a live server, and the seeding command refuses to run.
+     */
+    'bkash_sandbox' => [
+        'app_key' => env('BKASH_SANDBOX_APP_KEY'),
+        'app_secret' => env('BKASH_SANDBOX_APP_SECRET'),
+        'username' => env('BKASH_SANDBOX_USERNAME'),
+        'password' => env('BKASH_SANDBOX_PASSWORD'),
+    ],
+
 ];
