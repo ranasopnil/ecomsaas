@@ -35,9 +35,6 @@ class Tenant extends Model
         'template_settings',
         'map_provider',
         'delivers_everywhere',
-        'delivery_latitude',
-        'delivery_longitude',
-        'delivery_radius_km',
     ];
 
     protected function casts(): array
@@ -48,9 +45,6 @@ class Tenant extends Model
             'trial_ends_at' => 'datetime',
             'template_settings' => 'array',
             'delivers_everywhere' => 'boolean',
-            'delivery_latitude' => 'float',
-            'delivery_longitude' => 'float',
-            'delivery_radius_km' => 'float',
         ];
     }
 

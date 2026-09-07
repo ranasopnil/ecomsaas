@@ -363,9 +363,9 @@ class ProductService
     /**
      * Where this product is delivered.
      *
-     * Only a product tied to particular areas keeps that setting; anything
-     * else is "wherever the shop delivers" or "anywhere", and its old circle
-     * is cleared so a leftover pin can never quietly limit who sees it.
+     * Anything that is not one of the three known settings falls back to
+     * "wherever the shop delivers", so a stray value can never quietly limit
+     * who sees a product.
      *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
@@ -380,12 +380,7 @@ class ProductService
             $availability = Product::AVAILABLE_SHOP;
         }
 
-        return [
-            'availability' => $availability,
-            'latitude' => null,
-            'longitude' => null,
-            'radius_km' => null,
-        ];
+        return ['availability' => $availability];
     }
 
     /**

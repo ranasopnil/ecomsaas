@@ -37,7 +37,7 @@ class Product extends Model
         'status', 'has_variants', 'meta_title', 'meta_description', 'tags',
         'video_url', 'shipping_charge_minor', 'published_at',
         'demo_batch',
-        'availability', 'latitude', 'longitude', 'radius_km',
+        'availability',
     ];
 
     protected function casts(): array
@@ -47,9 +47,6 @@ class Product extends Model
             'published_at' => 'datetime',
             'tags' => 'array',
             'shipping_charge_minor' => 'integer',
-            'latitude' => 'float',
-            'longitude' => 'float',
-            'radius_km' => 'float',
         ];
     }
 
