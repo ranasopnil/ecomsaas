@@ -9,6 +9,7 @@ use App\Services\Storefront\Basket;
 use App\Services\Storefront\CustomerLocation;
 use App\Services\Storefront\TemplateCatalogue;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -34,7 +35,7 @@ class BasketController extends Controller
         ]);
     }
 
-    public function add(Request $request, Basket $basket): RedirectResponse
+    public function add(Request $request, Basket $basket): RedirectResponse|JsonResponse
     {
         $data = $request->validate([
             'variant_id' => ['required', 'integer'],
@@ -44,10 +45,25 @@ class BasketController extends Controller
         $variant = $this->sellable((int) $data['variant_id']);
 
         if ($variant === null) {
-            return back()->with('basket.refused', 'That is not available right now.');
+            $refused = 'That is not available right now.';
+
+            return $request->expectsJson()
+                ? response()->json(['ok' => false, 'message' => $refused, 'count' => $basket->count()], 422)
+                : back()->with('basket.refused', $refused);
         }
 
         $basket->add($variant, (int) ($data['quantity'] ?? 1));
+
+        // Asked for by the page itself: answer with the new state and let it
+        // update in place, rather than sending the shopper back to the top of
+        // a reloaded page.
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'name' => $variant->product->name,
+                'count' => $basket->count(),
+            ]);
+        }
 
         return back()->with('basket.added', $variant->product->name);
     }

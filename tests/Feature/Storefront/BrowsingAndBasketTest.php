@@ -230,6 +230,47 @@ class BrowsingAndBasketTest extends TestCase
         $this->get($url.'/basket')->assertOk()->assertSee('৳120.00')->assertDontSee('Fresh milk');
     }
 
+    public function test_adding_from_the_page_answers_instead_of_reloading_it(): void
+    {
+        $rice = $this->sell('Basmati rice');
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        $this->postJson($url.'/basket/add', ['variant_id' => $rice->variants->first()->id, 'quantity' => 2])
+            ->assertOk()
+            ->assertExactJson(['ok' => true, 'name' => 'Basmati rice', 'count' => 2]);
+
+        // Nothing was flashed for a banner, because no page is being reloaded.
+        $this->assertNull(session('basket.added'));
+    }
+
+    public function test_a_refusal_comes_back_the_same_quiet_way(): void
+    {
+        $rice = $this->sell('Basmati rice', ['stock' => 0]);
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        $this->postJson($url.'/basket/add', ['variant_id' => $rice->variants->first()->id])
+            ->assertStatus(422)
+            ->assertJson(['ok' => false, 'count' => 0]);
+    }
+
+    public function test_the_plus_still_works_with_no_javascript_at_all(): void
+    {
+        $rice = $this->sell('Basmati rice');
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        // An ordinary form post: it redirects back and flashes a banner.
+        $this->from($url.'/browse')
+            ->post($url.'/basket/add', ['variant_id' => $rice->variants->first()->id])
+            ->assertRedirect($url.'/browse')
+            ->assertSessionHas('basket.added', 'Basmati rice');
+    }
+
     public function test_something_sold_out_cannot_go_in(): void
     {
         $rice = $this->sell('Basmati rice', ['stock' => 0]);

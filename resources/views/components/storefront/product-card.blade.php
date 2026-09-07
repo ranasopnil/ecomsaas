@@ -52,11 +52,13 @@
                    class="absolute bottom-2 end-2 flex h-8 w-8 items-center justify-center rounded-xl bg-white text-lg font-semibold shadow-md ring-1 ring-slate-100 transition hover:scale-110"
                    style="color: {{ $accent }}">+</a>
             @else
-                <form method="POST" action="{{ route('storefront.basket.add') }}" class="absolute bottom-2 end-2">
+                {{-- Posts on its own with no javascript; quietly with it --}}
+                <form method="POST" action="{{ route('storefront.basket.add') }}" class="absolute bottom-2 end-2"
+                      x-data x-on:submit.prevent="$store.basket.add($el)">
                     @csrf
                     <input type="hidden" name="variant_id" value="{{ $variant->id }}">
                     <button type="submit" title="Add to basket" aria-label="Add {{ $product->name }} to basket"
-                            class="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-lg font-semibold shadow-md ring-1 ring-slate-100 transition hover:scale-110"
+                            class="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-lg font-semibold shadow-md ring-1 ring-slate-100 transition hover:scale-110 active:scale-95"
                             style="color: {{ $accent }}">+</button>
                 </form>
             @endif

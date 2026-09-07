@@ -137,7 +137,8 @@
                         {{ $isPreview ? 'Add to basket' : 'Sold out' }}
                     </button>
                 @else
-                    <form method="POST" action="{{ route('storefront.basket.add') }}" class="mt-6 space-y-3">
+                    <form method="POST" action="{{ route('storefront.basket.add') }}" class="mt-6 space-y-3"
+                          x-data x-on:submit.prevent="$store.basket.add($el)">
                         @csrf
                         @if ($product->has_variants && $variants->count() > 1)
                             <label class="block text-sm font-medium">
@@ -157,8 +158,10 @@
                         <div class="flex gap-3">
                             <input type="number" name="quantity" value="1" min="1" max="{{ \App\Services\Storefront\Basket::MAX_PER_LINE }}"
                                    aria-label="How many" class="w-20 rounded-lg border border-slate-300 px-3 py-3 text-center text-sm">
-                            <button type="submit" class="flex-1 rounded-lg px-5 py-3 text-sm font-medium text-white"
-                                    style="background: {{ $accent }}">Add to basket</button>
+                            <button type="submit"
+                                    class="flex-1 rounded-lg px-5 py-3 text-sm font-medium text-white transition active:scale-[.98]"
+                                    style="background: {{ $accent }}"
+                                    x-bind:disabled="$store.basket.busy">Add to basket</button>
                         </div>
                     </form>
                 @endif

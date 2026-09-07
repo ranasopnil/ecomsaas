@@ -22,18 +22,43 @@
 
         <x-storefront.location-bar :location="$location" :search-url="$searchUrl" :accent="$accent" />
 
-        <div class="ms-auto flex items-center gap-2">
+        <div class="ms-auto flex items-center gap-2"
+             x-data x-init="$store.basket.start({{ $inBasket }})">
             <a href="{{ route('storefront.basket') }}" title="Your basket" aria-label="Your basket"
                class="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-700 transition hover:bg-slate-100">
                 <x-storefront.icon name="basket" class="h-6 w-6" />
-                @if ($inBasket > 0)
-                    <span class="absolute -end-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold text-white"
-                          style="background: {{ $accent }}">{{ $inBasket }}</span>
-                @endif
+                {{-- Server first, so the number is right before any script runs --}}
+                <span x-show="$store.basket.count > 0"
+                      x-transition.scale
+                      @if ($inBasket === 0) x-cloak @endif
+                      class="absolute -end-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold text-white"
+                      style="background: {{ $accent }}"
+                      x-text="$store.basket.count">{{ $inBasket ?: '' }}</span>
             </a>
         </div>
     </div>
 </header>
+
+{{-- The small note in the corner, for when nothing reloaded --}}
+<div x-data x-cloak
+     class="pointer-events-none fixed inset-x-0 bottom-4 z-50 flex flex-col items-center gap-2 px-4 sm:inset-x-auto sm:bottom-6 sm:end-6 sm:items-end sm:px-0">
+    <template x-for="note in $store.basket.notes" :key="note.id">
+        <div x-transition.opacity.duration.200ms
+             class="pointer-events-auto flex max-w-sm items-center gap-3 rounded-xl bg-white px-4 py-3 text-sm shadow-lg ring-1 ring-slate-100">
+            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white"
+                  x-bind:style="note.tone === 'ok' ? 'background: {{ $accent }}' : 'background: #e11d48'">
+                <x-storefront.icon name="check" class="h-4 w-4" x-show="note.tone === 'ok'" />
+                <span x-show="note.tone !== 'ok'" class="text-base font-bold">!</span>
+            </span>
+            <span class="min-w-0 flex-1 text-slate-800" x-text="note.text"></span>
+            <a href="{{ route('storefront.basket') }}" x-show="note.tone === 'ok'"
+               class="shrink-0 text-xs font-semibold underline-offset-4 hover:underline"
+               style="color: {{ $accent }}">Basket</a>
+            <button type="button" x-on:click="$store.basket.dismiss(note.id)"
+                    class="shrink-0 text-slate-300 hover:text-slate-600" aria-label="Close">&times;</button>
+        </div>
+    </template>
+</div>
 
 {{-- A word back after something goes in, or cannot --}}
 @if ($added)
