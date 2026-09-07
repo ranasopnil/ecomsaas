@@ -125,7 +125,7 @@ function isPlainNavigation(event, link) {
         && ! event.metaKey && ! event.ctrlKey && ! event.shiftKey && ! event.altKey
         && link.target !== '_blank'
         && ! link.hasAttribute('download')
-        && ! link.dataset.noSkeleton
+        && ! ('noSkeleton' in link.dataset)
         && link.origin === window.location.origin
         && link.getAttribute('href')
         && ! link.getAttribute('href').startsWith('#')
@@ -146,7 +146,7 @@ document.addEventListener('submit', (event) => {
 
     if (form instanceof HTMLFormElement
         && form.method.toLowerCase() === 'get'
-        && ! form.dataset.noSkeleton
+        && ! ('noSkeleton' in form.dataset)
         && ! event.defaultPrevented) {
         showSkeleton(form.action)
     }

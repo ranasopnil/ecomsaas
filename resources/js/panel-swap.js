@@ -10,7 +10,7 @@
  * javascript gets. This takes the two parts it needs out of that answer, so
  * there is one description of the page rather than two that can drift apart.
  */
-import { showRegionSkeleton } from './skeleton'
+import { showRegionSkeleton } from './skeleton.js'
 
 /** The parts of the page that change when a category is picked. */
 const REGIONS = '[data-swap]'
@@ -69,7 +69,22 @@ export async function swapTo(url, { push = true } = {}) {
     current?.abort()
     current = new AbortController()
 
-    showRegionSkeleton(here.main, 'results')
+    // Where the shelf was before anything changed, so we only move the view
+    // if it has scrolled off the top.
+    const wasAbove = here.main ? here.main.getBoundingClientRect().top < 0 : false
+
+    // Most answers arrive too quickly to be worth showing anything for, and a
+    // grey flash on every category reads as a reload. So: fade what is there,
+    // and only put the outline up if the wait becomes a wait.
+    here.main?.classList.add('is-swapping')
+    here.main?.setAttribute('aria-busy', 'true')
+
+    const outline = setTimeout(() => {
+        if (here.main) {
+            here.main.classList.remove('is-swapping')
+            showRegionSkeleton(here.main, 'results')
+        }
+    }, 400)
 
     try {
         const response = await fetch(url, {
@@ -89,10 +104,13 @@ export async function swapTo(url, { push = true } = {}) {
             throw new Error('nothing to swap')
         }
 
+        clearTimeout(outline)
+
         Object.entries(theirs).forEach(([name, element]) => {
             if (here[name]) {
                 here[name].replaceChildren(...element.childNodes)
                 here[name].removeAttribute('aria-busy')
+                here[name].classList.remove('is-swapping')
             }
         })
 
@@ -103,10 +121,14 @@ export async function swapTo(url, { push = true } = {}) {
             window.history.pushState({ swap: true }, '', url)
         }
 
-        // The shelf, not the top of the page: the categories stay where the
-        // eye left them.
-        here.main?.scrollIntoView({ block: 'start', behavior: 'instant' })
+        // Only bring the shelf back into view if it had scrolled off the top.
+        // Somebody already looking at it should not have the page move.
+        if (wasAbove) {
+            here.main?.scrollIntoView({ block: 'start', behavior: 'instant' })
+        }
     } catch (error) {
+        clearTimeout(outline)
+
         if (error.name === 'AbortError') {
             return
         }
@@ -139,7 +161,7 @@ document.addEventListener('submit', (event) => {
 
     if (! (form instanceof HTMLFormElement)
         || event.defaultPrevented
-        || ! form.dataset.swapForm
+        || ! ('swapForm' in form.dataset)
         || ! document.querySelector('[data-swap="main"]')) {
         return
     }

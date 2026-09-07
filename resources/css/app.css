@@ -36,6 +36,16 @@
 }
 [x-cloak] { display: none !important; }
 
+/*
+ * A shelf being replaced. Only a fade, and only for the moment before the new
+ * one arrives: blanking it out for a fast answer reads as a page reload.
+ */
+[data-swap].is-swapping {
+    opacity: .55;
+    pointer-events: none;
+    transition: opacity .15s ease-out;
+}
+
 /* ---------------------------------------------------------------------------
    The shop admin's look.
    One place for the colours, cards and movement so every screen matches.
