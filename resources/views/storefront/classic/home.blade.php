@@ -26,7 +26,7 @@
         @if ($categories->isNotEmpty())
             <nav class="mb-8 flex flex-wrap gap-2">
                 @foreach ($categories as $category)
-                    <a href="{{ route('storefront.home') }}?category={{ $category->slug }}"
+                    <a href="{{ route('storefront.browse') }}?category={{ $category->slug }}"
                        class="flex items-center gap-2 rounded-full bg-slate-100 py-1.5 pe-3 text-sm text-slate-700 hover:bg-slate-200 {{ $category->hasImage() ? 'ps-1.5' : 'ps-3' }}">
                         @if ($category->hasImage())
                             <img src="{{ $category->thumbnailUrl() }}" alt="" loading="lazy"

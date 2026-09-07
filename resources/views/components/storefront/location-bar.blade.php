@@ -11,6 +11,9 @@
         <span class="truncate">
             {{ $location->isSet() ? ($location->label() ?: 'Where you are') : 'Set where you are' }}
         </span>
+        <svg class="h-3.5 w-3.5 shrink-0 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="m6 9 6 6 6-6"/>
+        </svg>
     </button>
 
     <!-- The panel -->

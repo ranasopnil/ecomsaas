@@ -71,13 +71,22 @@
                                            x-bind:class="locating ? 'animate-pulse' : ''" />
                     </button>
 
-                    <button type="button" x-on:click="discover()"
-                            x-bind:disabled="! canDiscover"
-                            class="shrink-0 rounded-lg px-5 py-2.5 text-sm font-medium transition
-                                   disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                            x-bind:style="canDiscover ? 'background: {{ $accent }}; color: #fff' : ''">
-                        Discover
-                    </button>
+                    @if ($location->isSet())
+                        {{-- They are known: the button opens the shop unless they are typing somewhere new --}}
+                        <button type="button"
+                                x-on:click="canDiscover ? discover() : (window.location.href = '{{ route('storefront.browse') }}')"
+                                class="shrink-0 rounded-lg px-5 py-2.5 text-sm font-medium text-white transition"
+                                style="background: {{ $accent }}"
+                                x-text="canDiscover ? 'Discover' : 'Browse'">Browse</button>
+                    @else
+                        <button type="button" x-on:click="discover()"
+                                x-bind:disabled="! canDiscover"
+                                class="shrink-0 rounded-lg px-5 py-2.5 text-sm font-medium transition
+                                       disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                                x-bind:style="canDiscover ? 'background: {{ $accent }}; color: #fff' : ''">
+                            Discover
+                        </button>
+                    @endif
                 </div>
 
                 {{-- Matches for what they typed --}}

@@ -38,5 +38,33 @@
             <circle cx="11" cy="11" r="6"/>
             <path d="m20 20-3.5-3.5"/>
             @break
+
+        @case('basket')
+            <path d="M3 9h18l-1.5 10.5a1 1 0 0 1-1 .5h-13a1 1 0 0 1-1-.5L3 9Z"/>
+            <path d="M8 9l2.5-5M16 9l-2.5-5M9 13v4M12 13v4M15 13v4"/>
+            @break
+
+        @case('check')
+            <path d="m5 12.5 4.5 4.5L19 7.5"/>
+            @break
+
+        @case('chevron')
+            <path d="m6 9 6 6 6-6"/>
+            @break
+
+        @case('tag')
+            <path d="M3.5 12.5v-8a1 1 0 0 1 1-1h8l8 8-8 8-9-7Z"/>
+            <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+            @break
+
+        @case('bike')
+            <circle cx="6" cy="16" r="3.5"/>
+            <circle cx="18" cy="16" r="3.5"/>
+            <path d="M6 16l4-8h4l4 8M10 8h4l-2 8"/>
+            @break
+
+        @case('arrow')
+            <path d="M5 12h14M13 6l6 6-6 6"/>
+            @break
     @endswitch
 </svg>

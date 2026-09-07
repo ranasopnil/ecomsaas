@@ -14,20 +14,7 @@
 </head>
 <body class="min-h-full bg-slate-50 text-slate-900 antialiased">
 
-    {{-- Top bar --}}
-    <header class="sticky top-0 z-40 border-b border-slate-100 bg-white/90 backdrop-blur">
-        <div class="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3">
-            <a href="{{ route('storefront.home') }}" class="flex items-center gap-2">
-                <span class="flex h-9 w-9 items-center justify-center rounded-xl text-lg font-bold text-white"
-                      style="background: {{ $accent }}">{{ mb_substr($store->name, 0, 1) }}</span>
-                <span class="hidden text-base font-bold sm:block">{{ $store->name }}</span>
-            </a>
-
-            <div class="ms-auto flex items-center gap-2">
-                <x-storefront.location-bar :location="$location" :search-url="$searchUrl" :accent="$accent" />
-            </div>
-        </div>
-    </header>
+    <x-storefront.shop-header :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent" />
 
     {{-- Where the customer is, and what reaches them --}}
     <x-storefront.discover-hero :store="$store" :location="$location"
@@ -36,7 +23,7 @@
     <main class="mx-auto max-w-6xl px-4 py-8 sm:py-10">
 
         {{-- Looking for one thing in particular --}}
-        <form action="{{ route('storefront.home') }}" method="GET" class="mb-8">
+        <form action="{{ route('storefront.browse') }}" method="GET" class="mb-8">
             <div class="relative">
                 <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-slate-400">
                     <x-storefront.icon name="search" class="h-5 w-5" />
@@ -56,7 +43,7 @@
                 <h2 class="mb-4 text-lg font-bold">Shop by category</h2>
                 <div class="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2">
                     @foreach ($categories as $category)
-                        <a href="{{ route('storefront.home') }}?category={{ $category->slug }}"
+                        <a href="{{ route('storefront.browse') }}?category={{ $category->slug }}"
                            class="group flex w-24 shrink-0 flex-col items-center gap-2 text-center">
                             <span class="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full text-2xl transition group-hover:scale-105"
                                   style="background: {{ $accent }}1a; color: {{ $accent }}">

@@ -5,12 +5,17 @@
     $image = $product->primaryImage();
     $symbol = config('currencies.'.($variant?->currency ?? 'BDT').'.symbol', '');
     $discounted = $variant?->isDiscounted() ?? false;
+    $sellable = $variant !== null && \App\Services\Storefront\Basket::canSell($variant);
+    $url = route('storefront.product', $product->slug);
 @endphp
 
-<a href="{{ route('storefront.product', $product->slug) }}"
-   class="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 transition hover:shadow-md">
+{{--
+    One thing for sale. The photo and the name open it; the + puts one straight
+    in the basket. A product that comes in sizes sends the shopper to choose.
+--}}
+<div class="group relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 transition hover:shadow-md">
 
-    <div class="relative aspect-square overflow-hidden bg-slate-50">
+    <a href="{{ $url }}" class="relative block aspect-square overflow-hidden bg-slate-50">
         @if ($image)
             <img src="{{ $image->thumbnailUrl() }}" alt="{{ $image->alt_text ?: $product->name }}"
                  loading="lazy"
@@ -25,14 +30,20 @@
         @endif
 
         @if ($discounted)
-            @php($off = (int) round(100 - ($variant->price_minor / $variant->compare_at_price_minor * 100)))
+            @php($off = (int) floor(100 - ($variant->price_minor / $variant->compare_at_price_minor * 100)))
             <span class="absolute start-2 top-2 rounded-full px-2 py-0.5 text-xs font-semibold text-white"
                   style="background: {{ $accent }}">{{ $off }}% off</span>
         @endif
-    </div>
+
+        @if (! $sellable)
+            <span class="absolute end-2 top-2 rounded-full bg-slate-900/70 px-2 py-0.5 text-xs font-medium text-white">Sold out</span>
+        @endif
+    </a>
 
     <div class="flex flex-1 flex-col gap-1 p-3">
-        <h3 class="line-clamp-2 text-sm font-medium text-slate-900">{{ $product->name }}</h3>
+        <h3 class="line-clamp-2 text-sm font-medium text-slate-900">
+            <a href="{{ $url }}" class="hover:underline">{{ $product->name }}</a>
+        </h3>
 
         @if ($product->short_description)
             <p class="line-clamp-1 text-xs text-slate-400">{{ $product->short_description }}</p>
@@ -52,8 +63,21 @@
                 @endif
             </div>
 
-            <span class="flex h-8 w-8 items-center justify-center rounded-full text-lg font-semibold text-white transition group-hover:scale-110"
-                  style="background: {{ $accent }}" aria-hidden="true">+</span>
+            @if ($variant === null || ! $sellable)
+                <span class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-lg text-slate-300" aria-hidden="true">+</span>
+            @elseif ($product->has_variants)
+                <a href="{{ $url }}" title="Choose a size" aria-label="Choose a size for {{ $product->name }}"
+                   class="flex h-8 w-8 items-center justify-center rounded-full text-lg font-semibold text-white transition hover:scale-110"
+                   style="background: {{ $accent }}">+</a>
+            @else
+                <form method="POST" action="{{ route('storefront.basket.add') }}">
+                    @csrf
+                    <input type="hidden" name="variant_id" value="{{ $variant->id }}">
+                    <button type="submit" title="Add to basket" aria-label="Add {{ $product->name }} to basket"
+                            class="flex h-8 w-8 items-center justify-center rounded-full text-lg font-semibold text-white transition hover:scale-110"
+                            style="background: {{ $accent }}">+</button>
+                </form>
+            @endif
         </div>
     </div>
-</a>
+</div>

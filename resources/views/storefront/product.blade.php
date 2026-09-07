@@ -5,6 +5,8 @@
     $tracked = $first?->inventory?->track_inventory ?? true;
     $available = (int) ($first?->inventory?->available ?? 0);
     $rtl = in_array(app()->getLocale(), ['ar', 'he', 'fa', 'ur']);
+    $accent = $template['accent'];
+    $sellable = collect($variants)->filter(fn ($v) => \App\Services\Storefront\Basket::canSell($v));
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ $rtl ? 'rtl' : 'ltr' }}" class="h-full">
@@ -38,11 +40,7 @@
         </div>
     @endif
 
-    <header class="border-b border-slate-200">
-        <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-            <a href="/" class="text-lg font-semibold">{{ $store->name }}</a>
-        </div>
-    </header>
+    <x-storefront.shop-header :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent" />
 
     <main class="mx-auto max-w-5xl px-4 py-10">
         <div class="grid gap-10 md:grid-cols-2">
@@ -133,11 +131,37 @@
                     </p>
                 @endif
 
-                <button type="button" disabled
-                        class="mt-6 w-full cursor-not-allowed rounded-lg bg-slate-300 px-5 py-3 text-sm font-medium text-slate-600">
-                    Add to basket
-                </button>
-                <p class="mt-2 text-xs text-slate-500">The basket and checkout are being built next.</p>
+                @if ($isPreview || $sellable->isEmpty())
+                    <button type="button" disabled
+                            class="mt-6 w-full cursor-not-allowed rounded-lg bg-slate-300 px-5 py-3 text-sm font-medium text-slate-600">
+                        {{ $isPreview ? 'Add to basket' : 'Sold out' }}
+                    </button>
+                @else
+                    <form method="POST" action="{{ route('storefront.basket.add') }}" class="mt-6 space-y-3">
+                        @csrf
+                        @if ($product->has_variants && $variants->count() > 1)
+                            <label class="block text-sm font-medium">
+                                Which one
+                                <select name="variant_id" class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm">
+                                    @foreach ($variants as $variant)
+                                        <option value="{{ $variant->id }}" @disabled(! $sellable->contains('id', $variant->id))>
+                                            {{ $variant->name ?: 'Standard' }} — {{ $variant->currency }} {{ $variant->price->toDisplay() }}{{ $sellable->contains('id', $variant->id) ? '' : ' (sold out)' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </label>
+                        @else
+                            <input type="hidden" name="variant_id" value="{{ $sellable->first()->id }}">
+                        @endif
+
+                        <div class="flex gap-3">
+                            <input type="number" name="quantity" value="1" min="1" max="{{ \App\Services\Storefront\Basket::MAX_PER_LINE }}"
+                                   aria-label="How many" class="w-20 rounded-lg border border-slate-300 px-3 py-3 text-center text-sm">
+                            <button type="submit" class="flex-1 rounded-lg px-5 py-3 text-sm font-medium text-white"
+                                    style="background: {{ $accent }}">Add to basket</button>
+                        </div>
+                    </form>
+                @endif
 
                 @if ($product->description)
                     <div class="shop-description mt-8 text-sm">

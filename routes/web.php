@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\PlaceSearchController;
 use App\Http\Controllers\Internal\DomainCheckController;
 use App\Http\Controllers\Payments\BkashCallbackController;
+use App\Http\Controllers\Storefront\BasketController;
+use App\Http\Controllers\Storefront\BrowseController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\LocationController;
 use App\Http\Controllers\Storefront\ProductController;
@@ -45,7 +47,18 @@ Route::get('/', function (HomeController $home) {
  * The shop itself.
  */
 Route::middleware([EnsureStoreDomain::class, CountVisit::class])->group(function () {
+    Route::get('/browse', BrowseController::class)->name('storefront.browse');
     Route::get('/products/{slug}', [ProductController::class, 'show'])->name('storefront.product');
+    Route::get('/basket', [BasketController::class, 'show'])->name('storefront.basket');
+});
+
+/*
+ * Picking things up and putting them back. Not counted as visits.
+ */
+Route::middleware(EnsureStoreDomain::class)->group(function () {
+    Route::post('/basket/add', [BasketController::class, 'add'])->name('storefront.basket.add');
+    Route::post('/basket/update', [BasketController::class, 'update'])->name('storefront.basket.update');
+    Route::post('/basket/remove', [BasketController::class, 'remove'])->name('storefront.basket.remove');
 });
 
 /*

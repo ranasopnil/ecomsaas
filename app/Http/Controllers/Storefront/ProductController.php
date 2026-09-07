@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Storefront;
 use App\Facades\Tenancy;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Services\Storefront\CustomerLocation;
+use App\Services\Storefront\TemplateCatalogue;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -16,7 +18,7 @@ use Illuminate\View\View;
  */
 class ProductController extends Controller
 {
-    public function show(string $slug): View
+    public function show(string $slug, CustomerLocation $location, TemplateCatalogue $templates): View
     {
         $product = Product::with(['variants.inventory', 'variants.optionValues', 'options.values', 'images', 'brand'])
             ->where('slug', $slug)
@@ -26,8 +28,13 @@ class ProductController extends Controller
 
         abort_if($isPreview && ! Auth::guard('web')->check(), 404);
 
+        $shop = Tenancy::current();
+
         return view('storefront.product', [
-            'store' => Tenancy::current(),
+            'store' => $shop,
+            'template' => config('templates.'.$templates->activeFor($shop)),
+            'location' => $location,
+            'searchUrl' => route('storefront.places'),
             'product' => $product,
             'isPreview' => $isPreview,
         ]);
