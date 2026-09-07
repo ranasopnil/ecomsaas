@@ -6,6 +6,12 @@
     'figures' => [],
 ])
 
+@php
+    // Enough of the address to recognise where you are, not the whole of it.
+    $whereabouts = $location->label() ?: '';
+    $shortWhereabouts = implode(', ', array_slice(array_map('trim', explode(',', $whereabouts)), 0, 3));
+@endphp
+
 {{--
     The front of the shop, before anything is sold.
 
@@ -13,7 +19,7 @@
     visitor never types anything: the address simply appears with a pin beside
     it. Anyone who would rather shop for somewhere else types it here instead.
 --}}
-<section class="bg-slate-50 pb-10 pt-6">
+<section class="bg-slate-50 pb-8 pt-4">
     <div class="mx-auto max-w-6xl px-4">
 
         <div x-data="shopperLocation(@js([
@@ -21,21 +27,21 @@
                 'auto' => ! $location->isSet(),
                 'known' => $location->isSet(),
             ]))"
-             class="relative overflow-hidden rounded-3xl px-5 py-12 text-center sm:px-10 sm:py-16"
+             class="relative overflow-hidden rounded-3xl px-5 py-8 text-center sm:px-10 sm:py-10"
              style="background:
                  radial-gradient(120% 120% at 50% 0%, {{ $accent }}1f 0%, {{ $accent }}0d 42%, rgba(255,255,255,0) 72%),
                  linear-gradient(180deg, #f2faf5 0%, #f7fbf8 100%)">
 
-            <h1 class="mx-auto max-w-3xl text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+            <h1 class="mx-auto max-w-3xl text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
                 Your Everyday <span style="color: {{ $accent }}">Needs,</span> Delivered
                 <span style="color: {{ $accent }}">Fast</span>
             </h1>
 
-            <p class="mx-auto mt-4 max-w-2xl text-sm text-slate-500 sm:text-base">
+            <p class="mx-auto mt-2 max-w-2xl text-sm text-slate-500">
                 Enter your address to enjoy fast delivery of groceries and daily needs from {{ $store->name }}.
             </p>
 
-            <p class="mt-6 text-base font-medium text-slate-700 sm:text-lg">
+            <p class="mt-4 text-sm font-medium text-slate-700 sm:text-base">
                 @if ($location->isSet())
                     Showing what reaches you
                 @else
@@ -45,21 +51,21 @@
 
             {{-- Where the customer is, once we know --}}
             @if ($location->isSet())
-                <p class="mx-auto mt-3 flex max-w-xl items-center justify-center gap-2 text-sm font-medium"
-                   style="color: {{ $accent }}">
+                <p class="mx-auto mt-1.5 flex max-w-md items-center justify-center gap-1.5 text-[13px] font-medium"
+                   style="color: {{ $accent }}" title="{{ $whereabouts }}">
                     <x-storefront.icon name="pin" class="h-4 w-4 shrink-0" />
-                    <span class="truncate">{{ $location->label() ?: 'Where you are' }}</span>
+                    <span class="truncate">{{ $shortWhereabouts ?: 'Where you are' }}</span>
                 </p>
             @endif
 
             {{-- The location box --}}
-            <div class="relative mx-auto mt-5 max-w-2xl">
-                <div class="flex items-center gap-1 rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-slate-100">
+            <div class="relative mx-auto mt-4 max-w-2xl">
+                <div class="flex items-center gap-1 rounded-xl bg-white p-1 shadow-sm ring-1 ring-slate-100">
                     <input type="search" x-ref="box" x-model="query" x-on:input="search()"
                            x-on:keydown.enter.prevent="discover()"
                            placeholder="{{ $location->isSet() ? 'Search another location…' : 'Search location here…' }}"
                            aria-label="Search location"
-                           class="min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0">
+                           class="min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0">
 
                     <span x-show="searching" x-cloak class="shrink-0 px-1 text-xs text-slate-400">Looking…</span>
 
@@ -116,7 +122,7 @@
             </p>
 
             @if ($location->isSet())
-                <form method="POST" action="{{ route('storefront.location.forget') }}" class="mt-4">
+                <form method="POST" action="{{ route('storefront.location.forget') }}" class="mt-3">
                     @csrf
                     <button type="submit" class="text-xs font-medium text-slate-500 underline-offset-4 hover:text-slate-900 hover:underline">
                         Show me everything instead
@@ -134,15 +140,15 @@
 
         {{-- The shop's own real figures --}}
         @if (! empty($figures))
-            <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 {{ [1 => 'lg:grid-cols-1', 2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4'][count($figures)] ?? 'lg:grid-cols-4' }}">
+            <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 {{ [1 => 'lg:grid-cols-1', 2 => 'lg:grid-cols-2', 3 => 'lg:grid-cols-3', 4 => 'lg:grid-cols-4'][count($figures)] ?? 'lg:grid-cols-4' }}">
                 @foreach ($figures as $figure)
-                    <div class="flex items-center gap-4 rounded-xl bg-white px-5 py-4 shadow-sm ring-1 ring-slate-100">
-                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg"
+                    <div class="flex items-center gap-3 rounded-xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-100">
+                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
                               style="background: {{ $accent }}1a; color: {{ $accent }}">
-                            <x-storefront.icon :name="$figure['icon']" class="h-5 w-5" />
+                            <x-storefront.icon :name="$figure['icon']" class="h-4 w-4" />
                         </span>
                         <span class="min-w-0">
-                            <span class="block truncate text-xl font-bold text-slate-900">{{ $figure['value'] }}</span>
+                            <span class="block truncate text-lg font-bold text-slate-900">{{ $figure['value'] }}</span>
                             <span class="block truncate text-[11px] font-medium uppercase tracking-wider text-slate-400">
                                 {{ $figure['caption'] }}
                             </span>
