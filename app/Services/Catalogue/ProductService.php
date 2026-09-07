@@ -4,11 +4,11 @@ namespace App\Services\Catalogue;
 
 use App\Facades\Entitlements;
 use App\Facades\Tenancy;
+use App\Models\DeliveryArea;
 use App\Models\InventoryLevel;
 use App\Models\Product;
 use App\Models\ProductOption;
 use App\Models\ProductVariant;
-use App\Support\GeoPoint;
 use App\Support\HtmlSanitiser;
 use App\Support\Money;
 use Illuminate\Support\Facades\DB;
@@ -54,6 +54,7 @@ class ProductService
             ]);
 
             $this->syncCategories($product, $data['category_ids'] ?? []);
+            $this->syncDeliveryAreas($product, $data['delivery_area_ids'] ?? []);
 
             $variant = $this->createVariant($product, array_merge($this->pricing($data), [
                 'cost_price' => $data['cost_price'] ?? null,
@@ -116,6 +117,10 @@ class ProductService
 
             if (array_key_exists('availability', $data)) {
                 $product->fill($this->deliveryArea($data));
+            }
+
+            if (array_key_exists('delivery_area_ids', $data)) {
+                $this->syncDeliveryAreas($product, $data['delivery_area_ids']);
             }
 
             if (array_key_exists('slug', $data) && $data['slug'] !== $product->slug) {
@@ -358,9 +363,9 @@ class ProductService
     /**
      * Where this product is delivered.
      *
-     * Only a product with an area of its own keeps a point and a radius.
-     * Anything else drops them, so a leftover pin from an earlier choice can
-     * never quietly limit who sees the product.
+     * Only a product tied to particular areas keeps that setting; anything
+     * else is "wherever the shop delivers" or "anywhere", and its old circle
+     * is cleared so a leftover pin can never quietly limit who sees it.
      *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
@@ -370,40 +375,36 @@ class ProductService
         $availability = $data['availability'] ?? Product::AVAILABLE_SHOP;
 
         if (! in_array($availability, [
-            Product::AVAILABLE_SHOP, Product::AVAILABLE_ANYWHERE, Product::AVAILABLE_AREA,
+            Product::AVAILABLE_SHOP, Product::AVAILABLE_ANYWHERE, Product::AVAILABLE_AREAS,
         ], true)) {
             $availability = Product::AVAILABLE_SHOP;
         }
 
-        if ($availability !== Product::AVAILABLE_AREA) {
-            return [
-                'availability' => $availability,
-                'latitude' => null,
-                'longitude' => null,
-                'radius_km' => null,
-            ];
-        }
-
-        $point = GeoPoint::tryFrom($data['latitude'] ?? null, $data['longitude'] ?? null);
-        $radius = (float) ($data['radius_km'] ?? 0);
-
-        // Claiming an area without drawing one would hide the product from
-        // everybody. Fall back to following the shop instead.
-        if ($point === null || $radius <= 0) {
-            return [
-                'availability' => Product::AVAILABLE_SHOP,
-                'latitude' => null,
-                'longitude' => null,
-                'radius_km' => null,
-            ];
-        }
-
         return [
-            'availability' => Product::AVAILABLE_AREA,
-            'latitude' => $point->latitude,
-            'longitude' => $point->longitude,
-            'radius_km' => $radius,
+            'availability' => $availability,
+            'latitude' => null,
+            'longitude' => null,
+            'radius_km' => null,
         ];
+    }
+
+    /**
+     * Tie a product to the shop's named areas, or to none of them.
+     *
+     * @param  array<int, int|string>  $areaIds
+     */
+    public function syncDeliveryAreas(Product $product, array $areaIds): void
+    {
+        $tenantId = Tenancy::id();
+
+        // Only the shop's own areas. An id from anywhere else is dropped
+        // rather than trusted.
+        $mine = DeliveryArea::whereIn('id', collect($areaIds)->filter()->map(fn ($id) => (int) $id))
+            ->pluck('id');
+
+        $product->deliveryAreas()->sync(
+            $mine->mapWithKeys(fn (int $id) => [$id => ['tenant_id' => $tenantId]])->all()
+        );
     }
 
     protected function cleanTags(array|string|null $tags): ?array

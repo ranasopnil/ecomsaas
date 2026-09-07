@@ -129,10 +129,10 @@
                 <div>
                     <p class="font-semibold text-slate-900">{{ $store->name }}</p>
                     <p class="mt-1">
-                        @if ($store->delivers_everywhere)
+                        @if ($areas->isEmpty())
                             Delivering everywhere.
                         @else
-                            Delivering within {{ rtrim(rtrim(number_format((float) $store->delivery_radius_km, 1), '0'), '.') }} km.
+                            Delivering to {{ $areas->pluck('name')->join(', ', ' and ') }}.
                         @endif
                     </p>
                 </div>

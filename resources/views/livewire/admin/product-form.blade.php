@@ -331,16 +331,18 @@
                     \App\Models\Product::AVAILABLE_SHOP => [
                         'Wherever my shop delivers',
                         $shopDeliversEverywhere
-                            ? 'Your shop delivers everywhere, so this reaches every customer.'
-                            : 'Follows the one area you set on the Delivery area screen. Change it there and this follows.',
+                            ? 'You have not named any delivery areas, so this reaches every customer.'
+                            : 'All of your areas: '.$deliveryAreas->pluck('name')->join(', ', ' and ').'.',
                     ],
                     \App\Models\Product::AVAILABLE_ANYWHERE => [
                         'Anywhere',
-                        'Every customer sees it, even outside your shop area. Good for anything you post.',
+                        'Every customer sees it, even outside your areas. Good for anything you post.',
                     ],
-                    \App\Models\Product::AVAILABLE_AREA => [
-                        'Only around a place I choose',
-                        'Give this one product its own area. Good for anything you cannot send far.',
+                    \App\Models\Product::AVAILABLE_AREAS => [
+                        'Only certain areas',
+                        $shopDeliversEverywhere
+                            ? 'Name your areas on the Delivery areas screen first, then pick them here.'
+                            : 'Pick the areas this one goes to. Good for anything you cannot send far.',
                     ],
                 ])
 
@@ -356,27 +358,43 @@
                 @endforeach
             </div>
 
-            @if ($availability === \App\Models\Product::AVAILABLE_AREA)
-                <div wire:key="product-area-map" class="mt-5 border-t border-slate-100 pt-5">
-                    <div class="mb-3 flex items-center justify-between gap-3">
-                        <h3 class="text-sm font-semibold">This product's own area</h3>
-                        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{{ $mapName }}</span>
-                    </div>
+            @if ($availability === \App\Models\Product::AVAILABLE_AREAS)
+                <div class="mt-5 border-t border-slate-100 pt-5">
+                    @if ($deliveryAreas->isEmpty())
+                        <div class="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                            You have not named any delivery areas yet.
+                            <a href="{{ route('admin.delivery.edit') }}" wire:navigate class="underline">Add one first</a>,
+                            then come back and pick it here. Until then this product goes wherever your shop goes.
+                        </div>
+                    @else
+                        <h3 class="mb-3 text-sm font-semibold">Which areas does this one go to?</h3>
 
-                    <x-area-picker
-                        :provider="$mapProvider"
-                        :latitude="$latitude"
-                        :longitude="$longitude"
-                        :radius="$radius_km"
-                        :centre="$mapCentre"
-                        :zoom="$mapZoom"
-                        :google-key="$googleKey"
-                        :paths="['latitude' => 'latitude', 'longitude' => 'longitude', 'radius' => 'radius_km']"
-                    />
+                        <div class="grid gap-2 sm:grid-cols-2">
+                            @foreach ($deliveryAreas as $area)
+                                <label wire:key="pa-{{ $area->id }}"
+                                       class="flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition
+                                              {{ in_array($area->id, $delivery_area_ids) ? 'border-emerald-400 bg-emerald-50/50' : 'border-slate-200 hover:border-slate-300' }}">
+                                    <input type="checkbox" wire:model.live="delivery_area_ids" value="{{ $area->id }}"
+                                           class="mt-1 rounded border-slate-300">
+                                    <span>
+                                        <span class="block text-sm font-medium">{{ $area->name }}</span>
+                                        <span class="block text-xs text-slate-500">Within {{ $area->distance() }} km</span>
+                                    </span>
+                                </label>
+                            @endforeach
+                        </div>
 
-                    <p class="mt-2 text-xs text-slate-500">
-                        Leave the pin unset and this product simply follows your shop area instead.
-                    </p>
+                        @if ($delivery_area_ids === [])
+                            <p class="mt-3 text-xs text-slate-500">
+                                Nothing picked, so this product goes wherever your shop goes.
+                            </p>
+                        @endif
+
+                        <p class="mt-3 text-xs text-slate-500">
+                            Areas are named on the
+                            <a href="{{ route('admin.delivery.edit') }}" wire:navigate class="underline">Delivery areas</a> screen.
+                        </p>
+                    @endif
                 </div>
             @endif
         </div>

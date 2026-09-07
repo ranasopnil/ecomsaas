@@ -8,6 +8,7 @@ use App\Livewire\Admin\TemplateIndex;
 use App\Livewire\Super\MapAccess;
 use App\Livewire\Super\TemplateMatrix;
 use App\Models\Admin;
+use App\Models\DeliveryArea;
 use App\Models\Domain;
 use App\Models\Package;
 use App\Models\PackageTemplate;
@@ -252,13 +253,10 @@ class ShopTemplateTest extends TestCase
         $this->grantGrocery();
         $this->catalogue()->choose($this->store, 'grocery');
 
-        $this->store->forceFill([
-            'delivers_everywhere' => false,
-            'delivery_latitude' => 23.8103,
-            'delivery_longitude' => 90.4125,
-            'delivery_radius_km' => 10,
-        ])->save();
-        Tenancy::set($this->store->fresh());
+        DeliveryArea::create([
+            'tenant_id' => $this->store->id,
+            'name' => 'Dhaka city', 'latitude' => 23.8103, 'longitude' => 90.4125, 'radius_km' => 10,
+        ]);
 
         $this->sellSomething('Fresh milk');
         $this->sellSomething('Dried lentils', ['availability' => Product::AVAILABLE_ANYWHERE]);
@@ -279,13 +277,10 @@ class ShopTemplateTest extends TestCase
 
     public function test_a_customer_who_has_not_said_where_they_are_sees_the_whole_shop(): void
     {
-        $this->store->forceFill([
-            'delivers_everywhere' => false,
-            'delivery_latitude' => 23.8103,
-            'delivery_longitude' => 90.4125,
-            'delivery_radius_km' => 1,
-        ])->save();
-        Tenancy::set($this->store->fresh());
+        DeliveryArea::create([
+            'tenant_id' => $this->store->id,
+            'name' => 'Dhaka city', 'latitude' => 23.8103, 'longitude' => 90.4125, 'radius_km' => 1,
+        ]);
 
         $this->sellSomething('Fresh milk');
 

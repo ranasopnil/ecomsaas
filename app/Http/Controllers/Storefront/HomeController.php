@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Services\Storefront\CustomerLocation;
+use App\Services\Storefront\DeliveryReach;
 use App\Services\Storefront\MapProviders;
 use App\Services\Storefront\TemplateCatalogue;
 use Illuminate\Contracts\View\View;
@@ -25,6 +26,7 @@ class HomeController extends Controller
         TemplateCatalogue $templates,
         CustomerLocation $location,
         MapProviders $maps,
+        DeliveryReach $reach,
     ): View {
         $shop = Tenancy::current();
         $template = $templates->activeFor($shop);
@@ -32,7 +34,7 @@ class HomeController extends Controller
 
         $products = Product::query()
             ->onSale()
-            ->deliverableTo($shop, $at)
+            ->deliverableTo($at)
             ->with(['variants' => fn ($q) => $q->orderBy('id'), 'images'])
             ->latest('published_at')
             ->take(24)
@@ -52,6 +54,7 @@ class HomeController extends Controller
             'location' => $location,
             'searchUrl' => route('storefront.places'),
             'mapProvider' => $maps->forShop($shop),
+            'areas' => $reach->areas(),
             // How much of the shop the customer cannot see from where they are.
             'hidden' => $at === null
                 ? 0

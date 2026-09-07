@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
-use App\Services\Storefront\DeliveryAreas;
+use App\Services\Storefront\DeliveryReach;
 use App\Support\GeoPoint;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,17 +29,8 @@ class Product extends Model
     /** No limit at all, whatever the shop's own area says. */
     public const AVAILABLE_ANYWHERE = 'anywhere';
 
-    /** This product has its own point and radius. */
-    public const AVAILABLE_AREA = 'area';
-
-    /**
-     * Kilometres from a given point to this row's own point, over the curve of
-     * the earth. Bindings, in order: latitude, latitude, longitude.
-     */
-    private const DISTANCE_SQL = '(6371.0088 * 2 * asin(sqrt('
-        .'power(sin(radians(? - latitude) / 2), 2)'
-        .' + cos(radians(latitude)) * cos(radians(?)) * power(sin(radians(? - longitude) / 2), 2)'
-        .')))';
+    /** Only the delivery areas ticked on this product. */
+    public const AVAILABLE_AREAS = 'areas';
 
     protected $fillable = [
         'tenant_id', 'brand_id', 'name', 'slug', 'description', 'short_description',
@@ -65,6 +56,11 @@ class Product extends Model
     public function brand(): BelongsTo
     {
         return $this->belongsTo(Brand::class);
+    }
+
+    public function deliveryAreas(): BelongsToMany
+    {
+        return $this->belongsToMany(DeliveryArea::class)->withPivot('tenant_id')->orderBy('position');
     }
 
     public function categories(): BelongsToMany
@@ -133,45 +129,41 @@ class Product extends Model
     /**
      * Narrow a shop's catalogue to what actually reaches one customer.
      *
-     * The shop's own area is the same for every row, so it is settled once in
-     * PHP; only products with an area of their own need measuring in the
-     * database. A customer who has not said where they are filters nothing —
-     * we show the shop rather than an empty one.
+     * Which named areas cover the customer is worked out once in PHP — a shop
+     * has a handful of areas and may have thousands of products — and the
+     * query then only has to match those areas against each product.
+     *
+     * A customer who has not said where they are filters nothing: we show the
+     * shop rather than an empty one.
      */
-    public function scopeDeliverableTo(Builder $query, Tenant $shop, ?GeoPoint $customer): Builder
+    public function scopeDeliverableTo(Builder $query, ?GeoPoint $customer): Builder
     {
         if ($customer === null) {
             return $query;
         }
 
-        $shopArea = app(DeliveryAreas::class)->shopArea($shop);
-        $shopReaches = $shopArea === null || $customer->isWithin($shopArea['radius'], $shopArea['point']);
+        $reach = app(DeliveryReach::class);
+        $reaching = $reach->areasReaching($customer)->pluck('id');
+        $shopReaches = $reach->shopReaches($customer);
 
-        return $query->where(function (Builder $outer) use ($customer, $shopReaches) {
+        return $query->where(function (Builder $outer) use ($reaching, $shopReaches) {
             $outer->where('availability', self::AVAILABLE_ANYWHERE);
 
-            $outer->orWhere(fn (Builder $q) => $q
-                ->where('availability', self::AVAILABLE_AREA)
-                ->whereNotNull('latitude')
-                ->whereNotNull('longitude')
-                ->where('radius_km', '>', 0)
-                ->whereRaw(self::DISTANCE_SQL.' <= radius_km', [
-                    $customer->latitude, $customer->latitude, $customer->longitude,
-                ]));
-
-            if (! $shopReaches) {
-                return;
+            if ($reaching->isNotEmpty()) {
+                $outer->orWhere(fn (Builder $q) => $q
+                    ->where('availability', self::AVAILABLE_AREAS)
+                    ->whereHas('deliveryAreas', fn ($areas) => $areas->whereIn('delivery_areas.id', $reaching)));
             }
 
-            // Following the shop, or claiming an area and never drawing one.
-            $outer->orWhere('availability', self::AVAILABLE_SHOP);
-            $outer->orWhere(fn (Builder $q) => $q
-                ->where('availability', self::AVAILABLE_AREA)
-                ->where(fn (Builder $missing) => $missing
-                    ->whereNull('latitude')
-                    ->orWhereNull('longitude')
-                    ->orWhereNull('radius_km')
-                    ->orWhere('radius_km', '<=', 0)));
+            if ($shopReaches) {
+                $outer->orWhere('availability', self::AVAILABLE_SHOP);
+
+                // Tied to areas but none picked yet: follows the shop, so a
+                // half-filled-in product is not hidden from everybody.
+                $outer->orWhere(fn (Builder $q) => $q
+                    ->where('availability', self::AVAILABLE_AREAS)
+                    ->whereDoesntHave('deliveryAreas'));
+            }
         });
     }
 

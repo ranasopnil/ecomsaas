@@ -6,12 +6,12 @@ use App\Exceptions\LimitReached;
 use App\Facades\Tenancy;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\DeliveryArea;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Services\Catalogue\ImageService;
 use App\Services\Catalogue\InventoryService;
 use App\Services\Catalogue\ProductService;
-use App\Services\Storefront\MapProviders;
 use App\Support\Money;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -80,14 +80,11 @@ class ProductForm extends Component
     public array $variantRows = [];
 
     /** Photos waiting to be uploaded. */
-    /** 'shop', 'anywhere' or 'area' — see App\Models\Product. */
+    /** 'shop', 'anywhere' or 'areas' — see App\Models\Product. */
     public string $availability = Product::AVAILABLE_SHOP;
 
-    public ?float $latitude = null;
-
-    public ?float $longitude = null;
-
-    public float $radius_km = 5;
+    /** The shop's own delivery areas this product is tied to. */
+    public array $delivery_area_ids = [];
 
     public array $newPhotos = [];
 
@@ -119,9 +116,7 @@ class ProductForm extends Component
             : (new Money($product->shipping_charge_minor, $product->defaultVariant()?->currency ?? 'BDT', Tenancy::current()->currency_exponent))->toDecimal();
 
         $this->availability = $product->availability ?: Product::AVAILABLE_SHOP;
-        $this->latitude = $product->latitude;
-        $this->longitude = $product->longitude;
-        $this->radius_km = (float) ($product->radius_km ?: 5);
+        $this->delivery_area_ids = $product->deliveryAreas()->pluck('delivery_areas.id')->all();
 
         $variant = $product->defaultVariant();
 
@@ -206,11 +201,10 @@ class ProductForm extends Component
             'options.*.name' => ['nullable', 'string', 'max:60'],
             'options.*.values' => ['nullable', 'string', 'max:500'],
             'availability' => ['required', Rule::in([
-                Product::AVAILABLE_SHOP, Product::AVAILABLE_ANYWHERE, Product::AVAILABLE_AREA,
+                Product::AVAILABLE_SHOP, Product::AVAILABLE_ANYWHERE, Product::AVAILABLE_AREAS,
             ])],
-            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'radius_km' => ['nullable', 'numeric', 'min:0.1', 'max:1000'],
+            'delivery_area_ids' => ['array'],
+            'delivery_area_ids.*' => ['integer'],
         ];
     }
 
@@ -285,9 +279,10 @@ class ProductForm extends Component
             'allow_backorder' => $this->allow_backorder,
             'low_stock_threshold' => $this->low_stock_threshold === '' ? null : (int) $this->low_stock_threshold,
             'availability' => $this->availability,
-            'latitude' => $this->latitude,
-            'longitude' => $this->longitude,
-            'radius_km' => $this->radius_km,
+            // Areas only mean anything when the product is tied to them.
+            'delivery_area_ids' => $this->availability === Product::AVAILABLE_AREAS
+                ? $this->delivery_area_ids
+                : [],
         ];
 
         if ($this->slug !== '') {
@@ -523,17 +518,11 @@ class ProductForm extends Component
     {
         $images = $this->product?->images()->orderBy('position')->get() ?? collect();
 
-        $shop = Tenancy::current();
-        $maps = app(MapProviders::class);
+        $deliveryAreas = DeliveryArea::orderBy('position')->orderBy('id')->get();
 
         return view('livewire.admin.product-form', [
-            'shop' => $shop,
-            'mapProvider' => $maps->forShop($shop),
-            'mapName' => $maps->nameFor($shop),
-            'googleKey' => $maps->key($maps->forShop($shop)) ?? '',
-            'mapCentre' => config("countries.{$shop->country_code}.centre", [23.8103, 90.4125]),
-            'mapZoom' => config("countries.{$shop->country_code}.zoom", 11),
-            'shopDeliversEverywhere' => (bool) $shop->delivers_everywhere,
+            'deliveryAreas' => $deliveryAreas,
+            'shopDeliversEverywhere' => $deliveryAreas->isEmpty(),
             'brands' => Brand::orderBy('name')->get(),
             'categories' => Category::with('parent.parent.parent')->orderBy('name')->get(),
             'currency' => Tenancy::current()->currency,
