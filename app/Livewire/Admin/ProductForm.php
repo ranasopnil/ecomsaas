@@ -11,6 +11,7 @@ use App\Models\ProductImage;
 use App\Services\Catalogue\ImageService;
 use App\Services\Catalogue\InventoryService;
 use App\Services\Catalogue\ProductService;
+use App\Services\Storefront\MapProviders;
 use App\Support\Money;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -79,6 +80,15 @@ class ProductForm extends Component
     public array $variantRows = [];
 
     /** Photos waiting to be uploaded. */
+    /** 'shop', 'anywhere' or 'area' — see App\Models\Product. */
+    public string $availability = Product::AVAILABLE_SHOP;
+
+    public ?float $latitude = null;
+
+    public ?float $longitude = null;
+
+    public float $radius_km = 5;
+
     public array $newPhotos = [];
 
     /** Which combination a photo belongs to, or nothing for the whole product. */
@@ -107,6 +117,11 @@ class ProductForm extends Component
         $this->shipping_charge = $product->shipping_charge_minor === null
             ? ''
             : (new Money($product->shipping_charge_minor, $product->defaultVariant()?->currency ?? 'BDT', Tenancy::current()->currency_exponent))->toDecimal();
+
+        $this->availability = $product->availability ?: Product::AVAILABLE_SHOP;
+        $this->latitude = $product->latitude;
+        $this->longitude = $product->longitude;
+        $this->radius_km = (float) ($product->radius_km ?: 5);
 
         $variant = $product->defaultVariant();
 
@@ -190,6 +205,12 @@ class ProductForm extends Component
             'low_stock_threshold' => ['nullable', 'integer', 'min:0'],
             'options.*.name' => ['nullable', 'string', 'max:60'],
             'options.*.values' => ['nullable', 'string', 'max:500'],
+            'availability' => ['required', Rule::in([
+                Product::AVAILABLE_SHOP, Product::AVAILABLE_ANYWHERE, Product::AVAILABLE_AREA,
+            ])],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'radius_km' => ['nullable', 'numeric', 'min:0.1', 'max:1000'],
         ];
     }
 
@@ -263,6 +284,10 @@ class ProductForm extends Component
             'track_inventory' => $this->track_inventory,
             'allow_backorder' => $this->allow_backorder,
             'low_stock_threshold' => $this->low_stock_threshold === '' ? null : (int) $this->low_stock_threshold,
+            'availability' => $this->availability,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
+            'radius_km' => $this->radius_km,
         ];
 
         if ($this->slug !== '') {
@@ -498,7 +523,17 @@ class ProductForm extends Component
     {
         $images = $this->product?->images()->orderBy('position')->get() ?? collect();
 
+        $shop = Tenancy::current();
+        $maps = app(MapProviders::class);
+
         return view('livewire.admin.product-form', [
+            'shop' => $shop,
+            'mapProvider' => $maps->forShop($shop),
+            'mapName' => $maps->nameFor($shop),
+            'googleKey' => $maps->key($maps->forShop($shop)) ?? '',
+            'mapCentre' => config("countries.{$shop->country_code}.centre", [23.8103, 90.4125]),
+            'mapZoom' => config("countries.{$shop->country_code}.zoom", 11),
+            'shopDeliversEverywhere' => (bool) $shop->delivers_everywhere,
             'brands' => Brand::orderBy('name')->get(),
             'categories' => Category::with('parent.parent.parent')->orderBy('name')->get(),
             'currency' => Tenancy::current()->currency,

@@ -8,6 +8,7 @@ use App\Models\InventoryLevel;
 use App\Models\Product;
 use App\Models\ProductOption;
 use App\Models\ProductVariant;
+use App\Support\GeoPoint;
 use App\Support\HtmlSanitiser;
 use App\Support\Money;
 use Illuminate\Support\Facades\DB;
@@ -49,6 +50,7 @@ class ProductService
                 'video_url' => ($data['video_url'] ?? null) ?: null,
                 'shipping_charge_minor' => $this->shippingMinor($data['shipping_charge'] ?? null),
                 'published_at' => ($data['status'] ?? null) === Product::STATUS_ACTIVE ? now() : null,
+                ...$this->deliveryArea($data),
             ]);
 
             $this->syncCategories($product, $data['category_ids'] ?? []);
@@ -111,6 +113,10 @@ class ProductService
                     ? $this->shippingMinor($data['shipping_charge'])
                     : $product->shipping_charge_minor,
             ]);
+
+            if (array_key_exists('availability', $data)) {
+                $product->fill($this->deliveryArea($data));
+            }
 
             if (array_key_exists('slug', $data) && $data['slug'] !== $product->slug) {
                 $product->slug = $this->uniqueSlug($data['slug'], $product->id);
@@ -349,6 +355,57 @@ class ProductService
      * @param  array<int, string>|string|null  $tags
      * @return array<int, string>|null
      */
+    /**
+     * Where this product is delivered.
+     *
+     * Only a product with an area of its own keeps a point and a radius.
+     * Anything else drops them, so a leftover pin from an earlier choice can
+     * never quietly limit who sees the product.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function deliveryArea(array $data): array
+    {
+        $availability = $data['availability'] ?? Product::AVAILABLE_SHOP;
+
+        if (! in_array($availability, [
+            Product::AVAILABLE_SHOP, Product::AVAILABLE_ANYWHERE, Product::AVAILABLE_AREA,
+        ], true)) {
+            $availability = Product::AVAILABLE_SHOP;
+        }
+
+        if ($availability !== Product::AVAILABLE_AREA) {
+            return [
+                'availability' => $availability,
+                'latitude' => null,
+                'longitude' => null,
+                'radius_km' => null,
+            ];
+        }
+
+        $point = GeoPoint::tryFrom($data['latitude'] ?? null, $data['longitude'] ?? null);
+        $radius = (float) ($data['radius_km'] ?? 0);
+
+        // Claiming an area without drawing one would hide the product from
+        // everybody. Fall back to following the shop instead.
+        if ($point === null || $radius <= 0) {
+            return [
+                'availability' => Product::AVAILABLE_SHOP,
+                'latitude' => null,
+                'longitude' => null,
+                'radius_km' => null,
+            ];
+        }
+
+        return [
+            'availability' => Product::AVAILABLE_AREA,
+            'latitude' => $point->latitude,
+            'longitude' => $point->longitude,
+            'radius_km' => $radius,
+        ];
+    }
+
     protected function cleanTags(array|string|null $tags): ?array
     {
         if ($tags === null) {

@@ -95,6 +95,11 @@ class Package extends Model
         return (bool) $this->entitlements->firstWhere('feature', $feature)?->enabled;
     }
 
+    public function templates(): HasMany
+    {
+        return $this->hasMany(PackageTemplate::class);
+    }
+
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);

@@ -31,6 +31,13 @@ class Tenant extends Model
         'timezone',
         'prices_include_tax',
         'trial_ends_at',
+        'template',
+        'template_settings',
+        'map_provider',
+        'delivers_everywhere',
+        'delivery_latitude',
+        'delivery_longitude',
+        'delivery_radius_km',
     ];
 
     protected function casts(): array
@@ -39,6 +46,11 @@ class Tenant extends Model
             'currency_exponent' => 'integer',
             'prices_include_tax' => 'boolean',
             'trial_ends_at' => 'datetime',
+            'template_settings' => 'array',
+            'delivers_everywhere' => 'boolean',
+            'delivery_latitude' => 'float',
+            'delivery_longitude' => 'float',
+            'delivery_radius_km' => 'float',
         ];
     }
 

@@ -14,6 +14,8 @@
             ['route' => 'admin.domains.index', 'label' => 'Web address', 'icon' => 'globe'],
             ['route' => 'admin.mail.edit', 'label' => 'Email', 'icon' => 'mail'],
             ['route' => 'admin.payments.index', 'label' => 'Payments', 'icon' => 'card'],
+            ['route' => 'admin.delivery.edit', 'label' => 'Delivery area', 'icon' => 'globe'],
+            ['route' => 'admin.templates.index', 'label' => 'Shop look', 'icon' => 'grid'],
         ],
     ];
 

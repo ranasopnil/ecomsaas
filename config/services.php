@@ -47,4 +47,12 @@ return [
         'password' => env('BKASH_SANDBOX_PASSWORD'),
     ],
 
+    /*
+     * Only needed if staff give a shop the Google map. Without it, Google
+     * cannot be handed out and the free map is used instead.
+     */
+    'google_maps' => [
+        'key' => env('GOOGLE_MAPS_KEY'),
+    ],
+
 ];

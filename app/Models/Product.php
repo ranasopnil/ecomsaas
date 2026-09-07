@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Services\Storefront\DeliveryAreas;
+use App\Support\GeoPoint;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,11 +23,30 @@ class Product extends Model
 
     public const STATUS_ARCHIVED = 'archived';
 
+    /** Delivered wherever the shop delivers. */
+    public const AVAILABLE_SHOP = 'shop';
+
+    /** No limit at all, whatever the shop's own area says. */
+    public const AVAILABLE_ANYWHERE = 'anywhere';
+
+    /** This product has its own point and radius. */
+    public const AVAILABLE_AREA = 'area';
+
+    /**
+     * Kilometres from a given point to this row's own point, over the curve of
+     * the earth. Bindings, in order: latitude, latitude, longitude.
+     */
+    private const DISTANCE_SQL = '(6371.0088 * 2 * asin(sqrt('
+        .'power(sin(radians(? - latitude) / 2), 2)'
+        .' + cos(radians(latitude)) * cos(radians(?)) * power(sin(radians(? - longitude) / 2), 2)'
+        .')))';
+
     protected $fillable = [
         'tenant_id', 'brand_id', 'name', 'slug', 'description', 'short_description',
         'status', 'has_variants', 'meta_title', 'meta_description', 'tags',
         'video_url', 'shipping_charge_minor', 'published_at',
         'demo_batch',
+        'availability', 'latitude', 'longitude', 'radius_km',
     ];
 
     protected function casts(): array
@@ -35,6 +56,9 @@ class Product extends Model
             'published_at' => 'datetime',
             'tags' => 'array',
             'shipping_charge_minor' => 'integer',
+            'latitude' => 'float',
+            'longitude' => 'float',
+            'radius_km' => 'float',
         ];
     }
 
@@ -106,6 +130,51 @@ class Product extends Model
     /**
      * On sale in the shop right now.
      */
+    /**
+     * Narrow a shop's catalogue to what actually reaches one customer.
+     *
+     * The shop's own area is the same for every row, so it is settled once in
+     * PHP; only products with an area of their own need measuring in the
+     * database. A customer who has not said where they are filters nothing —
+     * we show the shop rather than an empty one.
+     */
+    public function scopeDeliverableTo(Builder $query, Tenant $shop, ?GeoPoint $customer): Builder
+    {
+        if ($customer === null) {
+            return $query;
+        }
+
+        $shopArea = app(DeliveryAreas::class)->shopArea($shop);
+        $shopReaches = $shopArea === null || $customer->isWithin($shopArea['radius'], $shopArea['point']);
+
+        return $query->where(function (Builder $outer) use ($customer, $shopReaches) {
+            $outer->where('availability', self::AVAILABLE_ANYWHERE);
+
+            $outer->orWhere(fn (Builder $q) => $q
+                ->where('availability', self::AVAILABLE_AREA)
+                ->whereNotNull('latitude')
+                ->whereNotNull('longitude')
+                ->where('radius_km', '>', 0)
+                ->whereRaw(self::DISTANCE_SQL.' <= radius_km', [
+                    $customer->latitude, $customer->latitude, $customer->longitude,
+                ]));
+
+            if (! $shopReaches) {
+                return;
+            }
+
+            // Following the shop, or claiming an area and never drawing one.
+            $outer->orWhere('availability', self::AVAILABLE_SHOP);
+            $outer->orWhere(fn (Builder $q) => $q
+                ->where('availability', self::AVAILABLE_AREA)
+                ->where(fn (Builder $missing) => $missing
+                    ->whereNull('latitude')
+                    ->orWhereNull('longitude')
+                    ->orWhereNull('radius_km')
+                    ->orWhere('radius_km', '<=', 0)));
+        });
+    }
+
     public function scopeOnSale(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_ACTIVE)

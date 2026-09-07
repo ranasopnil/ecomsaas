@@ -321,6 +321,67 @@
     @endif
 
         <div class="card p-6">
+            <h2 class="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">Where you deliver it</h2>
+            <p class="mb-4 text-sm text-slate-500">
+                Customers outside the area do not see this product at all.
+            </p>
+
+            <div class="space-y-2">
+                @php($choices = [
+                    \App\Models\Product::AVAILABLE_SHOP => [
+                        'Wherever my shop delivers',
+                        $shopDeliversEverywhere
+                            ? 'Your shop delivers everywhere, so this reaches every customer.'
+                            : 'Follows the one area you set on the Delivery area screen. Change it there and this follows.',
+                    ],
+                    \App\Models\Product::AVAILABLE_ANYWHERE => [
+                        'Anywhere',
+                        'Every customer sees it, even outside your shop area. Good for anything you post.',
+                    ],
+                    \App\Models\Product::AVAILABLE_AREA => [
+                        'Only around a place I choose',
+                        'Give this one product its own area. Good for anything you cannot send far.',
+                    ],
+                ])
+
+                @foreach ($choices as $value => [$label, $hint])
+                    <label class="flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition
+                                  {{ $availability === $value ? 'border-violet-400 bg-violet-50/50' : 'border-slate-200 hover:border-slate-300' }}">
+                        <input type="radio" wire:model.live="availability" value="{{ $value }}" class="mt-1">
+                        <span>
+                            <span class="block text-sm font-medium">{{ $label }}</span>
+                            <span class="block text-xs text-slate-500">{{ $hint }}</span>
+                        </span>
+                    </label>
+                @endforeach
+            </div>
+
+            @if ($availability === \App\Models\Product::AVAILABLE_AREA)
+                <div wire:key="product-area-map" class="mt-5 border-t border-slate-100 pt-5">
+                    <div class="mb-3 flex items-center justify-between gap-3">
+                        <h3 class="text-sm font-semibold">This product's own area</h3>
+                        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">{{ $mapName }}</span>
+                    </div>
+
+                    <x-area-picker
+                        :provider="$mapProvider"
+                        :latitude="$latitude"
+                        :longitude="$longitude"
+                        :radius="$radius_km"
+                        :centre="$mapCentre"
+                        :zoom="$mapZoom"
+                        :google-key="$googleKey"
+                        :paths="['latitude' => 'latitude', 'longitude' => 'longitude', 'radius' => 'radius_km']"
+                    />
+
+                    <p class="mt-2 text-xs text-slate-500">
+                        Leave the pin unset and this product simply follows your shop area instead.
+                    </p>
+                </div>
+            @endif
+        </div>
+
+        <div class="card p-6">
             <div class="mb-2 flex items-center justify-between">
                 <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Variants</h2>
                 <button type="button" wire:click="addOption"

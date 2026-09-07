@@ -1,3 +1,6 @@
+import './area-picker'
+import './shopper-location'
+
 /**
  * The description designer.
  *

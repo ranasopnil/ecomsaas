@@ -2,8 +2,11 @@
 
 use App\Facades\Tenancy;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
+use App\Http\Controllers\Admin\PlaceSearchController;
 use App\Http\Controllers\Internal\DomainCheckController;
 use App\Http\Controllers\Payments\BkashCallbackController;
+use App\Http\Controllers\Storefront\HomeController;
+use App\Http\Controllers\Storefront\LocationController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Super\LoginController;
 use App\Http\Middleware\CountVisit;
@@ -12,33 +15,49 @@ use App\Http\Middleware\EnsureStoreDomain;
 use App\Livewire\Admin\BrandIndex;
 use App\Livewire\Admin\CategoryIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
+use App\Livewire\Admin\DeliveryAreaForm;
 use App\Livewire\Admin\DomainIndex;
 use App\Livewire\Admin\MailSettingsForm;
 use App\Livewire\Admin\PaymentMethodsIndex;
 use App\Livewire\Admin\ProductForm;
 use App\Livewire\Admin\ProductIndex;
 use App\Livewire\Admin\StockIndex;
+use App\Livewire\Admin\TemplateIndex;
 use App\Livewire\Super\Dashboard;
 use App\Livewire\Super\GatewayMatrix;
+use App\Livewire\Super\MapAccess;
 use App\Livewire\Super\PackageForm as SuperPackageForm;
 use App\Livewire\Super\PackageIndex as SuperPackageIndex;
 use App\Livewire\Super\ShopPayments;
 use App\Livewire\Super\StoreIndex;
+use App\Livewire\Super\TemplateMatrix;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
+Route::get('/', function (HomeController $home) {
     if (Tenancy::check()) {
-        return view('storefront.placeholder', ['store' => Tenancy::current()]);
+        return app()->call($home);
     }
 
     return view('welcome');
-})->middleware(CountVisit::class);
+})->middleware(CountVisit::class)->name('storefront.home');
 
 /*
  * The shop itself.
  */
 Route::middleware([EnsureStoreDomain::class, CountVisit::class])->group(function () {
     Route::get('/products/{slug}', [ProductController::class, 'show'])->name('storefront.product');
+});
+
+/*
+ * The shopper saying where they are. Not counted as a visit, and the place
+ * search is throttled because it stands in front of a free service.
+ */
+Route::middleware(EnsureStoreDomain::class)->group(function () {
+    Route::post('/where-i-am', [LocationController::class, 'store'])->name('storefront.location.store');
+    Route::post('/where-i-am/forget', [LocationController::class, 'destroy'])->name('storefront.location.forget');
+    Route::get('/places', [LocationController::class, 'search'])
+        ->middleware('throttle:30,1')
+        ->name('storefront.places');
 });
 
 /*
@@ -78,6 +97,8 @@ Route::prefix('super')->name('super.')->middleware(EnsureCentralDomain::class)->
         Route::get('shops', StoreIndex::class)->name('stores.index');
         Route::get('shops/{tenant}/payments', ShopPayments::class)->name('stores.payments');
         Route::get('payment-gateways', GatewayMatrix::class)->name('gateways.index');
+        Route::get('templates', TemplateMatrix::class)->name('templates.index');
+        Route::get('maps', MapAccess::class)->name('maps.index');
     });
 });
 
@@ -105,5 +126,10 @@ Route::prefix('admin')->name('admin.')->middleware(EnsureStoreDomain::class)->gr
         Route::get('web-address', DomainIndex::class)->name('domains.index');
         Route::get('email', MailSettingsForm::class)->name('mail.edit');
         Route::get('payments', PaymentMethodsIndex::class)->name('payments.index');
+        Route::get('shop-look', TemplateIndex::class)->name('templates.index');
+        Route::get('delivery-area', DeliveryAreaForm::class)->name('delivery.edit');
+
+        // Asked by the map picker as the shopkeeper types.
+        Route::get('places', PlaceSearchController::class)->name('places.search');
     });
 });
