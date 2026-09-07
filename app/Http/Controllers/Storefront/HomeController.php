@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Services\Storefront\CustomerLocation;
 use App\Services\Storefront\DeliveryReach;
 use App\Services\Storefront\MapProviders;
+use App\Services\Storefront\ShopFigures;
 use App\Services\Storefront\TemplateCatalogue;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -27,14 +28,23 @@ class HomeController extends Controller
         CustomerLocation $location,
         MapProviders $maps,
         DeliveryReach $reach,
+        ShopFigures $figures,
     ): View {
         $shop = Tenancy::current();
         $template = $templates->activeFor($shop);
         $at = $location->point();
 
+        $wanted = trim((string) $request->query('q', ''));
+        $inCategory = trim((string) $request->query('category', ''));
+
         $products = Product::query()
             ->onSale()
             ->deliverableTo($at)
+            ->when($wanted !== '', fn ($query) => $query->where('name', 'ilike', '%'.$wanted.'%'))
+            ->when($inCategory !== '', fn ($query) => $query->whereHas(
+                'categories',
+                fn ($category) => $category->where('slug', $inCategory),
+            ))
             ->with(['variants' => fn ($q) => $q->orderBy('id'), 'images'])
             ->latest('published_at')
             ->take(24)
@@ -55,8 +65,12 @@ class HomeController extends Controller
             'searchUrl' => route('storefront.places'),
             'mapProvider' => $maps->forShop($shop),
             'areas' => $reach->areas(),
+            'figures' => $figures->forFront(),
+            'searching' => $wanted,
             // How much of the shop the customer cannot see from where they are.
-            'hidden' => $at === null
+            // Only counted on the plain front page: a search or a category
+            // narrows things for reasons that have nothing to do with delivery.
+            'hidden' => $at === null || $wanted !== '' || $inCategory !== ''
                 ? 0
                 : Product::query()->onSale()->count() - $products->count(),
         ]);

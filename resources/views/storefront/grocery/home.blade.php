@@ -29,31 +29,26 @@
         </div>
     </header>
 
-    {{-- Hero --}}
-    <section class="relative overflow-hidden" style="background: linear-gradient(135deg, {{ $accent }} 0%, #065f46 100%)">
-        <div class="pointer-events-none absolute -end-24 -top-32 h-80 w-80 rounded-full bg-white/10 blur-3xl"></div>
-        <div class="pointer-events-none absolute -start-16 bottom-[-8rem] h-72 w-72 rounded-full bg-lime-200/10 blur-3xl"></div>
-
-        <div class="relative mx-auto max-w-6xl px-4 py-12 sm:py-16">
-            <p class="text-xs font-semibold uppercase tracking-[.16em] text-white/70">Groceries &amp; daily needs</p>
-            <h1 class="mt-2 text-3xl font-bold text-white sm:text-4xl">{{ $store->name }}</h1>
-            <p class="mt-2 max-w-xl text-sm text-white/80">
-                @if ($location->isSet())
-                    Showing what we can deliver to {{ $location->label() ?: 'you' }}.
-                @else
-                    Tell us where you are and we will show you what we can bring to your door.
-                @endif
-            </p>
-
-            <form action="{{ route('storefront.home') }}" method="GET" class="mt-6 flex max-w-xl gap-2">
-                <input type="search" name="q" value="{{ request('q') }}" placeholder="Search for rice, eggs, milk…"
-                       class="w-full rounded-xl border-0 px-4 py-3 text-sm text-slate-900 shadow-sm focus:outline-none">
-                <button type="submit" class="rounded-xl bg-slate-900 px-5 py-3 text-sm font-medium text-white">Search</button>
-            </form>
-        </div>
-    </section>
+    {{-- Where the customer is, and what reaches them --}}
+    <x-storefront.discover-hero :store="$store" :location="$location"
+                                :search-url="$searchUrl" :accent="$accent" :figures="$figures" />
 
     <main class="mx-auto max-w-6xl px-4 py-8 sm:py-10">
+
+        {{-- Looking for one thing in particular --}}
+        <form action="{{ route('storefront.home') }}" method="GET" class="mb-8">
+            <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-4 text-slate-400">
+                    <x-storefront.icon name="search" class="h-5 w-5" />
+                </span>
+                <input type="search" name="q" value="{{ request('q') }}"
+                       placeholder="Search for rice, eggs, milk…" aria-label="Search the shop"
+                       class="w-full rounded-xl border-0 bg-white py-3 pe-28 ps-12 text-sm text-slate-900 shadow-sm ring-1 ring-slate-100 focus:outline-none">
+                <button type="submit"
+                        class="absolute inset-y-1 end-1 rounded-lg px-5 text-sm font-medium text-white"
+                        style="background: {{ $accent }}">Search</button>
+            </div>
+        </form>
 
         {{-- Categories --}}
         @if ($categories->isNotEmpty())
@@ -83,7 +78,11 @@
         <section>
             <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
                 <h2 class="text-lg font-bold">
-                    {{ $location->isSet() ? 'Available near you' : 'What we sell' }}
+                    @if ($searching !== '')
+                        Results for &ldquo;{{ $searching }}&rdquo;
+                    @else
+                        {{ $location->isSet() ? 'Available near you' : 'What we sell' }}
+                    @endif
                 </h2>
                 @if ($hidden > 0)
                     <p class="text-xs text-slate-500">
@@ -98,14 +97,22 @@
                     <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full text-2xl"
                          style="background: {{ $accent }}1a; color: {{ $accent }}">!</div>
                     <h3 class="mt-4 text-lg font-semibold">
-                        {{ $location->isSet() ? 'Nothing reaches you yet' : 'Nothing on the shelves yet' }}
+                        @if ($searching !== '')
+                            Nothing matched that
+                        @else
+                            {{ $location->isSet() ? 'Nothing reaches you yet' : 'Nothing on the shelves yet' }}
+                        @endif
                     </h3>
                     <p class="mx-auto mt-2 max-w-sm text-sm text-slate-500">
-                        {{ $location->isSet()
-                            ? 'This shop does not deliver to where you are. Try another address, or ask us to show everything.'
-                            : 'This shop has not put anything on sale yet. Please come back soon.' }}
+                        @if ($searching !== '')
+                            We could not find anything called &ldquo;{{ $searching }}&rdquo;. Try a shorter word.
+                        @else
+                            {{ $location->isSet()
+                                ? 'This shop does not deliver to where you are. Try another address, or ask us to show everything.'
+                                : 'This shop has not put anything on sale yet. Please come back soon.' }}
+                        @endif
                     </p>
-                    @if ($location->isSet())
+                    @if ($location->isSet() && $searching === '')
                         <form method="POST" action="{{ route('storefront.location.forget') }}" class="mt-5">
                             @csrf
                             <button type="submit" class="rounded-xl px-4 py-2 text-sm font-medium text-white"

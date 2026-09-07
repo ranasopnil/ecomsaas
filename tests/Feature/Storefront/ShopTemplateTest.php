@@ -230,7 +230,8 @@ class ShopTemplateTest extends TestCase
 
         $this->get($url)
             ->assertOk()
-            ->assertSee('Groceries & daily needs')
+            ->assertSee('Delivered', false)
+            ->assertSee('Discover everything you need near you')
             ->assertSee('Basmati rice')
             ->assertSee('Set where you are');
     }

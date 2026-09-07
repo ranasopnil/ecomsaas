@@ -35,6 +35,69 @@ class PlaceSearch
     }
 
     /**
+     * The other way round: a point on the map turned back into a place name,
+     * so a customer whose browser told us where they are sees "Gulshan,
+     * Dhaka" rather than a pair of numbers.
+     *
+     * Rounded to about ten metres before caching, because two shoppers on the
+     * same street do not need two lookups.
+     */
+    public function describe(float $latitude, float $longitude, string $provider, ?string $country = null): ?string
+    {
+        $key = 'place-at:'.$provider.':'.round($latitude, 4).','.round($longitude, 4);
+
+        return Cache::remember($key, now()->addDays(7), fn () => $provider === 'google'
+            ? $this->nameFromGoogle($latitude, $longitude)
+            : $this->nameFromOpenStreetMap($latitude, $longitude));
+    }
+
+    protected function nameFromOpenStreetMap(float $latitude, float $longitude): ?string
+    {
+        $response = Http::withHeaders([
+            'User-Agent' => config('app.name').' ('.config('app.url').')',
+        ])
+            ->acceptJson()
+            ->timeout(10)
+            ->get('https://nominatim.openstreetmap.org/reverse', [
+                'lat' => $latitude,
+                'lon' => $longitude,
+                'format' => 'jsonv2',
+                'zoom' => 16,
+                'addressdetails' => 0,
+            ]);
+
+        if ($response->failed()) {
+            return null;
+        }
+
+        $name = trim((string) $response->json('display_name', ''));
+
+        return $name !== '' ? $name : null;
+    }
+
+    protected function nameFromGoogle(float $latitude, float $longitude): ?string
+    {
+        $key = $this->maps->key('google');
+
+        if ($key === null) {
+            return $this->nameFromOpenStreetMap($latitude, $longitude);
+        }
+
+        $response = Http::acceptJson()->timeout(10)->get('https://maps.googleapis.com/maps/api/geocode/json', [
+            'latlng' => $latitude.','.$longitude,
+            'key' => $key,
+        ]);
+
+        if ($response->failed() || $response->json('status') !== 'OK') {
+            return null;
+        }
+
+        $name = trim((string) $response->json('results.0.formatted_address', ''));
+
+        return $name !== '' ? $name : null;
+    }
+
+    /**
      * @return array<int, array{name: string, latitude: float, longitude: float}>
      */
     protected function fromOpenStreetMap(string $query, ?string $country): array
