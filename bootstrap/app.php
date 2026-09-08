@@ -24,6 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // These addresses prove themselves with a signature instead.
         $middleware->validateCsrfTokens(except: [
             'payments/*/webhook',
+            'payments/*/ipn',
+            // Some gateways post the customer back rather than sending them,
+            // from their own page, with no session and no token of ours.
+            'payments/*/callback',
         ]);
 
         $middleware->alias([

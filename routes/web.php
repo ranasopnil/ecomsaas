@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\PlaceSearchController;
 use App\Http\Controllers\Internal\DomainCheckController;
 use App\Http\Controllers\Payments\BkashCallbackController;
+use App\Http\Controllers\Payments\SslCommerzCallbackController;
+use App\Http\Controllers\Payments\SslCommerzIpnController;
 use App\Http\Controllers\Payments\StripeCallbackController;
 use App\Http\Controllers\Payments\StripeWebhookController;
 use App\Http\Controllers\Storefront\BasketController;
@@ -109,6 +111,10 @@ Route::middleware(EnsureStoreDomain::class)->group(function () {
 Route::middleware(EnsureStoreDomain::class)->group(function () {
     Route::get('/payments/bkash/callback', BkashCallbackController::class)->name('payments.bkash.callback');
     Route::get('/payments/stripe/callback', StripeCallbackController::class)->name('payments.stripe.callback');
+
+    // SSLCommerz posts the customer back rather than sending them.
+    Route::post('/payments/sslcommerz/callback', SslCommerzCallbackController::class)
+        ->name('payments.sslcommerz.callback');
 });
 
 /*
@@ -119,6 +125,14 @@ Route::middleware(EnsureStoreDomain::class)->group(function () {
 Route::post('/payments/stripe/webhook', StripeWebhookController::class)
     ->middleware(EnsureStoreDomain::class)
     ->name('payments.stripe.webhook');
+
+/*
+ * The same thing from SSLCommerz, signed with the shop's own store password
+ * and checked before anything is believed; see SslCommerzIpnController.
+ */
+Route::post('/payments/sslcommerz/ipn', SslCommerzIpnController::class)
+    ->middleware(EnsureStoreDomain::class)
+    ->name('payments.sslcommerz.ipn');
 
 /*
  * Caddy asks this before issuing a certificate for a hostname.

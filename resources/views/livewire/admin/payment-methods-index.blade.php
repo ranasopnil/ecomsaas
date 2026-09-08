@@ -114,16 +114,18 @@
                         @endforeach
 
                         {{-- Gateways that sign their own messages need to be told where to send them --}}
-                        @php($webhookRoute = 'payments.'.$key.'.webhook')
-                        @if (\Illuminate\Support\Facades\Route::has($webhookRoute))
+                        @php($webhookRoute = collect(['payments.'.$key.'.webhook', 'payments.'.$key.'.ipn'])
+                            ->first(fn ($name) => \Illuminate\Support\Facades\Route::has($name)))
+                        @if ($webhookRoute)
                             <div class="rounded-xl bg-slate-50 p-3">
                                 <p class="text-xs font-medium text-slate-600">
                                     Add this address as a webhook in {{ $gateway['name'] }}
                                 </p>
                                 <p class="mt-1 break-all font-mono text-xs text-slate-800">{{ route($webhookRoute) }}</p>
                                 <p class="mt-1 text-xs text-slate-500">
-                                    Then paste the signing secret it gives you into the box above. It is how your shop
-                                    knows a message really came from {{ $gateway['name'] }}.
+                                    It is how your shop hears about a payment when the customer closes the tab before
+                                    coming back. {{ $gateway['name'] }} signs what it sends, and your shop checks that
+                                    signature before believing a word of it.
                                 </p>
                             </div>
                         @endif

@@ -102,11 +102,13 @@ return [
         'entitlement' => 'online_payments',
         'countries' => ['BD'],
         'fields' => [
-            'store_id' => ['label' => 'Store ID', 'type' => 'text', 'secret' => false],
-            'store_password' => ['label' => 'Store password', 'type' => 'password', 'secret' => true],
+            'store_id' => ['label' => 'Store ID', 'type' => 'text', 'secret' => false,
+                'hint' => 'From your SSLCommerz merchant panel. Looks like yourshop0live.'],
+            'store_password' => ['label' => 'Store password', 'type' => 'password', 'secret' => true,
+                'hint' => 'The store password from the same panel, not the one you sign in with.'],
             'sandbox' => ['label' => 'Use the test system', 'type' => 'checkbox', 'secret' => false],
         ],
-        'blurb' => 'Cards, mobile money and banks through one hosted page.',
+        'blurb' => 'Cards, bKash, Nagad, Rocket and banks through one hosted page.',
     ],
 
     'stripe' => [
