@@ -24,7 +24,20 @@
         @endif
 
         <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
-            <h1 class="text-2xl font-bold">{{ $location->isSet() ? 'Available near you' : 'What we sell' }}</h1>
+            <div>
+                <h1 class="text-2xl font-bold">
+                    @if ($searching !== '')
+                        Results for &ldquo;{{ $searching }}&rdquo;
+                    @elseif ($location->isSet())
+                        Available for you
+                    @else
+                        What we sell
+                    @endif
+                </h1>
+                @if ($searching === '' && $location->isSet())
+                    <p class="mt-0.5 text-sm text-slate-500">Delivered to {{ $location->label() ?: 'where you are' }}.</p>
+                @endif
+            </div>
             @if ($hidden > 0)
                 <p class="text-xs text-slate-500">
                     {{ $hidden }} more {{ $hidden === 1 ? 'item is' : 'items are' }} not delivered to
@@ -36,14 +49,22 @@
         @if ($products->isEmpty())
             <div class="rounded-2xl border border-dashed border-slate-200 p-10 text-center">
                 <h2 class="text-lg font-semibold">
-                    {{ $location->isSet() ? 'Nothing reaches you yet' : 'Nothing on sale yet' }}
+                    @if ($searching !== '')
+                        Nothing matched that
+                    @else
+                        {{ $location->isSet() ? 'Nothing reaches you yet' : 'Nothing on sale yet' }}
+                    @endif
                 </h2>
                 <p class="mx-auto mt-2 max-w-sm text-sm text-slate-500">
-                    {{ $location->isSet()
-                        ? 'This shop does not deliver to where you are.'
-                        : 'This shop has not put anything on sale yet. Please come back soon.' }}
+                    @if ($searching !== '')
+                        We could not find anything called &ldquo;{{ $searching }}&rdquo;. Try a shorter word.
+                    @else
+                        {{ $location->isSet()
+                            ? 'This shop does not deliver to where you are.'
+                            : 'This shop has not put anything on sale yet. Please come back soon.' }}
+                    @endif
                 </p>
-                @if ($location->isSet())
+                @if ($location->isSet() && $searching === '')
                     <form method="POST" action="{{ route('storefront.location.forget') }}" class="mt-5">
                         @csrf
                         <button type="submit" class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">
@@ -59,12 +80,17 @@
                 @endforeach
             </div>
         @endif
-    </main>
 
-    <x-slot:footer>
-        <p class="font-semibold text-slate-900">{{ $store->name }}</p>
-        @if ($store->email)
-            <a href="mailto:{{ $store->email }}" class="mt-1 block hover:text-slate-900">{{ $store->email }}</a>
-        @endif
-    </x-slot:footer>
+        {{-- One row per category, so the whole shop can be seen from the front --}}
+        @foreach ($shelves as $shelf)
+            <x-storefront.product-shelf
+                :title="$shelf['category']->name"
+                :products="$shelf['products']"
+                :accent="$accent"
+                :image="$shelf['category']->hasImage() ? $shelf['category']->thumbnailUrl() : null"
+                :letter="mb_substr($shelf['category']->name, 0, 1)"
+                :href="route('storefront.browse').'?category='.$shelf['category']->slug"
+                class="mt-10" />
+        @endforeach
+    </main>
 </x-layouts.storefront>

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 class Category extends Model
@@ -67,6 +68,30 @@ class Category extends Model
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class)->withPivot('tenant_id');
+    }
+
+    /**
+     * This category and everything under it.
+     *
+     * A row for "Dairy" should also show what is in "Dairy › Cheese", so
+     * every page that narrows by category asks for the family, not the one.
+     * The walk down is capped in case a category ever ends up inside itself.
+     *
+     * @return Collection<int, int>
+     */
+    public function familyIds(): Collection
+    {
+        $ids = collect([$this->id]);
+        $frontier = [$this->id];
+        $depth = 0;
+
+        while ($frontier !== [] && $depth < 5) {
+            $frontier = self::query()->whereIn('parent_id', $frontier)->pluck('id')->all();
+            $ids = $ids->merge($frontier);
+            $depth++;
+        }
+
+        return $ids;
     }
 
     /**

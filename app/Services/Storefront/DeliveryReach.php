@@ -19,13 +19,23 @@ use Illuminate\Support\Collection;
 class DeliveryReach
 {
     /**
+     * Fetched once per instance. A page that asks whether twenty products
+     * reach one customer should not read the same handful of areas twenty
+     * times over. A fresh instance is made for each request, so a shopkeeper
+     * changing an area is never answered from a stale list.
+     *
+     * @var Collection<int, DeliveryArea>|null
+     */
+    protected ?Collection $named = null;
+
+    /**
      * Every area this shop has named.
      *
      * @return Collection<int, DeliveryArea>
      */
     public function areas(): Collection
     {
-        return DeliveryArea::orderBy('position')->orderBy('id')->get();
+        return $this->named ??= DeliveryArea::orderBy('position')->orderBy('id')->get();
     }
 
     /**

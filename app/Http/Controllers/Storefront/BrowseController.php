@@ -12,7 +12,6 @@ use App\Services\Storefront\TemplateCatalogue;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 /**
  * Walking round the shop: everything on sale, by category or by search,
@@ -49,7 +48,7 @@ class BrowseController extends Controller
         $products = $onSale()
             ->when($current !== null, fn (Builder $q) => $q->whereHas(
                 'categories',
-                fn ($c) => $c->whereIn('categories.id', $this->familyOf($current)),
+                fn ($c) => $c->whereIn('categories.id', $current->familyIds()),
             ))
             ->when($wanted !== '', fn (Builder $q) => $q->where('name', 'ilike', '%'.$wanted.'%'))
             ->when($offersOnly, fn (Builder $q) => $q->whereHas('variants', $this->discounted(...)))
@@ -90,27 +89,6 @@ class BrowseController extends Controller
             'example' => $example,
             'hasFreeDelivery' => Product::query()->onSale()->where('shipping_charge_minor', 0)->exists(),
         ]);
-    }
-
-    /**
-     * A category and everything under it, so "Dairy" also shows what is in
-     * "Dairy › Cheese".
-     *
-     * @return Collection<int, int>
-     */
-    protected function familyOf(Category $category): Collection
-    {
-        $ids = collect([$category->id]);
-        $frontier = [$category->id];
-        $depth = 0;
-
-        while ($frontier !== [] && $depth < 5) {
-            $frontier = Category::query()->whereIn('parent_id', $frontier)->pluck('id')->all();
-            $ids = $ids->merge($frontier);
-            $depth++;
-        }
-
-        return $ids;
     }
 
     protected function discounted(Builder $variants): Builder

@@ -1,5 +1,6 @@
 @php
     $accent = $template['accent'];
+    $whereabouts = $location->label() ?: 'where you are';
 @endphp
 
 <x-layouts.storefront :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent"
@@ -45,16 +46,31 @@
             </section>
         @endif
 
-        {{-- Products --}}
+        {{-- What we can send them, and nothing else --}}
         <section>
             <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
-                <h2 class="text-lg font-bold">
-                    @if ($searching !== '')
-                        Results for &ldquo;{{ $searching }}&rdquo;
-                    @else
-                        {{ $location->isSet() ? 'Available near you' : 'What we sell' }}
+                <div>
+                    <h2 class="text-lg font-bold sm:text-xl">
+                        @if ($searching !== '')
+                            Results for &ldquo;{{ $searching }}&rdquo;
+                        @elseif ($location->isSet())
+                            Available for you
+                        @else
+                            Fresh in the shop
+                        @endif
+                    </h2>
+                    @if ($searching === '')
+                        <p class="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500 sm:text-[13px]">
+                            @if ($location->isSet())
+                                <x-storefront.icon name="pin" class="h-3.5 w-3.5 shrink-0" style="color: {{ $accent }}" />
+                                <span class="truncate">Delivered to {{ $whereabouts }}</span>
+                            @else
+                                Tell us where you are and we will show only what reaches you.
+                            @endif
+                        </p>
                     @endif
-                </h2>
+                </div>
+
                 @if ($hidden > 0)
                     <p class="text-xs text-slate-500">
                         {{ $hidden }} more {{ $hidden === 1 ? 'item is' : 'items are' }} not delivered to
@@ -97,25 +113,33 @@
                         <x-storefront.product-card :product="$product" :accent="$accent" />
                     @endforeach
                 </div>
+
+                @if ($shelves->isNotEmpty())
+                    <div class="mt-6 text-center">
+                        <a href="{{ route('storefront.browse') }}"
+                           class="inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-semibold transition hover:bg-white"
+                           style="color: {{ $accent }}; border-color: {{ $accent }}40">
+                            See everything we sell
+                            <x-storefront.icon name="arrow" class="h-4 w-4" />
+                        </a>
+                    </div>
+                @endif
             @endif
         </section>
-    </main>
 
-    <x-slot:footer>
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <p class="font-semibold text-slate-900">{{ $store->name }}</p>
-                <p class="mt-1">
-                    @if ($areas->isEmpty())
-                        Delivering everywhere.
-                    @else
-                        Delivering to {{ $areas->pluck('name')->join(', ', ' and ') }}.
-                    @endif
-                </p>
-            </div>
-            @if ($store->email)
-                <a href="mailto:{{ $store->email }}" class="hover:text-slate-900">{{ $store->email }}</a>
-            @endif
-        </div>
-    </x-slot:footer>
+        {{-- Then the shop laid out the way it is arranged: one row per aisle --}}
+        @foreach ($shelves as $shelf)
+            <x-storefront.product-shelf
+                :title="$shelf['category']->name"
+                :products="$shelf['products']"
+                :accent="$accent"
+                :image="$shelf['category']->hasImage() ? $shelf['category']->thumbnailUrl() : null"
+                :letter="mb_substr($shelf['category']->name, 0, 1)"
+                :subtitle="$shelf['products']->count() === 1
+                    ? '1 item'
+                    : $shelf['products']->count().($shelf['products']->count() === App\Services\Storefront\HomeShelves::PER_SHELF ? '+ items' : ' items')"
+                :href="route('storefront.browse').'?category='.$shelf['category']->slug"
+                class="mt-10" />
+        @endforeach
+    </main>
 </x-layouts.storefront>
