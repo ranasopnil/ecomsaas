@@ -17,6 +17,7 @@
             ['route' => 'admin.payments.index', 'label' => 'Payments', 'icon' => 'card'],
             ['route' => 'admin.delivery.edit', 'label' => 'Delivery area', 'icon' => 'globe'],
             ['route' => 'admin.templates.index', 'label' => 'Shop look', 'icon' => 'grid'],
+            ['route' => 'admin.footer.edit', 'label' => 'Footer & pages', 'icon' => 'page'],
         ],
     ];
 
@@ -30,6 +31,7 @@
         'mail' => 'M3 6h18v12H3zM3 7l9 6 9-6',
         'card' => 'M3 6h18v12H3zM3 10h18M7 15h3',
         'receipt' => 'M5 3h14v18l-3-2-2 2-2-2-2 2-3-2zM8 8h8M8 12h8M8 16h5',
+        'page' => 'M6 3h9l3.5 3.5V21H6zM15 3v4h3.5M9 12h6M9 16h4',
     ];
 @endphp
 <!DOCTYPE html>

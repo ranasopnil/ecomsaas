@@ -1,7 +1,14 @@
 @props(['name'])
 
+@php
+    // A page that asks for its own size gets it. Adding the default alongside
+    // it would leave two sizes on one drawing, and the larger one would win
+    // whatever the page asked for.
+    $sized = preg_match('/(^|\s)(h|w|size)-/', (string) $attributes->get('class', '')) === 1;
+@endphp
+
 {{-- The small line drawings used across a shop front. One place, so they all match. --}}
-<svg {{ $attributes->merge(['class' => 'h-5 w-5']) }} viewBox="0 0 24 24" fill="none"
+<svg {{ $attributes->merge(['class' => $sized ? '' : 'h-5 w-5']) }} viewBox="0 0 24 24" fill="none"
      stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
      aria-hidden="true">
     @switch($name)
@@ -65,6 +72,55 @@
 
         @case('arrow')
             <path d="M5 12h14M13 6l6 6-6 6"/>
+            @break
+
+        @case('phone')
+            <path d="M6.5 3.5h3l1.5 4-2 1.5a12 12 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5Z"/>
+            @break
+
+        @case('mail')
+            <rect x="3" y="5.5" width="18" height="13" rx="2.5"/>
+            <path d="m3.8 7 8.2 5.5L20.2 7"/>
+            @break
+
+        @case('clock')
+            <circle cx="12" cy="12" r="8.5"/>
+            <path d="M12 7.5V12l3 1.8"/>
+            @break
+
+        @case('facebook')
+            <path d="M13.6 21v-7.7h2.6l.4-3h-3v-1.9c0-.87.24-1.46 1.5-1.46H16.7V3.24C16.4 3.2 15.4 3.1 14.2 3.1c-2.4 0-4.1 1.47-4.1 4.18V10.3H7.5v3h2.6V21Z"
+                  fill="currentColor" stroke="none"/>
+            @break
+
+        @case('instagram')
+            <rect x="3.5" y="3.5" width="17" height="17" rx="5"/>
+            <circle cx="12" cy="12" r="4"/>
+            <circle cx="16.9" cy="7.1" r="1.1" fill="currentColor" stroke="none"/>
+            @break
+
+        @case('youtube')
+            <rect x="2.5" y="5.5" width="19" height="13" rx="4"/>
+            <path d="m10.2 9.3 5 2.7-5 2.7Z" fill="currentColor"/>
+            @break
+
+        @case('tiktok')
+            <path d="M14.2 3.2v10.9a3.4 3.4 0 1 1-3-3.37"/>
+            <path d="M14.2 3.2a5 5 0 0 0 5 4.6"/>
+            @break
+
+        @case('x')
+            <path d="m4.5 4.5 15 15M19.5 4.5l-15 15"/>
+            @break
+
+        @case('linkedin')
+            <rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/>
+            <path d="M8 10.5V16M8 7.6v.02M12 16v-3.2a1.9 1.9 0 0 1 3.8 0V16"/>
+            @break
+
+        @case('whatsapp')
+            <path d="M20.5 11.7a8.4 8.4 0 0 1-12.5 7.3L4 20.2l1.2-4A8.4 8.4 0 1 1 20.5 11.7Z"/>
+            <path d="M9.3 8.6c.3-.05.6.04.75.35l.6 1.2a.8.8 0 0 1-.1.85l-.4.45a5.6 5.6 0 0 0 2.7 2.6l.45-.45a.8.8 0 0 1 .85-.1l1.2.55c.3.15.4.45.35.75a2 2 0 0 1-2.2 1.6 7.2 7.2 0 0 1-5.6-5.5 2 2 0 0 1 1.4-2.3Z"/>
             @break
     @endswitch
 </svg>

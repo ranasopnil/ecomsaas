@@ -139,3 +139,8 @@ body { background: var(--color-canvas); }
 }
 
 @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+/* The row of small round links at the bottom of a shop page. Each one takes
+   the shop's own colour when the pointer is over it, so the footer belongs to
+   the same shop as the rest of the page. */
+.social-chip:hover { background-color: var(--chip); border-color: transparent; }

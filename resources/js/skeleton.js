@@ -21,7 +21,7 @@ const SHAPES = [
     [/\/browse/, 'browse'],
     [/\/admin\/(products|categories|brands|stock|domains|payments)\/?$/, 'admin-list'],
     [/\/admin\/.+\/(new|edit)$/, 'admin-form'],
-    [/\/admin\/(mail|delivery|templates)/, 'admin-form'],
+    [/\/admin\/(mail|delivery|templates|footer)/, 'admin-form'],
     [/\/super\/[a-z-]+\/(new|edit|\d+)/, 'admin-form'],
     [/\/super\//, 'admin-list'],
     [/\/admin\/?$/, 'admin-list'],

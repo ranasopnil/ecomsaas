@@ -10,6 +10,7 @@ use App\Http\Controllers\Storefront\BrowseController;
 use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\HomeController;
 use App\Http\Controllers\Storefront\OrderController;
+use App\Http\Controllers\Storefront\PageController;
 use App\Http\Controllers\Storefront\LocationController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\SearchController;
@@ -22,6 +23,7 @@ use App\Livewire\Admin\CategoryIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\DeliveryAreaForm;
 use App\Livewire\Admin\DomainIndex;
+use App\Livewire\Admin\FooterSettings;
 use App\Livewire\Admin\MailSettingsForm;
 use App\Livewire\Admin\OrderIndex;
 use App\Livewire\Admin\OrderShow;
@@ -57,6 +59,13 @@ Route::middleware([EnsureStoreDomain::class, CountVisit::class])->group(function
     Route::get('/basket', [BasketController::class, 'show'])->name('storefront.basket');
     Route::get('/checkout', [CheckoutController::class, 'show'])->name('storefront.checkout');
     Route::get('/orders/{reference}', [OrderController::class, 'show'])->name('storefront.order');
+
+    // The shop's own written pages — privacy, refunds, delivery, terms.
+    // The list of addresses is fixed in StorefrontFooter::PAGES; a page the
+    // shopkeeper has not written is simply not there.
+    Route::get('/pages/{slug}', PageController::class)
+        ->whereIn('slug', array_keys(App\Models\StorefrontFooter::PAGES))
+        ->name('storefront.page');
 });
 
 /*
@@ -162,6 +171,7 @@ Route::prefix('admin')->name('admin.')->middleware(EnsureStoreDomain::class)->gr
         Route::get('payments', PaymentMethodsIndex::class)->name('payments.index');
         Route::get('shop-look', TemplateIndex::class)->name('templates.index');
         Route::get('delivery-area', DeliveryAreaForm::class)->name('delivery.edit');
+        Route::get('footer', FooterSettings::class)->name('footer.edit');
 
         // Asked by the map picker as the shopkeeper types.
         Route::get('places', PlaceSearchController::class)->name('places.search');

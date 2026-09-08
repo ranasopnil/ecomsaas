@@ -47,18 +47,20 @@
         {{ $slot }}
     </div>
 
-    <footer class="mt-10 border-t border-slate-100 bg-white">
-        <div class="mx-auto {{ $wide ? 'max-w-7xl' : 'max-w-6xl' }} px-4 py-8 text-sm text-slate-500">
-            @isset($footer)
+    {{--
+        The bottom of the page. A page can put its own words here; otherwise
+        it gets the shop's own footer — address, links, and the pages the
+        shopkeeper wrote — which is what nearly every page wants.
+    --}}
+    @isset($footer)
+        <footer class="mt-10 border-t border-slate-100 bg-white">
+            <div class="mx-auto {{ $wide ? 'max-w-7xl' : 'max-w-6xl' }} px-4 py-8 text-sm text-slate-500">
                 {{ $footer }}
-            @else
-                <p class="font-semibold text-slate-900">{{ $store->name }}</p>
-                @if ($store->email)
-                    <a href="mailto:{{ $store->email }}" class="mt-1 block hover:text-slate-900">{{ $store->email }}</a>
-                @endif
-            @endisset
-        </div>
-    </footer>
+            </div>
+        </footer>
+    @else
+        <x-storefront.site-footer :store="$store" :accent="$accent" />
+    @endisset
 
     <x-skeleton.shapes :accent="$accent" />
 </body>
