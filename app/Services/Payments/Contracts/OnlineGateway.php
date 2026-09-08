@@ -45,4 +45,36 @@ interface OnlineGateway
      * @return array<string, mixed>
      */
     public function refund(PaymentRefund $refund): array;
+
+    /**
+     * Does the gateway's own answer say the money actually moved?
+     *
+     * Every gateway words this differently, and only the gateway itself can
+     * settle it. Nothing else in the system is allowed to decide.
+     *
+     * @param  array<string, mixed>  $body
+     */
+    public function saysCompleted(array $body): bool;
+
+    /**
+     * What to write down about a payment the gateway has answered for.
+     *
+     * @param  array<string, mixed>  $body
+     * @return array{transaction_id: ?string, payer_account: ?string, failure_reason: ?string}
+     */
+    public function outcomeOf(array $body): array;
+
+    /**
+     * The gateway's own id for a refund it just made.
+     *
+     * @param  array<string, mixed>  $body
+     */
+    public function refundIdOf(array $body): ?string;
+
+    /**
+     * Is this account pointed at the gateway's test system rather than at
+     * real money? Shown to the shopkeeper so a test shop is never mistaken
+     * for a live one.
+     */
+    public function isTestMode(): bool;
 }

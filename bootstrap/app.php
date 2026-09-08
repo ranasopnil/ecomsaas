@@ -20,6 +20,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->appendToGroup('web', IdentifyTenant::class);
 
+        // A gateway posting to a webhook has no session and no token to send.
+        // These addresses prove themselves with a signature instead.
+        $middleware->validateCsrfTokens(except: [
+            'payments/*/webhook',
+        ]);
+
         $middleware->alias([
             'tenant' => IdentifyTenant::class,
             'central' => EnsureCentralDomain::class,

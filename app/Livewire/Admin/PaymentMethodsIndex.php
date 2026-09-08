@@ -151,8 +151,10 @@ class PaymentMethodsIndex extends Component
             return;
         }
 
+        $driver = app(GatewayFactory::class)->for($method);
+
         try {
-            app(GatewayFactory::class)->for($method)->testConnection();
+            $driver->testConnection();
         } catch (GatewayFailed $e) {
             $this->dispatch('toast', ['text' => $e->getMessage(), 'tone' => 'bad']);
 
@@ -162,18 +164,28 @@ class PaymentMethodsIndex extends Component
         $this->justChanged = $gateway;
         $this->dispatch('toast', [
             'text' => $method->name().' accepted your details'
-                .(($method->settings['sandbox'] ?? false) ? ' on the test system.' : '.'),
+                .($driver->isTestMode() ? ' on the test system.' : '.'),
             'tone' => 'ok',
         ]);
     }
 
     public function render()
     {
+        $factory = app(GatewayFactory::class);
+        $methods = PaymentMethod::query()->get()->keyBy('gateway');
+
         return view('livewire.admin.payment-methods-index', [
             'available' => app(GatewayCatalogue::class)->availableFor(Tenancy::current()),
-            'methods' => PaymentMethod::query()->get()->keyBy('gateway'),
+            'methods' => $methods,
             'definition' => $this->editing ? app(GatewayCatalogue::class)->find($this->editing) : null,
-            'factory' => app(GatewayFactory::class),
+            'factory' => $factory,
+            // Whether each one is pointed at the gateway's test system. Only
+            // the gateway itself can say: bKash has a switch for it, Stripe
+            // says it in the key. A shop must never think it is taking real
+            // money when it is not.
+            'testing' => $methods
+                ->filter(fn (PaymentMethod $method) => $factory->isDriven($method->gateway))
+                ->map(fn (PaymentMethod $method) => $factory->for($method)->isTestMode()),
         ]);
     }
 }

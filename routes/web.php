@@ -5,6 +5,8 @@ use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\PlaceSearchController;
 use App\Http\Controllers\Internal\DomainCheckController;
 use App\Http\Controllers\Payments\BkashCallbackController;
+use App\Http\Controllers\Payments\StripeCallbackController;
+use App\Http\Controllers\Payments\StripeWebhookController;
 use App\Http\Controllers\Storefront\BasketController;
 use App\Http\Controllers\Storefront\BrowseController;
 use App\Http\Controllers\Storefront\CheckoutController;
@@ -106,7 +108,17 @@ Route::middleware(EnsureStoreDomain::class)->group(function () {
  */
 Route::middleware(EnsureStoreDomain::class)->group(function () {
     Route::get('/payments/bkash/callback', BkashCallbackController::class)->name('payments.bkash.callback');
+    Route::get('/payments/stripe/callback', StripeCallbackController::class)->name('payments.stripe.callback');
 });
+
+/*
+ * What Stripe tells the shop directly, without a customer in the middle.
+ * Signed by the shop's own signing secret and checked before anything is
+ * believed; see StripeWebhookController.
+ */
+Route::post('/payments/stripe/webhook', StripeWebhookController::class)
+    ->middleware(EnsureStoreDomain::class)
+    ->name('payments.stripe.webhook');
 
 /*
  * Caddy asks this before issuing a certificate for a hostname.

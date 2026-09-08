@@ -19,6 +19,7 @@ use App\Services\Storefront\TemplateCatalogue;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rule;
 
 /**
@@ -116,7 +117,7 @@ class CheckoutController extends Controller
             $started = $payments->start(
                 $method,
                 $order->total,
-                route('payments.bkash.callback'),
+                $this->callbackUrl($order->payment_gateway),
                 ['order_id' => $order->id, 'payer_reference' => $order->reference],
             );
         } catch (GatewayFailed $e) {
@@ -152,6 +153,24 @@ class CheckoutController extends Controller
             ->filter(fn (PaymentMethod $method) => ($method->definition()['kind'] ?? null) === 'offline'
                 || $drivers->isDriven($method->gateway))
             ->values();
+    }
+
+    /**
+     * Where this gateway sends the customer back to.
+     *
+     * Every driven gateway has its own return address. A gateway without one
+     * cannot be paid through, and saying so here stops a customer being sent
+     * somewhere that could never bring them back.
+     */
+    protected function callbackUrl(string $gateway): string
+    {
+        $name = "payments.{$gateway}.callback";
+
+        if (! Route::has($name)) {
+            throw GatewayFailed::notConfigured($gateway);
+        }
+
+        return route($name);
     }
 
     protected function orderUrl(Order $order): string

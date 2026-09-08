@@ -6,6 +6,7 @@ use App\Exceptions\GatewayFailed;
 use App\Models\PaymentMethod;
 use App\Services\Payments\Contracts\OnlineGateway;
 use App\Services\Payments\Gateways\Bkash;
+use App\Services\Payments\Gateways\Stripe;
 
 /**
  * Turns a shop's saved account into something that can talk to that gateway.
@@ -18,6 +19,7 @@ class GatewayFactory
     /** @var array<string, class-string<OnlineGateway>> */
     protected const DRIVERS = [
         Bkash::KEY => Bkash::class,
+        Stripe::KEY => Stripe::class,
     ];
 
     public function for(PaymentMethod $method): OnlineGateway

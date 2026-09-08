@@ -18,8 +18,11 @@
             @php($on = $method?->isReady())
             <div wire:key="pm-{{ $key }}" class="card card-hover p-5 {{ $justChanged === $key ? 'settled' : '' }}">
                 <div class="flex items-start justify-between gap-3">
-                    <div>
-                        <div class="flex flex-wrap items-center gap-2">
+                    <div class="flex min-w-0 items-start gap-3">
+                        <x-admin.gateway-logo :gateway="$key" class="mt-0.5" />
+
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
                             <h2 class="font-semibold">{{ $method?->name() ?? $gateway['name'] }}</h2>
                             @if ($on)
                                 <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">On</span>
@@ -35,7 +38,8 @@
                                 <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">Not in your plan</span>
                             @endunless
                         </div>
-                        <p class="mt-1 text-sm text-slate-500">{{ $gateway['blurb'] }}</p>
+                            <p class="mt-1 text-sm text-slate-500">{{ $gateway['blurb'] }}</p>
+                        </div>
                     </div>
 
                     @if ($method)
@@ -109,6 +113,21 @@
                             </div>
                         @endforeach
 
+                        {{-- Gateways that sign their own messages need to be told where to send them --}}
+                        @php($webhookRoute = 'payments.'.$key.'.webhook')
+                        @if (\Illuminate\Support\Facades\Route::has($webhookRoute))
+                            <div class="rounded-xl bg-slate-50 p-3">
+                                <p class="text-xs font-medium text-slate-600">
+                                    Add this address as a webhook in {{ $gateway['name'] }}
+                                </p>
+                                <p class="mt-1 break-all font-mono text-xs text-slate-800">{{ route($webhookRoute) }}</p>
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Then paste the signing secret it gives you into the box above. It is how your shop
+                                    knows a message really came from {{ $gateway['name'] }}.
+                                </p>
+                            </div>
+                        @endif
+
                         <div class="flex items-center gap-2 pt-1">
                             <button type="submit" class="btn btn-primary !px-4 !py-2">Save</button>
                             <button type="button" wire:click="cancel" class="text-sm text-slate-500 hover:text-slate-900">Cancel</button>
@@ -127,7 +146,7 @@
                                 <span wire:loading.remove wire:target="test('{{ $key }}')">Test connection</span>
                                 <span wire:loading wire:target="test('{{ $key }}')">Checking…</span>
                             </button>
-                            @if ($method->settings['sandbox'] ?? false)
+                            @if ($testing->get($key))
                                 <span class="rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-800">Test system</span>
                             @endif
                         @endif

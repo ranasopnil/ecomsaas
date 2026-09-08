@@ -119,10 +119,29 @@ class Bkash implements OnlineGateway
      * bKash calls a payment successful with statusCode 0000, and a completed
      * transaction "Completed". Both have to agree before we treat it as paid.
      */
-    public static function saysCompleted(array $body): bool
+    public function saysCompleted(array $body): bool
     {
         return ($body['statusCode'] ?? null) === '0000'
             && in_array($body['transactionStatus'] ?? null, ['Completed', 'Authorized'], true);
+    }
+
+    public function outcomeOf(array $body): array
+    {
+        return [
+            'transaction_id' => $body['trxID'] ?? null,
+            'payer_account' => $body['customerMsisdn'] ?? null,
+            'failure_reason' => (string) ($body['statusMessage'] ?? 'bKash did not complete it.'),
+        ];
+    }
+
+    public function refundIdOf(array $body): ?string
+    {
+        return $body['refundTrxID'] ?? null;
+    }
+
+    public function isTestMode(): bool
+    {
+        return $this->isSandbox();
     }
 
     /*

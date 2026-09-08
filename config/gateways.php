@@ -115,11 +115,14 @@ return [
         'entitlement' => 'online_payments',
         'countries' => ['MY', 'AE', 'SA', 'ID'],
         'fields' => [
-            'publishable_key' => ['label' => 'Publishable key', 'type' => 'text', 'secret' => false],
-            'secret_key' => ['label' => 'Secret key', 'type' => 'password', 'secret' => true],
-            'webhook_secret' => ['label' => 'Webhook signing secret', 'type' => 'password', 'secret' => true],
+            'secret_key' => ['label' => 'Secret key', 'type' => 'password', 'secret' => true,
+                'hint' => 'From Stripe → Developers → API keys. Starts sk_test_ while you are testing and sk_live_ when you are taking real money.'],
+            'webhook_secret' => ['label' => 'Webhook signing secret', 'type' => 'password', 'secret' => true, 'optional' => true,
+                'hint' => 'From the webhook you add in Stripe. Without it a customer who closes the tab after paying leaves the order unfinished.'],
+            'publishable_key' => ['label' => 'Publishable key', 'type' => 'text', 'secret' => false, 'optional' => true,
+                'hint' => 'Not needed for the hosted payment page. Fill it in only if Stripe asks you for it.'],
         ],
-        'blurb' => 'Cards and local wallets. Needs a Stripe account in a country Stripe serves.',
+        'blurb' => 'Cards, Apple Pay and Google Pay on a hosted page. Needs a Stripe account.',
     ],
 
     'airwallex' => [

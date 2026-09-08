@@ -9,7 +9,7 @@ use App\Models\Payment;
 use App\Models\PaymentEvent;
 use App\Models\PaymentMethod;
 use App\Models\PaymentRefund;
-use App\Services\Payments\Gateways\Bkash;
+use App\Services\Payments\Contracts\OnlineGateway;
 use App\Support\Money;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -77,7 +77,9 @@ class PaymentProcessor
             return $this->finish(
                 $payment,
                 $outcome === 'cancel' ? Payment::STATUS_CANCELLED : Payment::STATUS_FAILED,
-                ['failure_reason' => $outcome === 'cancel' ? 'The customer cancelled it.' : 'bKash did not approve it.'],
+                ['failure_reason' => $outcome === 'cancel'
+                    ? 'The customer cancelled it.'
+                    : $method->name().' did not approve it.'],
             );
         }
 
@@ -87,13 +89,15 @@ class PaymentProcessor
             return $payment->refresh();
         }
 
+        $gateway = $this->gateways->for($method);
+
         try {
-            $body = $this->gateways->for($method)->complete($payment);
+            $body = $gateway->complete($payment);
         } catch (GatewayFailed $e) {
             return $this->finish($payment, Payment::STATUS_FAILED, ['failure_reason' => $e->getMessage()]);
         }
 
-        return $this->recordOutcome($payment, $body);
+        return $this->recordOutcome($payment, $gateway, $body);
     }
 
     /**
@@ -108,17 +112,19 @@ class PaymentProcessor
             return $payment;
         }
 
+        $gateway = $this->gateways->for($method);
+
         try {
-            $body = $this->gateways->for($method)->status($payment);
+            $body = $gateway->status($payment);
         } catch (GatewayFailed) {
             return $payment;
         }
 
-        if (! Bkash::saysCompleted($body)) {
+        if (! $gateway->saysCompleted($body)) {
             return $payment;
         }
 
-        return $this->recordOutcome($payment, $body);
+        return $this->recordOutcome($payment, $gateway, $body);
     }
 
     /**
@@ -144,18 +150,20 @@ class PaymentProcessor
         $refund->amount = $amount;
         $refund->save();
 
+        $gateway = $this->gateways->for($method);
+
         try {
-            $body = $this->gateways->for($method)->refund($refund);
+            $body = $gateway->refund($refund);
         } catch (GatewayFailed $e) {
             $refund->update(['status' => PaymentRefund::STATUS_FAILED, 'meta' => ['error' => $e->getMessage()]]);
 
             throw $e;
         }
 
-        DB::transaction(function () use ($refund, $body) {
+        DB::transaction(function () use ($refund, $gateway, $body) {
             $refund->update([
                 'status' => PaymentRefund::STATUS_COMPLETED,
-                'gateway_refund_id' => $body['refundTrxID'] ?? null,
+                'gateway_refund_id' => $gateway->refundIdOf($body),
                 'meta' => $this->safe($body),
             ]);
 
@@ -178,18 +186,20 @@ class PaymentProcessor
      * Write down what the gateway said, and the outbox row that goes with it,
      * in one transaction. Either both land or neither does.
      */
-    protected function recordOutcome(Payment $payment, array $body): Payment
+    protected function recordOutcome(Payment $payment, OnlineGateway $gateway, array $body): Payment
     {
-        if (! Bkash::saysCompleted($body)) {
+        $outcome = $gateway->outcomeOf($body);
+
+        if (! $gateway->saysCompleted($body)) {
             return $this->finish($payment, Payment::STATUS_FAILED, [
-                'failure_reason' => (string) ($body['statusMessage'] ?? 'bKash did not complete it.'),
+                'failure_reason' => $outcome['failure_reason'] ?? 'The payment was not completed.',
                 'meta' => $this->safe($body),
             ]);
         }
 
         return $this->finish($payment, Payment::STATUS_COMPLETED, [
-            'gateway_transaction_id' => $body['trxID'] ?? null,
-            'payer_account' => $body['customerMsisdn'] ?? null,
+            'gateway_transaction_id' => $outcome['transaction_id'] ?? null,
+            'payer_account' => $outcome['payer_account'] ?? null,
             'paid_at' => now(),
             'meta' => $this->safe($body),
         ]);
@@ -230,13 +240,15 @@ class PaymentProcessor
     protected function claim(Payment $payment, string $type): bool
     {
         try {
-            PaymentEvent::create([
+            // In its own transaction so that being second is a savepoint
+            // rolled back, not a whole request's transaction left unusable.
+            DB::transaction(fn () => PaymentEvent::create([
                 'tenant_id' => $payment->tenant_id,
                 'payment_id' => $payment->id,
                 'gateway' => $payment->gateway,
                 'event_id' => $payment->gateway_payment_id.':'.$type,
                 'type' => $type,
-            ]);
+            ]));
 
             return true;
         } catch (UniqueConstraintViolationException) {
@@ -253,7 +265,10 @@ class PaymentProcessor
     protected function safe(array $body): array
     {
         return collect($body)
-            ->except(['id_token', 'refresh_token', 'app_key', 'app_secret', 'password', 'username'])
+            ->except([
+                'id_token', 'refresh_token', 'app_key', 'app_secret', 'password', 'username',
+                'client_secret', 'secret_key', 'publishable_key', 'webhook_secret',
+            ])
             ->all();
     }
 }
