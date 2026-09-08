@@ -4,9 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Exceptions\PlanChangeRefused;
 use App\Facades\Tenancy;
-use App\Models\Addon;
 use App\Models\Package;
-use App\Models\SubscriptionAddon;
 use App\Models\SubscriptionPayment;
 use App\Services\Billing\Payments;
 use App\Services\Billing\PlanChange;
@@ -39,11 +37,6 @@ class PlanIndex extends Component
 
     /** The plan being looked at in the change panel. */
     public ?int $lookingAt = null;
-
-    /** The add-on being bought, and how many. */
-    public ?int $buying = null;
-
-    public int $quantity = 1;
 
     public function mount(): void
     {
@@ -190,41 +183,6 @@ class PlanIndex extends Component
     }
 
     /*
-     * ----------------------------------------------------------- add-ons
-     */
-
-    public function startBuying(int $addonId): void
-    {
-        $this->resetErrorBag();
-        $this->buying = $this->buying === $addonId ? null : $addonId;
-        $this->quantity = 1;
-    }
-
-    public function buy(int $addonId, Payments $payments): void
-    {
-        $addon = Addon::find($addonId);
-
-        if ($addon === null) {
-            return;
-        }
-
-        try {
-            $payment = $payments->requestAddon($addon, $this->quantity, Tenancy::current());
-        } catch (PlanChangeRefused $e) {
-            $this->addError('plan', $e->getMessage());
-
-            return;
-        }
-
-        $this->buying = null;
-
-        $this->dispatch('toast', [
-            'text' => 'Send '.$payment->amount->toDisplay().' and tell us below. It switches on when we find it.',
-            'tone' => 'ok',
-        ]);
-    }
-
-    /*
      * ------------------------------------------------------------ render
      */
 
@@ -248,11 +206,6 @@ class PlanIndex extends Component
             'switches' => $usage->switches(),
             'choices' => $plans->choices($shop),
             'plans' => $plans,
-            'addons' => Addon::query()->sellable()->with('prices')->get()
-                ->filter(fn (Addon $addon) => $addon->priceIn($shop->currency) !== null),
-            'mine' => SubscriptionAddon::query()
-                ->whereIn('status', [SubscriptionAddon::STATUS_ACTIVE, SubscriptionAddon::STATUS_PENDING])
-                ->with('addon')->get(),
             'history' => SubscriptionPayment::query()->latest('id')->take(12)->get(),
             'methods' => SubscriptionPayment::METHODS,
         ]);

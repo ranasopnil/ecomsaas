@@ -1,6 +1,5 @@
 @php
     use App\Models\Subscription;
-    use App\Models\SubscriptionAddon;
 
     $symbol = config('currencies.'.$shop->currency.'.symbol', $shop->currency.' ');
 @endphp
@@ -56,9 +55,6 @@
                         <p class="mt-1 text-sm text-slate-500">
                             {{ $symbol }}{{ $subscription->price->toDisplay() }}
                             {{ $subscription->billing_period === 'yearly' ? 'a year' : 'a month' }}
-                            @if ($mine->where('status', SubscriptionAddon::STATUS_ACTIVE)->isNotEmpty())
-                                · plus your extras
-                            @endif
                         </p>
                     </div>
 
@@ -275,75 +271,6 @@
                 @endforeach
             </div>
         </div>
-
-        {{-- Extras --}}
-        @if ($addons->isNotEmpty() || $mine->isNotEmpty())
-            <div class="card rise rise-4 p-6">
-                <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Extras on top of your plan</h2>
-                <p class="mt-1 text-sm text-slate-500">
-                    A little more of something, without moving to a bigger plan. They renew on the same date as
-                    your plan, so there is still one date and one amount.
-                </p>
-
-                @if ($mine->isNotEmpty())
-                    <div class="mt-4 divide-y divide-slate-100">
-                        @foreach ($mine as $bought)
-                            <div wire:key="mine-{{ $bought->id }}" class="flex flex-wrap items-center justify-between gap-3 py-3">
-                                <div>
-                                    <p class="text-sm font-medium">
-                                        {{ $bought->addon?->what() }}{{ $bought->quantity > 1 ? ' ×'.$bought->quantity : '' }}
-                                    </p>
-                                    <p class="text-xs text-slate-500">
-                                        {{ $symbol }}{{ $bought->total()->toDisplay() }} each renewal
-                                    </p>
-                                </div>
-                                @if ($bought->status === SubscriptionAddon::STATUS_PENDING)
-                                    <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900">
-                                        Waiting for your payment
-                                    </span>
-                                @else
-                                    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">On</span>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-
-                @if ($addons->isNotEmpty())
-                    <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                        @foreach ($addons as $addon)
-                            <div wire:key="addon-{{ $addon->id }}" class="rounded-xl border border-slate-200 p-4">
-                                <p class="text-sm font-medium">{{ $addon->what() }}</p>
-                                <p class="mt-0.5 text-xs text-slate-500">
-                                    {{ $symbol }}{{ $addon->priceIn($shop->currency)->toDisplay() }} a month
-                                    @if ($addon->description) · {{ $addon->description }} @endif
-                                </p>
-
-                                @if ($buying === $addon->id)
-                                    <div class="mt-3 flex items-center gap-2">
-                                        @if ($addon->isUnits())
-                                            <select wire:model="quantity"
-                                                    class="rounded-xl border border-slate-200 px-2 py-1.5 text-sm">
-                                                @foreach (range(1, 5) as $n)
-                                                    <option value="{{ $n }}">×{{ $n }}</option>
-                                                @endforeach
-                                            </select>
-                                        @endif
-                                        <button type="button" wire:click="buy({{ $addon->id }})"
-                                                class="btn btn-primary !px-3 !py-1.5">Add it</button>
-                                        <button type="button" wire:click="startBuying({{ $addon->id }})"
-                                                class="text-xs text-slate-500 hover:text-slate-900">Never mind</button>
-                                    </div>
-                                @else
-                                    <button type="button" wire:click="startBuying({{ $addon->id }})"
-                                            class="btn btn-quiet mt-3 !px-3 !py-1.5">Add this</button>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-            </div>
-        @endif
 
         {{-- What you have paid --}}
         @if ($history->isNotEmpty())

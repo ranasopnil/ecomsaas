@@ -21,6 +21,7 @@
             ['route' => 'admin.templates.index', 'label' => 'Shop look', 'icon' => 'grid'],
             ['route' => 'admin.footer.edit', 'label' => 'Footer & pages', 'icon' => 'page'],
             ['route' => 'admin.plan.index', 'label' => 'Your plan', 'icon' => 'badge'],
+            ['route' => 'admin.addons.index', 'label' => 'Add-ons', 'icon' => 'plus'],
         ],
     ];
 
@@ -38,6 +39,7 @@
         'van' => 'M3 7h11v9H3zM14 10h4l3 3v3h-7zM7.5 16a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6zM17.5 16a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6z',
         'book' => 'M5 4.5A1.5 1.5 0 0 1 6.5 3H19v18H6.5A1.5 1.5 0 0 1 5 19.5zM8 8h8M8 12h5',
         'badge' => 'M12 3 4 6.2v5.3c0 4.6 3.3 8.2 8 9.5 4.7-1.3 8-4.9 8-9.5V6.2zM9.2 12l2 2 3.6-3.8',
+        'plus' => 'M4 7.5A3.5 3.5 0 0 1 7.5 4h9A3.5 3.5 0 0 1 20 7.5v9a3.5 3.5 0 0 1-3.5 3.5h-9A3.5 3.5 0 0 1 4 16.5zM12 8.5v7M8.5 12h7',
     ];
 @endphp
 <!DOCTYPE html>

@@ -19,7 +19,7 @@ const SHAPES = [
     [/\/basket$/, 'basket'],
     [/\/products\//, 'product'],
     [/\/browse/, 'browse'],
-    [/\/admin\/(products|categories|brands|stock|domains|payments|couriers|orders|accounts|plan)\/?$/, 'admin-list'],
+    [/\/admin\/(products|categories|brands|stock|domains|payments|couriers|orders|accounts|plan|add-ons)\/?$/, 'admin-list'],
     [/\/admin\/.+\/(new|edit)$/, 'admin-form'],
     [/\/admin\/(mail|delivery|templates|footer)/, 'admin-form'],
     [/\/super\/[a-z-]+\/(new|edit|\d+)/, 'admin-form'],

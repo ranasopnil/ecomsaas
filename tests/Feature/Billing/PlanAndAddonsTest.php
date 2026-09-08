@@ -512,6 +512,42 @@ class PlanAndAddonsTest extends TestCase
         $this->assertSame(2, Entitlements::limit('custom_domains'));
     }
 
+    public function test_the_shop_buys_extras_on_their_own_page_not_on_the_plan_page(): void
+    {
+        $this->subscribe($this->starter);
+        $this->anAddon('50 more products', Addon::KIND_UNITS, 'products', 50, '300');
+        $this->actingAs(User::factory()->create(['tenant_id' => $this->store->id]));
+
+        // The plan page is about the plan. Extras have a page of their own.
+        Livewire::test(PlanIndex::class)->assertDontSee('50 more products');
+
+        Livewire::test(\App\Livewire\Admin\AddonIndex::class)
+            ->assertSee('50 more products')
+            ->assertSee('300.00')
+            ->assertSee('Nothing switches on until we have found your payment');
+    }
+
+    public function test_buying_an_extra_asks_for_the_money_and_grants_nothing_yet(): void
+    {
+        $this->subscribe($this->starter);
+        $addon = $this->anAddon('50 more products', Addon::KIND_UNITS, 'products', 50, '300');
+        $this->actingAs(User::factory()->create(['tenant_id' => $this->store->id]));
+
+        Livewire::test(\App\Livewire\Admin\AddonIndex::class)
+            ->call('start', $addon->id)
+            ->set('quantity', 2)
+            ->call('buy', $addon->id)
+            ->assertHasNoErrors()
+            ->assertDispatched('toast')
+            // It shows on their list at once, waiting.
+            ->assertSee('Waiting for your payment');
+
+        Entitlements::forget();
+
+        $this->assertSame(50, Entitlements::limit('products'));
+        $this->assertSame(60000, SubscriptionPayment::query()->firstOrFail()->amount_minor);
+    }
+
     public function test_staff_can_only_sell_an_extra_that_matches_what_it_adds_to(): void
     {
         $this->actingAs(Admin::factory()->create(), 'admin');

@@ -24,6 +24,7 @@ use App\Http\Middleware\CountVisit;
 use App\Http\Middleware\EnsureBillingCurrent;
 use App\Http\Middleware\EnsureCentralDomain;
 use App\Http\Middleware\EnsureStoreDomain;
+use App\Livewire\Admin\AddonIndex as ShopAddonIndex;
 use App\Livewire\Admin\BrandIndex;
 use App\Livewire\Admin\CategoryIndex;
 use App\Livewire\Admin\CourierIndex;
@@ -207,6 +208,7 @@ Route::prefix('admin')->name('admin.')->middleware(EnsureStoreDomain::class)->gr
         Route::get('couriers', CourierIndex::class)->name('couriers.index');
         Route::get('accounts', LedgerIndex::class)->name('ledger.index');
         Route::get('plan', PlanIndex::class)->name('plan.index');
+        Route::get('add-ons', ShopAddonIndex::class)->name('addons.index');
         Route::get('web-address', DomainIndex::class)->name('domains.index');
         Route::get('email', MailSettingsForm::class)->name('mail.edit');
         Route::get('payments', PaymentMethodsIndex::class)->name('payments.index');
