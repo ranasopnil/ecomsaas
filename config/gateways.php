@@ -89,8 +89,10 @@ return [
         'entitlement' => 'online_payments',
         'countries' => ['BD'],
         'fields' => [
-            'store_id' => ['label' => 'Store ID', 'type' => 'text', 'secret' => false],
-            'signature_key' => ['label' => 'Signature key', 'type' => 'password', 'secret' => true],
+            'store_id' => ['label' => 'Store ID', 'type' => 'text', 'secret' => false,
+                'hint' => 'From your AmarPay merchant panel.'],
+            'signature_key' => ['label' => 'Signature key', 'type' => 'password', 'secret' => true,
+                'hint' => 'From the same panel. AmarPay checks it on every request your shop makes.'],
             'sandbox' => ['label' => 'Use the test system', 'type' => 'checkbox', 'secret' => false],
         ],
         'blurb' => 'Cards, bKash, Nagad, Rocket and banks through one hosted page.',

@@ -4,6 +4,7 @@ use App\Facades\Tenancy;
 use App\Http\Controllers\Admin\LoginController as AdminLoginController;
 use App\Http\Controllers\Admin\PlaceSearchController;
 use App\Http\Controllers\Internal\DomainCheckController;
+use App\Http\Controllers\Payments\AmarPayCallbackController;
 use App\Http\Controllers\Payments\BkashCallbackController;
 use App\Http\Controllers\Payments\SslCommerzCallbackController;
 use App\Http\Controllers\Payments\SslCommerzIpnController;
@@ -112,9 +113,11 @@ Route::middleware(EnsureStoreDomain::class)->group(function () {
     Route::get('/payments/bkash/callback', BkashCallbackController::class)->name('payments.bkash.callback');
     Route::get('/payments/stripe/callback', StripeCallbackController::class)->name('payments.stripe.callback');
 
-    // SSLCommerz posts the customer back rather than sending them.
+    // SSLCommerz and AmarPay post the customer back rather than sending them.
     Route::post('/payments/sslcommerz/callback', SslCommerzCallbackController::class)
         ->name('payments.sslcommerz.callback');
+    Route::post('/payments/amarpay/callback', AmarPayCallbackController::class)
+        ->name('payments.amarpay.callback');
 });
 
 /*

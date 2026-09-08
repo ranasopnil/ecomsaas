@@ -5,6 +5,7 @@ namespace App\Services\Payments;
 use App\Exceptions\GatewayFailed;
 use App\Models\PaymentMethod;
 use App\Services\Payments\Contracts\OnlineGateway;
+use App\Services\Payments\Gateways\AmarPay;
 use App\Services\Payments\Gateways\Bkash;
 use App\Services\Payments\Gateways\SslCommerz;
 use App\Services\Payments\Gateways\Stripe;
@@ -19,6 +20,7 @@ class GatewayFactory
 {
     /** @var array<string, class-string<OnlineGateway>> */
     protected const DRIVERS = [
+        AmarPay::KEY => AmarPay::class,
         Bkash::KEY => Bkash::class,
         SslCommerz::KEY => SslCommerz::class,
         Stripe::KEY => Stripe::class,
