@@ -40,6 +40,13 @@ class Ledger
 
         $by ??= auth()->user();
 
+        // Only ever the shop's own people. Platform staff confirming a
+        // payment are recorded in the audit log, not written into the shop's
+        // book as though they worked there.
+        if (! $by instanceof User) {
+            $by = null;
+        }
+
         try {
             // In its own transaction so that being second is a savepoint
             // rolled back, not the whole request's transaction left unusable,

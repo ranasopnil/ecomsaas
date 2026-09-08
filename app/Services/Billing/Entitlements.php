@@ -5,8 +5,11 @@ namespace App\Services\Billing;
 use App\Exceptions\LimitReached;
 use App\Exceptions\TenantContextMissing;
 use App\Facades\Tenancy;
+use App\Models\Addon;
 use App\Models\Subscription;
+use App\Models\SubscriptionAddon;
 use App\Models\TenantEntitlement;
+use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
 /**
@@ -19,6 +22,9 @@ class Entitlements
 {
     /** @var array<int, array<string, TenantEntitlement>> */
     protected array $cache = [];
+
+    /** @var array<int, Collection<int, SubscriptionAddon>> */
+    protected array $extras = [];
 
     /**
      * The ceiling for a counted feature. Null means no ceiling.
@@ -36,6 +42,13 @@ class Entitlements
         $limit = $row === null
             ? config("features.{$feature}.default")
             : ($row->enabled ? $row->limit_value : 0);
+
+        // Extras bought on top stack onto the plan: a Starter shop with two
+        // "+50 products" is allowed 150. Something staff granted by hand is
+        // the last word and is left exactly as they set it.
+        if (! $this->isOverride($row) && $limit !== null) {
+            $limit += $this->extraUnits($feature);
+        }
 
         return $this->cap($feature, $limit);
     }
@@ -68,11 +81,61 @@ class Entitlements
 
         $row = $this->rows()[$feature] ?? null;
 
-        if ($row === null) {
-            return (bool) config("features.{$feature}.default");
+        // Something staff granted or withheld by hand is the last word.
+        if ($this->isOverride($row)) {
+            return (bool) $row->enabled;
         }
 
-        return $row->enabled;
+        $fromPlan = $row === null
+            ? (bool) config("features.{$feature}.default")
+            : (bool) $row->enabled;
+
+        return $fromPlan || $this->hasExtraSwitch($feature);
+    }
+
+    /**
+     * How much more of a counted thing this shop has bought on top of its
+     * plan.
+     */
+    protected function extraUnits(string $feature): int
+    {
+        return (int) $this->addons()
+            ->filter(fn (SubscriptionAddon $bought) => $bought->addon?->kind === Addon::KIND_UNITS
+                && $bought->addon?->feature === $feature)
+            ->sum(fn (SubscriptionAddon $bought) => (int) $bought->addon->unit_amount * $bought->quantity);
+    }
+
+    /**
+     * Has this shop bought this feature on top of its plan?
+     */
+    protected function hasExtraSwitch(string $feature): bool
+    {
+        return $this->addons()->contains(fn (SubscriptionAddon $bought) => $bought->addon?->kind === Addon::KIND_SWITCH
+            && $bought->addon?->feature === $feature);
+    }
+
+    /**
+     * The extras this shop is paying for right now.
+     *
+     * @return Collection<int, SubscriptionAddon>
+     */
+    protected function addons()
+    {
+        $tenantId = Tenancy::id();
+
+        if ($tenantId === null) {
+            throw TenantContextMissing::for(SubscriptionAddon::class);
+        }
+
+        return $this->extras[$tenantId] ??= SubscriptionAddon::query()
+            ->inForce()
+            ->with('addon')
+            ->get();
+    }
+
+    protected function isOverride(?TenantEntitlement $row): bool
+    {
+        return $row !== null && $row->source === TenantEntitlement::SOURCE_OVERRIDE;
     }
 
     /**
@@ -148,11 +211,12 @@ class Entitlements
     {
         if ($tenantId === null) {
             $this->cache = [];
+            $this->extras = [];
 
             return;
         }
 
-        unset($this->cache[$tenantId]);
+        unset($this->cache[$tenantId], $this->extras[$tenantId]);
     }
 
     protected function hasActiveSubscription(): bool

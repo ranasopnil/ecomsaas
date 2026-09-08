@@ -19,6 +19,8 @@
                             'super.dashboard' => 'Overview',
                             'super.packages.index' => 'Plans',
                             'super.stores.index' => 'Shops',
+                            'super.billing.index' => 'Money due',
+                            'super.addons.index' => 'Add-ons',
                             'super.gateways.index' => 'Gateways',
                             'super.templates.index' => 'Templates',
                             'super.maps.index' => 'Maps',

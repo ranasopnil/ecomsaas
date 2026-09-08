@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * One store's subscription to one package.
@@ -33,6 +34,8 @@ class Subscription extends Model
     protected $fillable = [
         'tenant_id',
         'package_id',
+        'scheduled_package_id',
+        'scheduled_change_at',
         'status',
         'price_minor',
         'currency',
@@ -41,6 +44,8 @@ class Subscription extends Model
         'starts_at',
         'trial_ends_at',
         'current_period_ends_at',
+        'grace_ends_at',
+        'locked_at',
         'cancelled_at',
         'ends_at',
     ];
@@ -54,6 +59,9 @@ class Subscription extends Model
             'starts_at' => 'datetime',
             'trial_ends_at' => 'datetime',
             'current_period_ends_at' => 'datetime',
+            'grace_ends_at' => 'datetime',
+            'locked_at' => 'datetime',
+            'scheduled_change_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'ends_at' => 'datetime',
         ];
@@ -62,6 +70,58 @@ class Subscription extends Model
     public function package(): BelongsTo
     {
         return $this->belongsTo(Package::class);
+    }
+
+    /**
+     * The plan this shop is dropping to at its renewal date. A downgrade is
+     * booked rather than applied, so the shop keeps what it paid for.
+     */
+    public function scheduledPackage(): BelongsTo
+    {
+        return $this->belongsTo(Package::class, 'scheduled_package_id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(SubscriptionPayment::class);
+    }
+
+    public function hasScheduledChange(): bool
+    {
+        return $this->scheduled_package_id !== null;
+    }
+
+    public function isPastDue(): bool
+    {
+        return $this->status === self::STATUS_PAST_DUE;
+    }
+
+    /**
+     * The shop's dashboard is closed until it pays. Its storefront is never
+     * touched: its customers had no part in this.
+     */
+    public function isLocked(): bool
+    {
+        return $this->locked_at !== null;
+    }
+
+    /**
+     * Overdue, but still inside the days of grace.
+     */
+    public function isInGrace(): bool
+    {
+        return $this->isPastDue() && ! $this->isLocked();
+    }
+
+    /**
+     * Whole days until the renewal date, or until the dashboard closes once
+     * it has passed. Never negative.
+     */
+    public function daysLeft(): int
+    {
+        $until = $this->isPastDue() ? $this->grace_ends_at : $this->current_period_ends_at;
+
+        return $until === null ? 0 : max(0, (int) now()->startOfDay()->diffInDays($until->copy()->startOfDay(), false));
     }
 
     /**

@@ -21,6 +21,7 @@ use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\SearchController;
 use App\Http\Controllers\Super\LoginController;
 use App\Http\Middleware\CountVisit;
+use App\Http\Middleware\EnsureBillingCurrent;
 use App\Http\Middleware\EnsureCentralDomain;
 use App\Http\Middleware\EnsureStoreDomain;
 use App\Livewire\Admin\BrandIndex;
@@ -35,10 +36,13 @@ use App\Livewire\Admin\MailSettingsForm;
 use App\Livewire\Admin\OrderIndex;
 use App\Livewire\Admin\OrderShow;
 use App\Livewire\Admin\PaymentMethodsIndex;
+use App\Livewire\Admin\PlanIndex;
 use App\Livewire\Admin\ProductForm;
 use App\Livewire\Admin\ProductIndex;
 use App\Livewire\Admin\StockIndex;
 use App\Livewire\Admin\TemplateIndex;
+use App\Livewire\Super\AddonIndex;
+use App\Livewire\Super\BillingIndex;
 use App\Livewire\Super\Dashboard;
 use App\Livewire\Super\GatewayMatrix;
 use App\Livewire\Super\MapAccess;
@@ -168,6 +172,8 @@ Route::prefix('super')->name('super.')->middleware(EnsureCentralDomain::class)->
 
         Route::get('shops', StoreIndex::class)->name('stores.index');
         Route::get('shops/{tenant}/payments', ShopPayments::class)->name('stores.payments');
+        Route::get('money-due', BillingIndex::class)->name('billing.index');
+        Route::get('add-ons', AddonIndex::class)->name('addons.index');
         Route::get('payment-gateways', GatewayMatrix::class)->name('gateways.index');
         Route::get('templates', TemplateMatrix::class)->name('templates.index');
         Route::get('maps', MapAccess::class)->name('maps.index');
@@ -183,7 +189,7 @@ Route::prefix('admin')->name('admin.')->middleware(EnsureStoreDomain::class)->gr
         Route::post('login', [AdminLoginController::class, 'store'])->name('login.store');
     });
 
-    Route::middleware('auth:web')->group(function () {
+    Route::middleware(['auth:web', EnsureBillingCurrent::class])->group(function () {
         Route::post('logout', [AdminLoginController::class, 'destroy'])->name('logout');
 
         Route::get('/', AdminDashboard::class)->name('dashboard');
@@ -200,6 +206,7 @@ Route::prefix('admin')->name('admin.')->middleware(EnsureStoreDomain::class)->gr
         Route::get('brands', BrandIndex::class)->name('brands.index');
         Route::get('couriers', CourierIndex::class)->name('couriers.index');
         Route::get('accounts', LedgerIndex::class)->name('ledger.index');
+        Route::get('plan', PlanIndex::class)->name('plan.index');
         Route::get('web-address', DomainIndex::class)->name('domains.index');
         Route::get('email', MailSettingsForm::class)->name('mail.edit');
         Route::get('payments', PaymentMethodsIndex::class)->name('payments.index');

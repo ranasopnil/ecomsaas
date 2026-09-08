@@ -18,6 +18,17 @@ Schedule::command('domains:check')
     ->runInBackground();
 
 /*
+ * Trials end, months run out, days of grace expire. This is what notices.
+ * It charges nobody — the money moves by hand and staff confirm it — but it
+ * does close the dashboard of a shop that has not paid, seven days after its
+ * renewal date. The shop's own storefront is never touched.
+ */
+Schedule::command('subscriptions:tick')
+    ->dailyAt('02:15')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+/*
  * NOT SCHEDULED YET, ON PURPOSE.
  *
  * `payments:reconcile` asks each gateway about payments the customer never
