@@ -10,6 +10,7 @@
             ['route' => 'admin.categories.index', 'label' => 'Categories', 'icon' => 'grid'],
             ['route' => 'admin.brands.index', 'label' => 'Brands', 'icon' => 'tag'],
             ['route' => 'admin.stock.index', 'label' => 'Stock', 'icon' => 'layers'],
+            ['route' => 'admin.couriers.index', 'label' => 'Couriers', 'icon' => 'van'],
         ],
         'Settings' => [
             ['route' => 'admin.domains.index', 'label' => 'Web address', 'icon' => 'globe'],
@@ -32,6 +33,7 @@
         'card' => 'M3 6h18v12H3zM3 10h18M7 15h3',
         'receipt' => 'M5 3h14v18l-3-2-2 2-2-2-2 2-3-2zM8 8h8M8 12h8M8 16h5',
         'page' => 'M6 3h9l3.5 3.5V21H6zM15 3v4h3.5M9 12h6M9 16h4',
+        'van' => 'M3 7h11v9H3zM14 10h4l3 3v3h-7zM7.5 16a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6zM17.5 16a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6z',
     ];
 @endphp
 <!DOCTYPE html>
