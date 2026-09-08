@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Order;
+use App\Services\Accounts\Ledger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -45,6 +46,8 @@ class OrderIndex extends Component
         'handed_over' => ['label' => 'With the courier', 'statuses' => [Order::STATUS_HANDED_OVER]],
         'not_delivered' => ['label' => 'Not delivered', 'statuses' => [Order::STATUS_NOT_DELIVERED]],
         'delivered' => ['label' => 'Delivered', 'statuses' => [Order::STATUS_DELIVERED]],
+        // Delivered, paid for in cash, and the courier still has the money.
+        'cash' => ['label' => 'Cash to collect', 'statuses' => [Order::STATUS_DELIVERED], 'owed' => true],
         'unfinished' => ['label' => 'Unfinished and cancelled', 'statuses' => [
             Order::STATUS_PENDING_PAYMENT, Order::STATUS_CANCELLED,
         ]],
@@ -67,12 +70,23 @@ class OrderIndex extends Component
         $this->resetPage();
     }
 
+    /**
+     * Orders the courier has been paid for and the shop has not.
+     */
+    protected function stillOwed(Builder $query): Builder
+    {
+        return $query
+            ->where('payment_status', Order::PAYMENT_ON_DELIVERY)
+            ->whereColumn('cod_received_minor', '<', 'total_minor');
+    }
+
     public function render()
     {
         $tab = self::TABS[$this->show] ?? self::TABS['open'];
 
         $orders = Order::query()
             ->when($tab['statuses'] !== [], fn (Builder $q) => $q->whereIn('status', $tab['statuses']))
+            ->when($tab['owed'] ?? false, fn (Builder $q) => $this->stillOwed($q))
             ->when($this->search !== '', function (Builder $q) {
                 $wanted = '%'.trim($this->search).'%';
 
@@ -95,9 +109,14 @@ class OrderIndex extends Component
         return view('livewire.admin.order-index', [
             'orders' => $orders,
             'tabs' => self::TABS,
-            'counts' => collect(self::TABS)->map(fn (array $definition) => $definition['statuses'] === []
-                ? $byStatus->sum()
-                : collect($definition['statuses'])->sum(fn (string $status) => $byStatus->get($status, 0))),
+            'counts' => collect(self::TABS)->map(fn (array $definition, string $key) => match (true) {
+                ($definition['owed'] ?? false) => $this->stillOwed(
+                    Order::query()->whereIn('status', $definition['statuses'])
+                )->count(),
+                $definition['statuses'] === [] => $byStatus->sum(),
+                default => collect($definition['statuses'])->sum(fn (string $status) => $byStatus->get($status, 0)),
+            }),
+            'owed' => app(Ledger::class)->owedByCouriers(),
             'takenToday' => Order::whereNotIn('status', [Order::STATUS_PENDING_PAYMENT, Order::STATUS_CANCELLED])
                 ->whereDate('placed_at', today())
                 ->count(),

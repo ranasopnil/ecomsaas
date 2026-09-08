@@ -17,6 +17,12 @@ class OrderEvent extends Model
 {
     use BelongsToTenant;
 
+    /**
+     * Not a step along the road: the money arriving afterwards, from the
+     * courier who collected it. The order's own status does not change.
+     */
+    public const CASH_RECEIVED = 'cash_received';
+
     protected $fillable = [
         'tenant_id', 'order_id', 'from_status', 'to_status', 'note',
         'courier_id', 'courier_name', 'tracking_code', 'user_id', 'user_name',
@@ -32,6 +38,10 @@ class OrderEvent extends Model
      */
     public function title(): string
     {
+        if ($this->to_status === self::CASH_RECEIVED) {
+            return 'Cash received from '.($this->courier_name ?: 'the courier');
+        }
+
         if ($this->to_status === Order::STATUS_HANDED_OVER && $this->courier_name) {
             return 'Handed to '.$this->courier_name;
         }

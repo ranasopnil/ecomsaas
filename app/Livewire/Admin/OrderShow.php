@@ -6,6 +6,7 @@ use App\Exceptions\OrderStepRefused;
 use App\Models\Courier;
 use App\Models\Order;
 use App\Services\Orders\OrderFlow;
+use App\Support\Money;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -29,6 +30,14 @@ class OrderShow extends Component
     public ?int $courier_id = null;
 
     public string $tracking_code = '';
+
+    /** The cash-from-courier form, when it is open. */
+    public bool $collecting = false;
+
+    /** What the courier handed over, as the shopkeeper types it. */
+    public string $cash = '';
+
+    public string $cash_note = '';
 
     public function mount(Order $order): void
     {
@@ -92,6 +101,69 @@ class OrderShow extends Component
         ]);
     }
 
+    /**
+     * The courier is handing over what it collected. Opens with the whole
+     * amount still owed already filled in, because that is what usually
+     * arrives — but the shopkeeper can type what actually came.
+     */
+    public function collect(): void
+    {
+        $this->resetErrorBag();
+
+        $this->collecting = true;
+        $this->cash = $this->stillOwed()->toDecimal();
+        $this->cash_note = '';
+    }
+
+    public function cancelCollecting(): void
+    {
+        $this->reset(['collecting', 'cash', 'cash_note']);
+        $this->resetErrorBag();
+    }
+
+    public function recordCash(OrderFlow $flow): void
+    {
+        try {
+            $amount = Money::fromDecimal(
+                trim($this->cash) === '' ? '0' : trim($this->cash),
+                $this->order->currency,
+                $this->order->currency_exponent,
+            );
+        } catch (\InvalidArgumentException) {
+            $this->addError('cash', 'Write the amount in figures, like 260 or 260.50.');
+
+            return;
+        }
+
+        try {
+            $this->order = $flow->cashFromCourier($this->order, $amount, $this->cash_note);
+        } catch (OrderStepRefused $e) {
+            $this->addError('cash', $e->getMessage());
+
+            return;
+        }
+
+        $this->order->load(['lines', 'payment', 'courier', 'events']);
+        $this->cancelCollecting();
+
+        $this->dispatch('toast', [
+            'text' => $amount->toDisplay().' '.$amount->currency.' entered in your book.',
+            'tone' => 'ok',
+        ]);
+    }
+
+    /**
+     * What the courier still has of this shop's money.
+     */
+    public function stillOwed(): Money
+    {
+        return new Money(
+            max(0, $this->order->total_minor - $this->order->cod_received_minor),
+            $this->order->currency,
+            $this->order->currency_exponent,
+        );
+    }
+
     public function render()
     {
         $flow = app(OrderFlow::class);
@@ -100,6 +172,8 @@ class OrderShow extends Component
             'steps' => $flow->steps($this->order),
             'needs' => $this->step === '' ? null : $flow->needs($this->step),
             'couriers' => Courier::inUse(),
+            'waitingForCash' => $flow->isWaitingForCash($this->order),
+            'stillOwed' => $this->stillOwed(),
         ])->title('Order '.$this->order->reference);
     }
 }

@@ -4,11 +4,14 @@ namespace App\Services\Orders;
 
 use App\Exceptions\OrderStepRefused;
 use App\Models\Courier;
+use App\Models\LedgerEntry;
 use App\Models\Order;
 use App\Models\OrderEvent;
 use App\Models\OutboxEvent;
 use App\Models\User;
+use App\Services\Accounts\Ledger;
 use App\Services\Catalogue\InventoryService;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -43,7 +46,7 @@ class OrderFlow
         Order::STATUS_CANCELLED => [],
     ];
 
-    public function __construct(protected InventoryService $stock) {}
+    public function __construct(protected InventoryService $stock, protected Ledger $ledger) {}
 
     /**
      * The steps this order can take next, ready for buttons.
@@ -171,6 +174,114 @@ class OrderFlow
         }
 
         return $moved->refresh();
+    }
+
+    /**
+     * Cash the courier collected on delivery, handed over to the shop.
+     *
+     * This is not a step along the road — the parcel has already arrived. It
+     * is the money catching up, and it is entered in the shop's book at the
+     * same moment as it is written on the order, so the two can never
+     * disagree.
+     *
+     * The courier may hand over less than was due, or in more than one lot.
+     * Both are recorded as they happened rather than tidied up: the order
+     * says what is still owed until it is all in.
+     *
+     * @throws OrderStepRefused
+     */
+    public function cashFromCourier(Order $order, Money $amount, ?string $note = null, ?User $by = null): Order
+    {
+        if ($order->payment_status !== Order::PAYMENT_ON_DELIVERY) {
+            throw OrderStepRefused::notCashOnDelivery();
+        }
+
+        if ($order->status !== Order::STATUS_DELIVERED) {
+            throw OrderStepRefused::notDeliveredYet();
+        }
+
+        if ($amount->minor <= 0) {
+            throw OrderStepRefused::noAmount();
+        }
+
+        $stillOwed = $order->total_minor - $order->cod_received_minor;
+
+        if ($amount->minor > $stillOwed) {
+            throw OrderStepRefused::moreThanOwed();
+        }
+
+        $by ??= auth()->user();
+
+        $moved = DB::transaction(function () use ($order, $amount, $note, $by) {
+            $fresh = Order::whereKey($order->id)->lockForUpdate()->first();
+
+            if ($fresh === null || $fresh->cod_received_minor !== $order->cod_received_minor) {
+                throw OrderStepRefused::movedAlready();
+            }
+
+            $received = $fresh->cod_received_minor + $amount->minor;
+            $settled = $received >= $fresh->total_minor;
+
+            $fresh->forceFill([
+                'cod_received_minor' => $received,
+                'cod_received_at' => now(),
+                // Only once every taka of it is in is the order paid for.
+                ...($settled ? [
+                    'payment_status' => Order::PAYMENT_PAID,
+                    'paid_at' => $fresh->paid_at ?? now(),
+                ] : []),
+            ])->save();
+
+            OrderEvent::create([
+                'tenant_id' => $fresh->tenant_id,
+                'order_id' => $fresh->id,
+                'from_status' => $fresh->status,
+                'to_status' => OrderEvent::CASH_RECEIVED,
+                'note' => trim(($amount->toDisplay().' '.$amount->currency)
+                    .($settled ? '' : ', still owed '.$fresh->total->minus(new Money($received, $amount->currency, $amount->exponent))->toDisplay())
+                    .($note ? ' — '.$note : '')),
+                'courier_id' => $fresh->courier_id,
+                'courier_name' => $fresh->courier_name,
+                'user_id' => $by?->id,
+                'user_name' => $by?->name,
+            ]);
+
+            // The shop's book, written in the same breath as the order.
+            $this->ledger->record($amount, [
+                'direction' => LedgerEntry::IN,
+                'kind' => LedgerEntry::KIND_COD,
+                'description' => 'Cash from '.($fresh->courier_name ?: 'the courier')
+                    .' for '.$fresh->reference
+                    .($note ? ' — '.$note : ''),
+                'order_id' => $fresh->id,
+            ], $by);
+
+            OutboxEvent::create([
+                'tenant_id' => $fresh->tenant_id,
+                'type' => 'order.cash_received',
+                'payload' => [
+                    'order_id' => $fresh->id,
+                    'reference' => $fresh->reference,
+                    'amount_minor' => $amount->minor,
+                    'settled' => $settled,
+                ],
+                'available_at' => now(),
+            ]);
+
+            return $fresh;
+        });
+
+        return $moved->refresh();
+    }
+
+    /**
+     * Is the shop still waiting on the courier for this one?
+     */
+    public function isWaitingForCash(Order $order): bool
+    {
+        return $order->status === Order::STATUS_DELIVERED
+            && $order->payment_status === Order::PAYMENT_ON_DELIVERY
+            && $order->cod_received_minor < $order->total_minor;
     }
 
     /**

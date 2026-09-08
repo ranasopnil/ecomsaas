@@ -14,9 +14,9 @@ use App\Http\Controllers\Storefront\BasketController;
 use App\Http\Controllers\Storefront\BrowseController;
 use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\HomeController;
+use App\Http\Controllers\Storefront\LocationController;
 use App\Http\Controllers\Storefront\OrderController;
 use App\Http\Controllers\Storefront\PageController;
-use App\Http\Controllers\Storefront\LocationController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\SearchController;
 use App\Http\Controllers\Super\LoginController;
@@ -25,11 +25,12 @@ use App\Http\Middleware\EnsureCentralDomain;
 use App\Http\Middleware\EnsureStoreDomain;
 use App\Livewire\Admin\BrandIndex;
 use App\Livewire\Admin\CategoryIndex;
-use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\CourierIndex;
+use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\DeliveryAreaForm;
 use App\Livewire\Admin\DomainIndex;
 use App\Livewire\Admin\FooterSettings;
+use App\Livewire\Admin\LedgerIndex;
 use App\Livewire\Admin\MailSettingsForm;
 use App\Livewire\Admin\OrderIndex;
 use App\Livewire\Admin\OrderShow;
@@ -46,6 +47,7 @@ use App\Livewire\Super\PackageIndex as SuperPackageIndex;
 use App\Livewire\Super\ShopPayments;
 use App\Livewire\Super\StoreIndex;
 use App\Livewire\Super\TemplateMatrix;
+use App\Models\StorefrontFooter;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function (HomeController $home) {
@@ -70,7 +72,7 @@ Route::middleware([EnsureStoreDomain::class, CountVisit::class])->group(function
     // The list of addresses is fixed in StorefrontFooter::PAGES; a page the
     // shopkeeper has not written is simply not there.
     Route::get('/pages/{slug}', PageController::class)
-        ->whereIn('slug', array_keys(App\Models\StorefrontFooter::PAGES))
+        ->whereIn('slug', array_keys(StorefrontFooter::PAGES))
         ->name('storefront.page');
 });
 
@@ -197,6 +199,7 @@ Route::prefix('admin')->name('admin.')->middleware(EnsureStoreDomain::class)->gr
         Route::get('categories', CategoryIndex::class)->name('categories.index');
         Route::get('brands', BrandIndex::class)->name('brands.index');
         Route::get('couriers', CourierIndex::class)->name('couriers.index');
+        Route::get('accounts', LedgerIndex::class)->name('ledger.index');
         Route::get('web-address', DomainIndex::class)->name('domains.index');
         Route::get('email', MailSettingsForm::class)->name('mail.edit');
         Route::get('payments', PaymentMethodsIndex::class)->name('payments.index');

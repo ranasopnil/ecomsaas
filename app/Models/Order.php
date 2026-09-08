@@ -77,6 +77,7 @@ class Order extends Model
         'status', 'payment_status',
         'placed_at', 'paid_at', 'approved_at', 'handed_over_at', 'delivered_at',
         'cancelled_at', 'cancelled_reason', 'not_delivered_reason',
+        'cod_received_minor', 'cod_received_at',
     ];
 
     protected function casts(): array
@@ -97,6 +98,8 @@ class Order extends Model
             'handed_over_at' => 'datetime',
             'delivered_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'cod_received_minor' => 'integer',
+            'cod_received_at' => 'datetime',
         ];
     }
 

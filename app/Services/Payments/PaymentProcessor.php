@@ -4,11 +4,13 @@ namespace App\Services\Payments;
 
 use App\Exceptions\GatewayFailed;
 use App\Facades\Tenancy;
+use App\Models\LedgerEntry;
 use App\Models\OutboxEvent;
 use App\Models\Payment;
 use App\Models\PaymentEvent;
 use App\Models\PaymentMethod;
 use App\Models\PaymentRefund;
+use App\Services\Accounts\Ledger;
 use App\Services\Payments\Contracts\OnlineGateway;
 use App\Support\Money;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -24,7 +26,7 @@ use Illuminate\Support\Facades\DB;
  */
 class PaymentProcessor
 {
-    public function __construct(protected GatewayFactory $gateways) {}
+    public function __construct(protected GatewayFactory $gateways, protected Ledger $ledger) {}
 
     /**
      * Open a payment and return where to send the customer.
@@ -160,11 +162,22 @@ class PaymentProcessor
             throw $e;
         }
 
-        DB::transaction(function () use ($refund, $gateway, $body) {
+        DB::transaction(function () use ($payment, $refund, $gateway, $body) {
             $refund->update([
                 'status' => PaymentRefund::STATUS_COMPLETED,
                 'gateway_refund_id' => $gateway->refundIdOf($body),
                 'meta' => $this->safe($body),
+            ]);
+
+            // Money out, written with the refund for the same reason.
+            $this->ledger->record($refund->amount, [
+                'direction' => LedgerEntry::OUT,
+                'kind' => LedgerEntry::KIND_REFUND,
+                'description' => 'Refunded to the customer'
+                    .($refund->reason ? ': '.$refund->reason : ''),
+                'order_id' => $payment->order_id,
+                'payment_id' => $payment->id,
+                'source_key' => 'refund:'.$refund->id,
             ]);
 
             OutboxEvent::create([
@@ -217,6 +230,20 @@ class PaymentProcessor
             $fresh->forceFill(['status' => $status, ...$attributes])->save();
 
             if ($status === Payment::STATUS_COMPLETED) {
+                // Money in, written with the payment rather than after it, so
+                // the shop's book can never be missing a payment it took.
+                // Named after the payment, so being told twice enters it once.
+                $this->ledger->record($fresh->amount, [
+                    'direction' => LedgerEntry::IN,
+                    'kind' => LedgerEntry::KIND_PAYMENT,
+                    'description' => 'Paid through '
+                        .config('gateways.'.$fresh->gateway.'.name', $fresh->gateway)
+                        .($fresh->order_id ? '' : ' ('.$fresh->reference.')'),
+                    'order_id' => $fresh->order_id,
+                    'payment_id' => $fresh->id,
+                    'source_key' => 'payment:'.$fresh->id,
+                ]);
+
                 OutboxEvent::create([
                     'tenant_id' => $fresh->tenant_id,
                     'type' => 'payment.completed',

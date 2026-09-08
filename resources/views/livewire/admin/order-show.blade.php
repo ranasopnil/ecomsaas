@@ -70,6 +70,88 @@
         </div>
     @endif
 
+    {{-- The courier's cash --}}
+    @if ($order->payment_gateway === 'cod' || $order->payment_status === Order::PAYMENT_ON_DELIVERY || $order->cod_received_minor > 0)
+        @php($received = new App\Support\Money($order->cod_received_minor, $order->currency, $order->currency_exponent))
+        <div class="card p-5">
+            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">Cash on delivery</h2>
+
+            @if ($order->status !== Order::STATUS_DELIVERED && $stillOwed->minor > 0)
+                <p class="mt-2 text-sm text-slate-600">
+                    {{ $symbol }}{{ $stillOwed->toDisplay() }} to collect when it arrives.
+                    Nothing to enter until the courier hands it over.
+                </p>
+            @elseif ($stillOwed->minor === 0)
+                <p class="mt-2 flex flex-wrap items-center gap-2 text-sm">
+                    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">All in</span>
+                    <span class="text-slate-600">
+                        {{ $symbol }}{{ $received->toDisplay() }} received
+                        @if ($order->courier_name) from {{ $order->courier_name }} @endif
+                        @if ($order->cod_received_at) on {{ $order->cod_received_at->format('j M Y') }} @endif
+                        · entered in your book.
+                    </span>
+                </p>
+            @elseif (! $collecting)
+                <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p class="flex flex-wrap items-center gap-2 text-sm">
+                            <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                                Waiting for the cash
+                            </span>
+                            <span class="text-slate-600">
+                                {{ $order->courier_name ?: 'The courier' }} has
+                                {{ $symbol }}{{ $stillOwed->toDisplay() }} of yours.
+                            </span>
+                        </p>
+                        @if ($received->minor > 0)
+                            <p class="mt-1 text-xs text-slate-500">
+                                {{ $symbol }}{{ $received->toDisplay() }} of
+                                {{ $symbol }}{{ $order->total->toDisplay() }} already handed over.
+                            </p>
+                        @endif
+                    </div>
+                    <button type="button" wire:click="collect" class="btn btn-primary !px-4 !py-2">
+                        Record cash received
+                    </button>
+                </div>
+            @else
+                <form wire:submit="recordCash" class="mt-3 space-y-3">
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-slate-500">
+                                How much did the courier hand over?
+                            </label>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-slate-500">{{ $symbol }}</span>
+                                <input type="text" inputmode="decimal" wire:model="cash"
+                                       class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm tabular-nums focus:border-violet-400 focus:outline-none">
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500">
+                                {{ $symbol }}{{ $stillOwed->toDisplay() }} is owed. Enter less if that is what came,
+                                and enter the rest when it does.
+                            </p>
+                            @error('cash') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-slate-500">A note (optional)</label>
+                            <input type="text" wire:model="cash_note" maxlength="200"
+                                   placeholder="Paid at the Friday settlement, courier kept its charge…"
+                                   class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="submit" class="btn btn-primary !px-4 !py-2">Enter it in the book</button>
+                        <button type="button" wire:click="cancelCollecting" class="text-sm text-slate-500 hover:text-slate-900">
+                            Never mind
+                        </button>
+                    </div>
+                </form>
+            @endif
+        </div>
+    @endif
+
     {{-- What happens next --}}
     @if ($steps !== [])
         <div class="card p-5">
@@ -246,6 +328,13 @@
                 <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">Payment</h2>
                 <p class="font-medium">{{ config('gateways.'.$order->payment_gateway.'.name', $order->payment_gateway) }}</p>
                 <p class="text-slate-600">{{ $order->paymentLabel() }}</p>
+
+                @if ($order->cod_received_minor > 0)
+                    <p class="mt-1 text-xs text-slate-500">
+                        {{ $symbol }}{{ (new App\Support\Money($order->cod_received_minor, $order->currency, $order->currency_exponent))->toDisplay() }}
+                        received from the courier.
+                    </p>
+                @endif
 
                 @if ($order->payment)
                     <dl class="mt-3 space-y-1 text-xs text-slate-500">

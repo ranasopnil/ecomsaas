@@ -31,6 +31,26 @@ class OrderStepRefused extends RuntimeException
         return new self('Choose which courier the parcel went to.');
     }
 
+    public static function notCashOnDelivery(): self
+    {
+        return new self('This order was not a cash-on-delivery one, so there is no cash for a courier to hand over.');
+    }
+
+    public static function notDeliveredYet(): self
+    {
+        return new self('Cash comes in when the parcel arrives. Mark it delivered first.');
+    }
+
+    public static function noAmount(): self
+    {
+        return new self('Say how much the courier handed over.');
+    }
+
+    public static function moreThanOwed(): self
+    {
+        return new self('That is more than this order is owed. Enter what actually came in.');
+    }
+
     public static function movedAlready(): self
     {
         return new self('Somebody moved this order while you were looking at it. Open it again.');

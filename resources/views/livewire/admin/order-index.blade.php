@@ -23,6 +23,11 @@
                 @if ($counts['open'] > 0)
                     {{ $counts['open'] }} still {{ $counts['open'] === 1 ? 'needs' : 'need' }} something doing.
                 @endif
+                @if ($owed->minor > 0)
+                    Couriers are holding
+                    {{ config('currencies.'.$owed->currency.'.symbol', $owed->currency.' ') }}{{ $owed->toDisplay() }}
+                    of yours.
+                @endif
             </p>
         </div>
 

@@ -11,6 +11,7 @@
             ['route' => 'admin.brands.index', 'label' => 'Brands', 'icon' => 'tag'],
             ['route' => 'admin.stock.index', 'label' => 'Stock', 'icon' => 'layers'],
             ['route' => 'admin.couriers.index', 'label' => 'Couriers', 'icon' => 'van'],
+            ['route' => 'admin.ledger.index', 'label' => 'Accounts', 'icon' => 'book'],
         ],
         'Settings' => [
             ['route' => 'admin.domains.index', 'label' => 'Web address', 'icon' => 'globe'],
@@ -34,6 +35,7 @@
         'receipt' => 'M5 3h14v18l-3-2-2 2-2-2-2 2-3-2zM8 8h8M8 12h8M8 16h5',
         'page' => 'M6 3h9l3.5 3.5V21H6zM15 3v4h3.5M9 12h6M9 16h4',
         'van' => 'M3 7h11v9H3zM14 10h4l3 3v3h-7zM7.5 16a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6zM17.5 16a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6z',
+        'book' => 'M5 4.5A1.5 1.5 0 0 1 6.5 3H19v18H6.5A1.5 1.5 0 0 1 5 19.5zM8 8h8M8 12h5',
     ];
 @endphp
 <!DOCTYPE html>
