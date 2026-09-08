@@ -11,6 +11,7 @@ use App\Models\OutboxEvent;
 use App\Models\User;
 use App\Services\Accounts\Ledger;
 use App\Services\Catalogue\InventoryService;
+use App\Services\Couriers\CourierFactory;
 use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 
@@ -46,7 +47,11 @@ class OrderFlow
         Order::STATUS_CANCELLED => [],
     ];
 
-    public function __construct(protected InventoryService $stock, protected Ledger $ledger) {}
+    public function __construct(
+        protected InventoryService $stock,
+        protected Ledger $ledger,
+        protected CourierFactory $couriers,
+    ) {}
 
     /**
      * The steps this order can take next, ready for buttons.
@@ -108,6 +113,16 @@ class OrderFlow
 
             if ($courier === null) {
                 throw OrderStepRefused::needsCourier();
+            }
+
+            // A courier the shop has switched to automatic books the parcel
+            // itself, and the number comes back from the courier rather than
+            // being typed. Done before anything is written down: if the
+            // courier will not take it, the order has not moved.
+            if ($courier->isReady()) {
+                $booked = $this->couriers->for($courier)->book($order, $with);
+
+                $trackingCode = $booked['tracking_code'] ?? $booked['consignment_id'];
             }
         }
 

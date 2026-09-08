@@ -55,16 +55,36 @@
                                     <span class="ms-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">Off</span>
                                 @endunless
                             </div>
-                            <div class="text-xs text-slate-500">
-                                {{ $courier->phone ?: 'No phone number' }}
-                                · {{ $courier->orders_count === 0
+                            <div class="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                @if ($courier->isAutomatic())
+                                    <span class="rounded-full bg-violet-100 px-2 py-0.5 font-medium text-violet-800">
+                                        Books parcels itself
+                                    </span>
+                                    @unless ($courier->isComplete())
+                                        <span class="rounded-full bg-rose-100 px-2 py-0.5 text-rose-800">Details missing</span>
+                                    @endunless
+                                    @if ($courier->isTestMode())
+                                        <span class="rounded-full bg-sky-100 px-2 py-0.5 text-sky-800">Test system</span>
+                                    @endif
+                                @elseif ($courier->canBeAutomatic())
+                                    <span class="rounded-full bg-slate-100 px-2 py-0.5">Numbers typed by hand</span>
+                                @endif
+                                <span>{{ $courier->phone ?: 'No phone number' }}</span>
+                                <span>· {{ $courier->orders_count === 0
                                     ? 'no parcels yet'
-                                    : $courier->orders_count.' '.($courier->orders_count === 1 ? 'parcel' : 'parcels') }}
-                                {{ $courier->tracking_url ? '· can be followed online' : '' }}
+                                    : $courier->orders_count.' '.($courier->orders_count === 1 ? 'parcel' : 'parcels') }}</span>
                             </div>
                         </div>
 
-                        <div class="flex gap-2">
+                        <div class="flex flex-wrap gap-2">
+                            @if ($courier->canBeAutomatic() && $courier->isComplete())
+                                <button type="button" wire:click="test({{ $courier->id }})"
+                                        wire:loading.attr="disabled" wire:target="test({{ $courier->id }})"
+                                        class="btn btn-quiet !px-3 !py-1.5">
+                                    <span wire:loading.remove wire:target="test({{ $courier->id }})">Test connection</span>
+                                    <span wire:loading wire:target="test({{ $courier->id }})">Checking…</span>
+                                </button>
+                            @endif
                             <button type="button" wire:click="toggle({{ $courier->id }})" class="btn btn-quiet !px-3 !py-1.5">
                                 {{ $courier->is_active ? 'Switch off' : 'Switch on' }}
                             </button>
@@ -108,6 +128,77 @@
                            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
                     @error('phone') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
+
+                <div class="sm:col-span-2">
+                    <label class="mb-1 block text-sm font-medium">How do you work with them?</label>
+                    <select wire:model.live="driver"
+                            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                        <option value="">I book parcels with them myself, and type the number in</option>
+                        @foreach ($modules as $key => $module)
+                            <option value="{{ $key }}">{{ $module['name'] }} — this shop can talk to them</option>
+                        @endforeach
+                    </select>
+                    @if ($driver !== '')
+                        <p class="mt-1 text-xs text-slate-500">{{ $modules[$driver]['blurb'] ?? '' }}</p>
+                    @endif
+                </div>
+
+                @if ($driver !== '')
+                    <div class="sm:col-span-2">
+                        <label class="mb-1 block text-sm font-medium">Booking parcels</label>
+                        <div class="space-y-2">
+                            <label class="flex items-start gap-2 rounded-xl border border-slate-200 p-3 text-sm">
+                                <input type="radio" wire:model.live="mode" value="manual" class="mt-0.5">
+                                <span>
+                                    <span class="font-medium">By hand</span>
+                                    <span class="block text-xs text-slate-500">
+                                        You book the parcel with {{ $modules[$driver]['name'] ?? 'them' }} yourself and
+                                        type the consignment number into the order. Nothing to set up.
+                                    </span>
+                                </span>
+                            </label>
+                            <label class="flex items-start gap-2 rounded-xl border border-slate-200 p-3 text-sm">
+                                <input type="radio" wire:model.live="mode" value="automatic" class="mt-0.5">
+                                <span>
+                                    <span class="font-medium">Automatically</span>
+                                    <span class="block text-xs text-slate-500">
+                                        This shop books the parcel as you hand the order over, and the consignment
+                                        number comes back on its own. Needs your own
+                                        {{ $modules[$driver]['name'] ?? '' }} account details below.
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    @if ($mode === 'automatic')
+                        @foreach ($this->fields() as $fieldKey => $field)
+                            <div wire:key="courier-field-{{ $driver }}-{{ $fieldKey }}"
+                                 class="{{ ($field['type'] ?? 'text') === 'checkbox' ? 'sm:col-span-2' : '' }}">
+                                @if (($field['type'] ?? 'text') === 'checkbox')
+                                    <label class="flex items-center gap-2 text-sm">
+                                        <input type="checkbox" wire:model="form.{{ $fieldKey }}" class="rounded border-slate-300">
+                                        {{ $field['label'] }}
+                                    </label>
+                                @else
+                                    <label class="mb-1 block text-sm font-medium">{{ $field['label'] }}</label>
+                                    <input type="{{ $field['type'] === 'password' ? 'password' : 'text' }}"
+                                           wire:model="form.{{ $fieldKey }}"
+                                           autocomplete="{{ $field['secret'] ? 'new-password' : 'off' }}"
+                                           placeholder="{{ $field['secret'] && $editing?->hasSecret($fieldKey) ? '•••••••• saved — type to replace' : '' }}"
+                                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                                    @if ($field['hint'] ?? false)
+                                        <p class="mt-1 text-xs text-slate-500">{{ $field['hint'] }}</p>
+                                    @elseif ($field['secret'])
+                                        <p class="mt-1 text-xs text-slate-500">
+                                            Stored encrypted and never shown again. Leave empty to keep what is saved.
+                                        </p>
+                                    @endif
+                                @endif
+                            </div>
+                        @endforeach
+                    @endif
+                @endif
 
                 <div class="sm:col-span-2">
                     <label class="mb-1 block text-sm font-medium">Where a parcel can be followed (optional)</label>

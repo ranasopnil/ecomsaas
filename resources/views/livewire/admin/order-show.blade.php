@@ -188,23 +188,50 @@
                             <div class="grid gap-3 sm:grid-cols-2">
                                 <div>
                                     <label class="mb-1 block text-xs font-medium text-slate-500">Which courier</label>
-                                    <select wire:model="courier_id"
+                                    <select wire:model.live="courier_id"
                                             class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
                                         @foreach ($couriers as $courier)
                                             <option value="{{ $courier->id }}">{{ $courier->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div>
-                                    <label class="mb-1 block text-xs font-medium text-slate-500">
-                                        Consignment number (optional)
-                                    </label>
-                                    <input type="text" wire:model="tracking_code" maxlength="80"
-                                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
-                                    <p class="mt-1 text-xs text-slate-500">
-                                        The customer sees this, and can follow the parcel if the courier has a page for it.
+
+                                @if ($booksItself)
+                                    {{-- The courier books the parcel itself, and asks for what it needs --}}
+                                    @foreach ($asks as $ask)
+                                        <div wire:key="ask-{{ $ask['key'] }}">
+                                            <label class="mb-1 block text-xs font-medium text-slate-500">{{ $ask['label'] }}</label>
+                                            <select wire:model.live="booking.{{ $ask['key'] }}"
+                                                    @disabled($ask['options'] === [])
+                                                    class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none disabled:bg-slate-50 disabled:text-slate-400">
+                                                <option value="">
+                                                    {{ $ask['options'] === []
+                                                        ? ($ask['depends_on'] ? 'Choose the '.$ask['depends_on'].' first' : 'Nothing to choose from')
+                                                        : 'Choose…' }}
+                                                </option>
+                                                @foreach ($ask['options'] as $value => $label)
+                                                    <option value="{{ $value }}">{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endforeach
+
+                                    <p class="text-xs text-slate-500 sm:col-span-2">
+                                        The parcel is booked with this courier when you confirm, and the consignment
+                                        number comes back on its own. Nothing is booked if they refuse it.
                                     </p>
-                                </div>
+                                @else
+                                    <div>
+                                        <label class="mb-1 block text-xs font-medium text-slate-500">
+                                            Consignment number (optional)
+                                        </label>
+                                        <input type="text" wire:model="tracking_code" maxlength="80"
+                                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                                        <p class="mt-1 text-xs text-slate-500">
+                                            The customer sees this, and can follow the parcel if the courier has a page for it.
+                                        </p>
+                                    </div>
+                                @endif
                             </div>
                         @endif
                     @endif
@@ -320,6 +347,23 @@
                         <p class="mt-2 text-xs text-slate-500">
                             Handed over {{ $order->handed_over_at->format('j M, g:ia') }}
                         </p>
+                    @endif
+
+                    @if ($canAskCourier)
+                        <button type="button" wire:click="askCourier" wire:loading.attr="disabled"
+                                class="btn btn-quiet mt-3 !px-3 !py-1.5">
+                            <span wire:loading.remove wire:target="askCourier">Ask them where it is</span>
+                            <span wire:loading wire:target="askCourier">Asking…</span>
+                        </button>
+
+                        @if ($courierSays !== '')
+                            <p class="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                                {{ $order->courier_name }} says: <span class="font-medium">{{ $courierSays }}</span>
+                            </p>
+                            <p class="mt-1 text-xs text-slate-400">
+                                What they say does not move the order. That is still your decision.
+                            </p>
+                        @endif
                     @endif
                 </div>
             @endif
