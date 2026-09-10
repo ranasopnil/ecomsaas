@@ -13,7 +13,7 @@
     product and in the basket, so nothing moves about under them.
 --}}
 <header class="sticky top-0 z-40 border-b border-slate-100 bg-white/90 backdrop-blur">
-    <div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
+    <div class="safe-x mx-auto flex max-w-7xl items-center gap-2.5 px-4 py-2.5 sm:gap-3 sm:py-3">
         <a href="{{ route('storefront.home') }}" class="flex shrink-0 items-center gap-2">
             <span class="flex h-9 w-9 items-center justify-center rounded-xl text-lg font-bold text-white"
                   style="background: {{ $accent }}">{{ mb_substr($store->name, 0, 1) }}</span>

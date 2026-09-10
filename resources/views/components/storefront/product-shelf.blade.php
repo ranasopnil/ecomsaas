@@ -51,7 +51,7 @@
         @endif
     </div>
 
-    <div class="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2
+    <div class="swipe-row -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2
                 sm:mx-0 sm:snap-none sm:px-0">
         @foreach ($products as $product)
             <div class="w-36 shrink-0 snap-start sm:w-40 lg:w-44">

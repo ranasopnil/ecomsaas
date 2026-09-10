@@ -8,10 +8,24 @@
     'robots' => null,
     'bodyClass' => 'bg-slate-50',
     'wide' => false,
+    'bottomBar' => false,
 ])
 
 @php
     $rtl = in_array(app()->getLocale(), ['ar', 'he', 'fa', 'ur']);
+
+    // Whether the shop has anything reduced, so the tab strip only offers
+    // "Offers" when there is something behind it. Asked once every few
+    // minutes rather than on every page.
+    $hasOffers = \Illuminate\Support\Facades\Cache::remember(
+        'shop-has-offers:'.$store->id,
+        now()->addMinutes(5),
+        fn () => \App\Models\Product::query()->onSale()->whereHas(
+            'variants',
+            fn ($q) => $q->whereNotNull('compare_at_price_minor')
+                ->whereColumn('compare_at_price_minor', '>', 'price_minor'),
+        )->exists(),
+    );
 @endphp
 
 {{--
@@ -33,10 +47,26 @@
     @if ($robots)
         <meta name="robots" content="{{ $robots }}">
     @endif
+
+    {{--
+        What turns this into something a shopper can keep on their home
+        screen: the shop's own icon, its own colour behind the status bar,
+        and a manifest saying it opens without the browser's furniture.
+    --}}
+    <meta name="theme-color" content="{{ $accent }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="{{ $store->name }}">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="manifest" href="{{ route('storefront.manifest') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ route('storefront.icon') }}">
+    <link rel="apple-touch-icon" href="{{ route('storefront.icon.png') }}">
+
     {{ $head ?? '' }}
     @vite(['resources/css/app.css', 'resources/js/storefront.js'])
 </head>
-<body class="min-h-full {{ $bodyClass }} text-slate-900 antialiased">
+<body class="has-tabs {{ $bottomBar ? 'has-bar' : '' }} min-h-full {{ $bodyClass }} text-slate-900 antialiased">
 
     {{ $above ?? '' }}
 
@@ -61,6 +91,9 @@
     @else
         <x-storefront.site-footer :store="$store" :accent="$accent" />
     @endisset
+
+    {{-- On a phone: home, the aisles and the basket, always one thumb away --}}
+    <x-storefront.tab-bar :accent="$accent" :has-offers="$hasOffers" />
 
     <x-skeleton.shapes :accent="$accent" />
 </body>

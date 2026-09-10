@@ -3,7 +3,8 @@
     $symbol = $subtotal ? config('currencies.'.$subtotal->currency.'.symbol', $subtotal->currency.' ') : '';
 @endphp
 <x-layouts.storefront :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent"
-                      :title="'Your basket — '.$store->name" robots="noindex">
+                      :title="'Your basket — '.$store->name" robots="noindex"
+                      :bottom-bar="$lines->isNotEmpty()">
 
     <main class="mx-auto max-w-5xl px-4 py-8">
         <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -92,6 +93,25 @@
                         Checkout
                     </a>
                 </aside>
+            </div>
+
+            {{--
+                On a phone the summary sits under every item, so Checkout is
+                a long way down. This is the same button, kept in reach.
+            --}}
+            <div class="app-bar safe-x fixed inset-x-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-2.5 backdrop-blur md:hidden">
+                <div class="mx-auto flex max-w-lg items-center gap-3">
+                    <div class="min-w-0">
+                        <p class="text-[0.7rem] text-slate-500">
+                            {{ $lines->sum('quantity') }} {{ $lines->sum('quantity') === 1 ? 'item' : 'items' }}
+                        </p>
+                        <p class="truncate text-base font-bold tabular-nums">{{ $symbol }}{{ $subtotal->toDisplay() }}</p>
+                    </div>
+
+                    <a href="{{ route('storefront.checkout') }}"
+                       class="tap ms-auto shrink-0 rounded-xl px-6 py-3 text-sm font-bold text-white"
+                       style="background: {{ $accent }}">Checkout</a>
+                </div>
             </div>
         @endif
     </main>

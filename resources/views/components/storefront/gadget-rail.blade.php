@@ -42,7 +42,7 @@
         @endif
     </div>
 
-    <div class="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:snap-none sm:px-0">
+    <div class="swipe-row -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:snap-none sm:px-0">
         @foreach ($products as $product)
             <div class="w-44 shrink-0 snap-start sm:w-48 lg:w-52">
                 <x-storefront.gadget-card :product="$product" :accent="$accent" />

@@ -14,7 +14,7 @@
     <div class="mx-auto max-w-7xl px-4 py-6 lg:flex lg:gap-6">
 
         {{-- Down the side: quick ways in, then every category --}}
-        <aside class="mb-6 lg:mb-0 lg:w-64 lg:shrink-0" data-swap="side">
+        <aside class="hidden lg:mb-0 lg:block lg:w-64 lg:shrink-0" data-swap="side">
             <div class="rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 lg:sticky lg:top-20">
                 <nav class="border-b border-slate-100 p-3">
                     <a href="{{ $browse(['offers' => 1]) }}" data-swap-link data-no-skeleton
@@ -108,6 +108,55 @@
                     </div>
                 </div>
             </section>
+
+            {{--
+                On a phone the rail down the side would be a wall of links
+                above everything worth looking at, so it becomes a row of
+                chips a thumb can push along instead. Same places, same
+                order, one line.
+            --}}
+            <div class="swipe-row -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 lg:hidden">
+                <a href="{{ $browse() }}" data-swap-link data-no-skeleton
+                   class="tap shrink-0 rounded-full px-3.5 py-2 text-[13px] font-semibold ring-1 transition
+                          {{ ($current === null && $brand === null && ! $offersOnly && ! $freeDeliveryOnly) ? 'text-white ring-transparent' : 'bg-white text-slate-600 ring-slate-200' }}"
+                   @style(['background: '.$accent => $current === null && $brand === null && ! $offersOnly && ! $freeDeliveryOnly])>
+                    All
+                </a>
+
+                <a href="{{ $browse(['offers' => 1]) }}" data-swap-link data-no-skeleton
+                   class="tap shrink-0 rounded-full px-3.5 py-2 text-[13px] font-semibold ring-1 transition
+                          {{ $offersOnly ? 'text-white ring-transparent' : 'bg-white text-slate-600 ring-slate-200' }}"
+                   @style(['background: '.$accent => $offersOnly])>
+                    Offers
+                </a>
+
+                @if ($hasFreeDelivery)
+                    <a href="{{ $browse(['free-delivery' => 1]) }}" data-swap-link data-no-skeleton
+                       class="tap shrink-0 rounded-full px-3.5 py-2 text-[13px] font-semibold ring-1 transition
+                              {{ $freeDeliveryOnly ? 'text-white ring-transparent' : 'bg-white text-slate-600 ring-slate-200' }}"
+                       @style(['background: '.$accent => $freeDeliveryOnly])>
+                        Free delivery
+                    </a>
+                @endif
+
+                @foreach ($categories as $category)
+                    <a href="{{ $browse(['category' => $category->slug]) }}" data-swap-link data-no-skeleton
+                       class="tap shrink-0 whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] font-semibold ring-1 transition
+                              {{ $current?->id === $category->id ? 'text-white ring-transparent' : 'bg-white text-slate-600 ring-slate-200' }}"
+                       @style(['background: '.$accent => $current?->id === $category->id])>
+                        {{ $category->name }}
+                    </a>
+                @endforeach
+
+                @foreach ($brands as $make)
+                    <a href="{{ $browse(['brand' => $make->slug]) }}" data-swap-link data-no-skeleton
+                       class="tap shrink-0 whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] font-semibold ring-1 transition
+                              {{ $brand?->id === $make->id ? 'text-white ring-transparent' : 'bg-white text-slate-600 ring-slate-200' }}"
+                       @style(['background: '.$accent => $brand?->id === $make->id])>
+                        {{ $make->name }}
+                    </a>
+                @endforeach
+            </div>
 
             {{-- Everything below the search box changes with the category --}}
             <div data-swap="main">

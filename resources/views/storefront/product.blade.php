@@ -38,6 +38,7 @@
                       :title="($product->meta_title ?: $product->name).' — '.$store->name"
                       :description="$product->meta_description ?: $product->short_description"
                       :robots="$isPreview ? 'noindex' : null"
+                      :bottom-bar="! $isPreview && $sellable->isNotEmpty()"
                       wide>
 
     <x-slot:head>
@@ -327,6 +328,49 @@
                     </div>
                 @endif
             </section>
+        @endif
+
+        {{--
+            On a phone, the thing you came to press.
+
+            The buy box is halfway down a long page, and on a phone that means
+            scrolling back up to it. This is the same form, fixed just above
+            the tab strip, sharing the same chosen size and quantity — so
+            whatever is picked above is what this buys.
+        --}}
+        @if (! $isPreview && $sellable->isNotEmpty())
+            <div class="app-bar safe-x fixed inset-x-0 z-30 border-t border-slate-200 bg-white/95 px-4 pt-2.5 backdrop-blur md:hidden">
+                <div class="mx-auto flex max-w-lg items-center gap-3">
+                    <div class="min-w-0">
+                        <p class="truncate text-[0.7rem] text-slate-500"
+                           x-text="quantity > 1 ? quantity + ' × ' + (variant?.name || '{{ addslashes($product->name) }}') : (variant?.name || 'Total')"></p>
+                        <p class="truncate text-base font-bold tabular-nums" x-text="money(totalMinor)"></p>
+                    </div>
+
+                    <form method="POST" action="{{ route('storefront.basket.add') }}"
+                          class="ms-auto flex shrink-0 items-center gap-2"
+                          x-data x-on:submit.prevent="$store.basket.add($el)">
+                        @csrf
+                        <input type="hidden" name="variant_id" x-bind:value="variant?.id">
+                        <input type="hidden" name="quantity" x-bind:value="quantity">
+                        <input type="hidden" name="then" x-ref="thenBar" value="">
+
+                        <button type="submit" x-on:click="$refs.thenBar.value = ''"
+                                x-bind:disabled="! sellable"
+                                aria-label="Add to basket"
+                                class="tap flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-slate-700 disabled:text-slate-300">
+                            <x-storefront.icon name="basket" class="h-5 w-5" />
+                        </button>
+
+                        <button type="submit" x-on:click="$refs.thenBar.value = 'checkout'"
+                                x-bind:disabled="! sellable"
+                                class="tap rounded-xl px-5 py-3 text-sm font-bold text-white disabled:bg-slate-200 disabled:text-slate-400"
+                                x-bind:style="sellable ? 'background: {{ $accent }}' : ''">
+                            Buy now
+                        </button>
+                    </form>
+                </div>
+            </div>
         @endif
     </main>
 </x-layouts.storefront>

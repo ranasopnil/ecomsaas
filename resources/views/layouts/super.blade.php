@@ -58,12 +58,21 @@
     <title>{{ $title ?? 'Super admin' }} — Platform</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="platform-admin h-full text-slate-900 antialiased">
+<body class="platform-admin h-full text-slate-900 antialiased" x-data="{ menu: false }">
     <div id="route-progress" class="route-progress"></div>
 
     {{-- The dark bar across the top --}}
     <header class="plat-bar sticky top-0 z-30">
-        <div class="flex h-full items-center gap-4 px-4 sm:px-6">
+        <div class="safe-x flex h-full items-center gap-3 px-4 sm:gap-4 sm:px-6">
+            <button type="button" x-on:click.stop="menu = true"
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-300 hover:bg-white/10 hover:text-white lg:hidden"
+                    aria-label="Menu">
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round">
+                    <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+            </button>
+
             <a href="{{ route('super.dashboard') }}" wire:navigate class="flex shrink-0 items-center gap-2.5">
                 <span class="flex h-9 w-9 items-center justify-center rounded-xl text-white"
                       style="background-image: linear-gradient(135deg, #60a5fa, #1d4ed8)">
@@ -152,7 +161,21 @@
 
     <div class="flex min-h-[calc(100vh-var(--plat-bar-height))]">
         {{-- The rail down the side --}}
-        <aside class="rail sticky top-[var(--plat-bar-height)] hidden h-[calc(100vh-var(--plat-bar-height))] w-64 shrink-0 flex-col justify-between overflow-y-auto p-4 lg:flex">
+        {{-- Behind the drawer, on a phone --}}
+        <div x-show="menu" x-cloak x-transition.opacity
+             x-on:click="menu = false"
+             class="fixed inset-0 z-40 bg-slate-900/40 lg:hidden" aria-hidden="true"></div>
+
+        {{--
+            The rail. A drawer a thumb pulls open on a phone, and the fixed
+            column it has always been on anything wider. Without this, staff
+            on a phone had no way to leave the page they landed on.
+        --}}
+        <aside class="rail flex-col justify-between overflow-y-auto p-4"
+               x-bind:class="menu
+                   ? 'fixed inset-y-0 start-0 z-50 flex w-72 shadow-2xl'
+                   : 'hidden lg:sticky lg:top-[var(--plat-bar-height)] lg:flex lg:h-[calc(100vh-var(--plat-bar-height))] lg:w-64 lg:shrink-0'"
+               x-on:click="menu = false">
             <div>
                 @foreach ($sections as $heading => $links)
                     @if ($heading !== '')

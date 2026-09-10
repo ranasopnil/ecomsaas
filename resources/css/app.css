@@ -344,3 +344,62 @@ body { background: var(--color-canvas); }
     background: var(--plat-blue-soft);
     color: var(--plat-blue);
 }
+
+/* ---------------------------------------------------------------------------
+   On a phone.
+
+   A shop opened on a phone should feel like an app rather than a page that
+   happens to be narrow: something fixed to walk about with along the bottom,
+   the thing you came to press within reach of a thumb, and nothing hidden
+   under the notch or the home bar.
+
+   These are the few things Tailwind cannot say on its own. Everything else
+   stays in the markup where it can be read.
+--------------------------------------------------------------------------- */
+
+/* The strip along the bottom of a phone, and the room the page leaves it. */
+.app-tabs {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* An action bar sits directly on top of the tab strip, so it has to clear
+   both the strip and whatever the phone reserves below it. */
+.app-bar {
+    bottom: calc(3.9rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: .625rem;
+}
+
+/* Room at the foot of the page so the last thing on it is not covered by
+   the tab strip. Only on the sizes that actually have one. */
+@media (max-width: 767px) {
+    .has-tabs { padding-bottom: calc(4.25rem + env(safe-area-inset-bottom, 0px)); }
+    .has-tabs.has-bar { padding-bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* A phone in landscape, or an iPhone's rounded corners, eat the sides. */
+.safe-x {
+    padding-inline-start: env(safe-area-inset-left, 0px);
+    padding-inline-end: env(safe-area-inset-right, 0px);
+}
+
+/* Rows a thumb pushes sideways: no scrollbar, and it stops where a card does. */
+.swipe-row {
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+
+.swipe-row::-webkit-scrollbar { display: none; }
+
+/* Nothing may push the page sideways.
+
+   `clip` rather than `hidden` on purpose: `hidden` turns the body into a
+   scrolling box, and everything sticky inside it — the shop's top bar, the
+   admin rail — quietly stops sticking. `clip` cuts the overflow off without
+   doing that. A browser too old to know the word simply does not clip. */
+body { overflow-x: clip; }
+
+/* A phone taps things; it does not hover them. Stop the grey flash. */
+@media (hover: none) {
+    .tap { -webkit-tap-highlight-color: transparent; }
+}

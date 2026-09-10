@@ -10,6 +10,7 @@ use App\Http\Controllers\Payments\SslCommerzCallbackController;
 use App\Http\Controllers\Payments\SslCommerzIpnController;
 use App\Http\Controllers\Payments\StripeCallbackController;
 use App\Http\Controllers\Payments\StripeWebhookController;
+use App\Http\Controllers\Storefront\AppIconController;
 use App\Http\Controllers\Storefront\BasketController;
 use App\Http\Controllers\Storefront\BrowseController;
 use App\Http\Controllers\Storefront\CheckoutController;
@@ -80,6 +81,17 @@ Route::middleware([EnsureStoreDomain::class, CountVisit::class])->group(function
     Route::get('/pages/{slug}', PageController::class)
         ->whereIn('slug', array_keys(StorefrontFooter::PAGES))
         ->name('storefront.page');
+});
+
+/*
+ * What a phone reads to keep this shop on a home screen: its icon, and the
+ * note saying it opens without the browser's furniture. Fetching an icon is
+ * not somebody visiting the shop, so none of it is counted.
+ */
+Route::middleware(EnsureStoreDomain::class)->group(function () {
+    Route::get('/icon.svg', [AppIconController::class, 'svg'])->name('storefront.icon');
+    Route::get('/icon.png', [AppIconController::class, 'png'])->name('storefront.icon.png');
+    Route::get('/manifest.webmanifest', [AppIconController::class, 'manifest'])->name('storefront.manifest');
 });
 
 /*

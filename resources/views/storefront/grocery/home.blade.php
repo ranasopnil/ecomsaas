@@ -26,7 +26,7 @@
         @if ($categories->isNotEmpty())
             <section class="mb-10">
                 <h2 class="mb-4 text-lg font-bold">Shop by category</h2>
-                <div class="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2">
+                <div class="swipe-row -mx-4 flex gap-4 overflow-x-auto px-4 pb-2">
                     @foreach ($categories as $category)
                         <a href="{{ route('storefront.browse') }}?category={{ $category->slug }}"
                            class="group flex w-24 shrink-0 flex-col items-center gap-2 text-center">

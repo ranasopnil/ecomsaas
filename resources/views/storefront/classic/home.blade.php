@@ -9,10 +9,10 @@
 
     <main class="mx-auto max-w-5xl px-4 py-10">
         @if ($categories->isNotEmpty())
-            <nav class="mb-8 flex flex-wrap gap-2">
+            <nav class="swipe-row -mx-4 mb-8 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
                 @foreach ($categories as $category)
                     <a href="{{ route('storefront.browse') }}?category={{ $category->slug }}"
-                       class="flex items-center gap-2 rounded-full bg-slate-100 py-1.5 pe-3 text-sm text-slate-700 hover:bg-slate-200 {{ $category->hasImage() ? 'ps-1.5' : 'ps-3' }}">
+                       class="tap flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-slate-100 py-1.5 pe-3 text-sm text-slate-700 hover:bg-slate-200 {{ $category->hasImage() ? 'ps-1.5' : 'ps-3' }}">
                         @if ($category->hasImage())
                             <img src="{{ $category->thumbnailUrl() }}" alt="" loading="lazy"
                                  class="h-6 w-6 rounded-full object-cover">
