@@ -1,7 +1,16 @@
 <div class="space-y-6">
-    <div>
-        <h1 class="text-2xl font-semibold">Shops</h1>
-        <p class="mt-1 text-sm text-slate-500">Every shop on the platform and the plan it is on.</p>
+    <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight">Shops</h1>
+            <p class="mt-1 text-sm text-slate-500">Every shop on the platform and the plan it is on.</p>
+        </div>
+
+        <a href="{{ route('super.stores.create') }}" wire:navigate class="btn btn-primary">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                <path d="M12 5v14M5 12h14" />
+            </svg>
+            Add a shop
+        </a>
     </div>
 
     @if ($message !== '')

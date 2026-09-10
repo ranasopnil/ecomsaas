@@ -104,7 +104,7 @@
                                         </label>
                                         <input type="text" wire:model="note" maxlength="250"
                                                placeholder="Found it in the 6 September bKash statement"
-                                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none">
                                     </div>
                                     <div class="flex flex-wrap items-center gap-2">
                                         <button type="button" wire:click="confirm({{ $payment->id }})"

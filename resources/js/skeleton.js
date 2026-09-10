@@ -24,6 +24,7 @@ const SHAPES = [
     [/\/admin\/(mail|delivery|templates|footer)/, 'admin-form'],
     [/\/super\/[a-z-]+\/(new|edit|\d+)/, 'admin-form'],
     [/\/super\//, 'admin-list'],
+    [/\/super\/?$/, 'admin-list'],
     [/\/admin\/?$/, 'admin-list'],
     [/^\/$/, 'home'],
 ]

@@ -34,7 +34,7 @@
                         <td class="px-5 py-3 text-slate-500">{{ $shop->country_code }}</td>
                         <td class="px-5 py-3">
                             <select wire:change="assign({{ $shop->id }}, $event.target.value)"
-                                    class="rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:border-violet-400 focus:outline-none">
+                                    class="rounded-lg border border-slate-200 px-3 py-1.5 text-sm focus:border-blue-400 focus:outline-none">
                                 <option value="" @selected($shop->map_provider === null)>
                                     Platform default ({{ $maps->find($maps->default())['name'] }})
                                 </option>

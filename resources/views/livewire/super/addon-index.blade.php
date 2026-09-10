@@ -84,20 +84,20 @@
                 <div>
                     <label class="mb-1 block text-sm font-medium">Name</label>
                     <input type="text" wire:model="name" maxlength="80" placeholder="50 more products"
-                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none">
                     @error('name') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
                     <label class="mb-1 block text-sm font-medium">A line about it (optional)</label>
                     <input type="text" wire:model="description" maxlength="160"
-                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none">
                 </div>
 
                 <div>
                     <label class="mb-1 block text-sm font-medium">What it adds to</label>
                     <select wire:model.live="feature"
-                            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none">
                         @foreach ($features as $key => $definition)
                             <option value="{{ $key }}">
                                 {{ $definition['label'] }} ({{ $definition['type'] === 'limit' ? 'counted' : 'on or off' }})
@@ -109,7 +109,7 @@
                 <div>
                     <label class="mb-1 block text-sm font-medium">How it is sold</label>
                     <select wire:model.live="kind"
-                            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none">
                         <option value="units">More of it, a fixed amount at a time</option>
                         <option value="switch">Switched on</option>
                     </select>
@@ -120,7 +120,7 @@
                     <div>
                         <label class="mb-1 block text-sm font-medium">How much, each time it is bought</label>
                         <input type="number" wire:model="unit_amount" min="1"
-                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-blue-400 focus:outline-none">
                         <p class="mt-1 text-xs text-slate-500">
                             A shop buying two of these gets twice this much.
                         </p>
@@ -151,7 +151,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="text-sm text-slate-500">{{ $currency['symbol'] }}</span>
                                 <input type="text" inputmode="decimal" wire:model="prices.{{ $code }}"
-                                       class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm tabular-nums focus:border-violet-400 focus:outline-none">
+                                       class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm tabular-nums focus:border-blue-400 focus:outline-none">
                             </div>
                             @error('prices.'.$code) <p class="mt-1 text-xs text-rose-700">{{ $message }}</p> @enderror
                         </div>

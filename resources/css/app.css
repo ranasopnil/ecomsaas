@@ -249,3 +249,98 @@ body { background: var(--color-canvas); }
 @media (prefers-reduced-motion: reduce) {
     .bar { animation: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   The platform staff admin.
+
+   Its own look, kept apart from a shopkeeper's: a dark navy bar across the
+   top, a white rail down the side, and blue for anything that is the
+   platform's own doing. Scoped to `.platform-admin` so nothing here can leak
+   into a shop's screens.
+--------------------------------------------------------------------------- */
+
+.platform-admin {
+    --plat-navy: #101c3d;
+    --plat-navy-soft: #1b2a52;
+    --plat-blue: #2563eb;
+    --plat-blue-deep: #1d4ed8;
+    --plat-blue-soft: #eff4ff;
+    --plat-canvas: #f6f7fb;
+    --plat-bar-height: 3.75rem;
+    --plat-line: #eaecf3;
+
+    background: var(--plat-canvas);
+}
+
+/* The bar across the top ------------------------------------------------- */
+.plat-bar {
+    background: var(--plat-navy);
+    height: var(--plat-bar-height);
+}
+
+.plat-pill {
+    display: inline-flex; align-items: center; gap: .4rem;
+    border-radius: .625rem; padding: .45rem .8rem;
+    font-size: .8125rem; font-weight: 500; color: #9dabcc;
+    white-space: nowrap;
+    transition: background-color .2s ease, color .2s ease;
+}
+
+.plat-pill:hover { background: rgba(255, 255, 255, .07); color: #fff; }
+
+.plat-pill-active,
+.plat-pill-active:hover {
+    background: var(--plat-blue);
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, .35);
+}
+
+/* The white rail down the side ------------------------------------------- */
+.platform-admin .rail {
+    background: #fff;
+    border-inline-end: 1px solid var(--plat-line);
+}
+
+.platform-admin .rail-link {
+    color: #5c6782;
+    font-weight: 500;
+    padding: .6rem .875rem;
+}
+
+.platform-admin .rail-link:hover { background: #f7f8fc; color: #0f172a; }
+
+.platform-admin .rail-link-active,
+.platform-admin .rail-link-active:hover {
+    background: var(--plat-blue-soft);
+    background-image: none;
+    color: var(--plat-blue-deep);
+    box-shadow: none;
+    font-weight: 600;
+}
+
+.platform-admin .rail-count { background: var(--plat-blue); }
+
+/* Buttons and cards ------------------------------------------------------ */
+.platform-admin .btn-primary {
+    background-image: linear-gradient(135deg, #3b82f6, var(--plat-blue-deep));
+    box-shadow: 0 6px 18px rgba(37, 99, 235, .28);
+}
+
+.platform-admin .btn-primary:hover { box-shadow: 0 10px 24px rgba(37, 99, 235, .36); }
+
+.platform-admin .card {
+    border-color: var(--plat-line);
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 41, .04);
+}
+
+.platform-admin .route-progress { background-image: linear-gradient(90deg, #60a5fa, var(--plat-blue)); }
+
+/* The pale blue tile a figure sits in ------------------------------------ */
+.plat-icon {
+    display: flex; align-items: center; justify-content: center;
+    height: 2.5rem; width: 2.5rem;
+    border-radius: .75rem;
+    background: var(--plat-blue-soft);
+    color: var(--plat-blue);
+}

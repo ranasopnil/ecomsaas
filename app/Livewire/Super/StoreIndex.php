@@ -10,6 +10,7 @@ use App\Services\Billing\SubscribeToPackage;
 use Exception;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -19,6 +20,7 @@ class StoreIndex extends Component
 {
     use WithPagination;
 
+    #[Url]
     public string $search = '';
 
     public string $message = '';

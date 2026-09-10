@@ -50,6 +50,7 @@ use App\Livewire\Super\MapAccess;
 use App\Livewire\Super\PackageForm as SuperPackageForm;
 use App\Livewire\Super\PackageIndex as SuperPackageIndex;
 use App\Livewire\Super\ShopPayments;
+use App\Livewire\Super\StoreForm;
 use App\Livewire\Super\StoreIndex;
 use App\Livewire\Super\TemplateMatrix;
 use App\Models\StorefrontFooter;
@@ -172,6 +173,7 @@ Route::prefix('super')->name('super.')->middleware(EnsureCentralDomain::class)->
         Route::get('plans/{package}/edit', SuperPackageForm::class)->name('packages.edit');
 
         Route::get('shops', StoreIndex::class)->name('stores.index');
+        Route::get('shops/new', StoreForm::class)->name('stores.create');
         Route::get('shops/{tenant}/payments', ShopPayments::class)->name('stores.payments');
         Route::get('money-due', BillingIndex::class)->name('billing.index');
         Route::get('add-ons', AddonIndex::class)->name('addons.index');
