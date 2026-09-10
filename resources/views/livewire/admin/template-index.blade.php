@@ -18,6 +18,9 @@
                         <div class="flex flex-wrap items-center gap-2">
                             <span class="h-3 w-3 rounded-full" style="background: {{ $template['accent'] }}"></span>
                             <h2 class="font-semibold">{{ $template['name'] }}</h2>
+                            {{-- Its one unchanging name, for when you ask us about it --}}
+                            <span class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.65rem] text-slate-500"
+                                  title="The name this look goes by">{{ $key }}</span>
                             @if ($template['chosen'])
                                 <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800">In use</span>
                             @endif

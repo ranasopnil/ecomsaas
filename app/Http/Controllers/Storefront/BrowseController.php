@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Facades\Tenancy;
 use App\Http\Controllers\Controller;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -36,6 +37,10 @@ class BrowseController extends Controller
             ->orderBy('name')
             ->get();
 
+        // A shopper who arrives by make rather than by aisle.
+        $make = trim((string) $request->query('brand', ''));
+        $brand = $make !== '' ? Brand::query()->where('slug', $make)->first() : null;
+
         $current = null;
         $slug = trim((string) $request->query('category', ''));
 
@@ -50,19 +55,20 @@ class BrowseController extends Controller
                 'categories',
                 fn ($c) => $c->whereIn('categories.id', $current->familyIds()),
             ))
+            ->when($brand !== null, fn (Builder $q) => $q->where('brand_id', $brand->id))
             ->when($wanted !== '', fn (Builder $q) => $q->where('name', 'ilike', '%'.$wanted.'%'))
             ->when($offersOnly, fn (Builder $q) => $q->whereHas('variants', $this->discounted(...)))
             ->when($freeDeliveryOnly, fn (Builder $q) => $q->where('shipping_charge_minor', 0))
-            ->with(['variants' => fn ($q) => $q->orderBy('id'), 'variants.inventory', 'images'])
+            ->with(['brand', 'variants' => fn ($q) => $q->orderBy('id'), 'variants.inventory', 'images'])
             ->latest('published_at')
             ->take(48)
             ->get();
 
         // Today's deals: anything on sale for less than its normal price.
-        $deals = ($current === null && $wanted === '' && ! $offersOnly)
+        $deals = ($current === null && $brand === null && $wanted === '' && ! $offersOnly)
             ? $onSale()
                 ->whereHas('variants', $this->discounted(...))
-                ->with(['variants' => fn ($q) => $q->orderBy('id'), 'variants.inventory', 'images'])
+                ->with(['brand', 'variants' => fn ($q) => $q->orderBy('id'), 'variants.inventory', 'images'])
                 ->latest('published_at')
                 ->take(12)
                 ->get()
@@ -80,6 +86,13 @@ class BrowseController extends Controller
             'searchUrl' => route('storefront.places'),
             'categories' => $categories,
             'current' => $current,
+            'brand' => $brand,
+            'brands' => Brand::query()
+                ->where('is_active', true)
+                ->whereHas('products', fn (Builder $q) => $q->onSale())
+                ->withCount(['products' => fn (Builder $q) => $q->onSale()])
+                ->orderBy('name')
+                ->get(),
             'products' => $products,
             'deals' => $deals,
             'biggestSaving' => $this->biggestSaving(),

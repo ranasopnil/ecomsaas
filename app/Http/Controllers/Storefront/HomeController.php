@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Services\Storefront\CustomerLocation;
 use App\Services\Storefront\DeliveryReach;
+use App\Services\Storefront\GadgetShelves;
 use App\Services\Storefront\HomeShelves;
 use App\Services\Storefront\MapProviders;
 use App\Services\Storefront\ShopFigures;
@@ -36,6 +37,7 @@ class HomeController extends Controller
         DeliveryReach $reach,
         ShopFigures $figures,
         HomeShelves $shelves,
+        GadgetShelves $gadgets,
     ): View {
         $shop = Tenancy::current();
         $template = $templates->activeFor($shop);
@@ -56,7 +58,7 @@ class HomeController extends Controller
                     'categories',
                     fn ($category) => $category->where('slug', $inCategory),
                 ))
-                ->with(['variants' => fn ($q) => $q->orderBy('id'), 'variants.inventory', 'images'])
+                ->with(['brand', 'variants' => fn ($q) => $q->orderBy('id'), 'variants.inventory', 'images'])
                 ->latest('published_at')
                 ->take(24)
                 ->get()
@@ -70,7 +72,16 @@ class HomeController extends Controller
             ->take(12)
             ->get();
 
-        return view("storefront.{$template}.home", [
+        // Rows only the electronics look has a use for. Asked for nowhere
+        // else, so a grocery front page runs no extra queries for them.
+        $extra = $template !== 'electronics' || $narrowed ? [] : [
+            'topSelling' => $gadgets->topSelling($at),
+            'offers' => $gadgets->offers($at),
+            'brands' => $gadgets->brands(),
+            'promises' => $gadgets->promises(),
+        ];
+
+        return view("storefront.{$template}.home", array_merge($extra, [
             'store' => $shop,
             'template' => config("templates.{$template}"),
             'products' => $products,
@@ -90,6 +101,6 @@ class HomeController extends Controller
             'hidden' => $at === null || $narrowed
                 ? 0
                 : Product::query()->onSale()->count() - Product::query()->onSale()->deliverableTo($at)->count(),
-        ]);
+        ]));
     }
 }

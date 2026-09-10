@@ -4,7 +4,7 @@
     $tints = ['#fce7f3', '#dbeafe', '#e5e7eb', '#ecfccb', '#fef3c7', '#fee2e2', '#fef9c3', '#ffedd5', '#ede9fe', '#ccfbf1'];
     $browse = fn (array $with = []) => route('storefront.browse').(($q = http_build_query(array_filter($with))) ? '?'.$q : '');
     $title = $wanted !== '' ? 'Results for “'.$wanted.'”'
-        : ($current?->name ?? ($offersOnly ? 'On offer' : ($freeDeliveryOnly ? 'Free delivery' : 'Everything')));
+        : ($current?->name ?? ($brand?->name ?? ($offersOnly ? 'On offer' : ($freeDeliveryOnly ? 'Free delivery' : 'Everything'))));
 @endphp
 <x-layouts.storefront :store="$store" :location="$location" :search-url="$searchUrl" :accent="$accent"
                       :title="$title.' — '.$store->name"
@@ -67,6 +67,24 @@
                                             @endforeach
                                         </ul>
                                     @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                {{-- The makes this shop stocks. Only ones with something behind them. --}}
+                @if ($brands->isNotEmpty())
+                    <div class="border-t border-slate-100 p-3">
+                        <h2 class="px-3 py-2 text-base font-bold text-slate-700">Brands</h2>
+                        <ul>
+                            @foreach ($brands as $make)
+                                <li>
+                                    <a href="{{ $browse(['brand' => $make->slug]) }}" data-swap-link data-no-skeleton
+                                       class="flex items-center justify-between gap-2 px-3 py-2 text-sm {{ $brand?->id === $make->id ? 'font-semibold text-slate-900' : 'text-slate-700 hover:text-slate-900' }}">
+                                        <span class="truncate">{{ $make->name }}</span>
+                                        <span class="shrink-0 text-xs tabular-nums text-slate-400">{{ $make->products_count }}</span>
+                                    </a>
                                 </li>
                             @endforeach
                         </ul>

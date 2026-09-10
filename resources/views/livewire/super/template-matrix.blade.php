@@ -33,6 +33,7 @@
                                 <div class="flex items-center gap-2">
                                     <span class="h-3 w-3 rounded-full" style="background: {{ $template['accent'] }}"></span>
                                     <span class="font-medium">{{ $template['name'] }}</span>
+                                    <span class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.65rem] text-slate-500">{{ $key }}</span>
                                     @if ($template['always'])
                                         <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">In every plan</span>
                                     @endif

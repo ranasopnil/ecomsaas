@@ -113,6 +113,23 @@
             <path d="m4.5 4.5 15 15M19.5 4.5l-15 15"/>
             @break
 
+        @case('wallet')
+            <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18v3"/>
+            <path d="M3 7.5V18a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3M3 7.5h16a2 2 0 0 1 2 2V15"/>
+            <path d="M17 11.5h4v3.5h-4a1.75 1.75 0 0 1 0-3.5Z"/>
+            @break
+
+        @case('card')
+            <rect x="3" y="5.5" width="18" height="13" rx="2.5"/>
+            <path d="M3 10h18M6.5 14.5h3"/>
+            @break
+
+        @case('van')
+            <path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/>
+            <circle cx="7.5" cy="17.8" r="1.8"/>
+            <circle cx="17.5" cy="17.8" r="1.8"/>
+            @break
+
         @case('linkedin')
             <rect x="3.5" y="3.5" width="17" height="17" rx="3.5"/>
             <path d="M8 10.5V16M8 7.6v.02M12 16v-3.2a1.9 1.9 0 0 1 3.8 0V16"/>

@@ -73,7 +73,7 @@ class HomeShelves
         return Product::query()
             ->onSale()
             ->deliverableTo($customer)
-            ->with(['variants' => fn ($q) => $q->orderBy('id'), 'variants.inventory', 'images'])
+            ->with(['brand', 'variants' => fn ($q) => $q->orderBy('id'), 'variants.inventory', 'images'])
             ->latest('published_at')
             ->orderByDesc('id');
     }

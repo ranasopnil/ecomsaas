@@ -43,4 +43,19 @@ return [
         ],
     ],
 
+    'electronics' => [
+        'name' => 'Electronics',
+        'blurb' => 'For phones, laptops and gadgets. Products photographed on white, the make shown above the name, and what is reduced said in figures rather than words.',
+        'best_for' => 'Phones, computers and gadgets',
+        'accent' => '#f26e21',
+        'always' => false,
+        'features' => [
+            'Shop by make as well as by category',
+            'Best sellers counted from real orders',
+            'Old price crossed out and the saving shown',
+            'Says whether a thing is in stock',
+            'Reads right-to-left for Arabic',
+        ],
+    ],
+
 ];
