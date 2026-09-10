@@ -144,7 +144,7 @@ class GadgetShelves
             $strip[] = [
                 'icon' => 'card',
                 'title' => 'Pay online',
-                'detail' => $upFront->take(3)->map(fn (PaymentMethod $way) => $way->label())->implode(', '),
+                'detail' => $upFront->take(3)->map(fn (PaymentMethod $way) => $way->name())->implode(', '),
             ];
         }
 

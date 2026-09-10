@@ -13,6 +13,7 @@ use App\Models\Package;
 use App\Models\PackageTemplate;
 use App\Models\PaymentMethod;
 use App\Models\Product;
+use App\Models\StorefrontFooter;
 use App\Models\Tenant;
 use App\Services\Billing\SubscribeToPackage;
 use App\Services\Catalogue\ProductService;
@@ -285,9 +286,16 @@ class ElectronicsTemplateTest extends TestCase
     {
         $this->sell('AirPods Pro');
 
-        Tenancy::run($this->store, fn () => PaymentMethod::create([
-            'tenant_id' => $this->store->id, 'gateway' => 'cod', 'is_enabled' => true, 'position' => 0,
-        ]));
+        // Both ways of paying, so the strip has to name the online ones too.
+        Tenancy::run($this->store, function () {
+            PaymentMethod::create([
+                'tenant_id' => $this->store->id, 'gateway' => 'cod', 'is_enabled' => true, 'position' => 0,
+            ]);
+
+            PaymentMethod::create([
+                'tenant_id' => $this->store->id, 'gateway' => 'bkash', 'is_enabled' => true, 'position' => 1,
+            ]);
+        });
 
         $url = $this->shopUrl();
         Tenancy::forget();
@@ -295,12 +303,47 @@ class ElectronicsTemplateTest extends TestCase
         $this->get($url)
             ->assertOk()
             ->assertSee('Pay on delivery')
+            ->assertSee('Pay online')
+            ->assertSee('bKash (merchant)')
             ->assertSee('Delivered anywhere')
             // The shop this look is modelled on promises these. We cannot
             // know either, so we never say them.
             ->assertDontSee('0% EMI')
             ->assertDontSee('100% Secure')
             ->assertDontSee('Authorized Reseller');
+    }
+
+    public function test_a_shop_that_takes_money_online_and_has_a_phone_number_says_both(): void
+    {
+        $this->sell('AirPods Pro');
+
+        Tenancy::run($this->store, function () {
+            PaymentMethod::create([
+                'tenant_id' => $this->store->id, 'gateway' => 'stripe', 'is_enabled' => true,
+                'display_name' => 'Card', 'position' => 0,
+            ]);
+
+            StorefrontFooter::create([
+                'tenant_id' => $this->store->id, 'phone' => '01711223344',
+            ]);
+
+            // Switched off, so it must not be offered to anybody.
+            PaymentMethod::create([
+                'tenant_id' => $this->store->id, 'gateway' => 'nagad', 'is_enabled' => false, 'position' => 1,
+            ]);
+        });
+
+        $url = $this->shopUrl();
+        Tenancy::forget();
+
+        $this->get($url)
+            ->assertOk()
+            ->assertSee('Pay online')
+            ->assertSee('Card')
+            ->assertSee('Talk to somebody')
+            ->assertSee('01711223344')
+            ->assertDontSee('Pay on delivery')
+            ->assertDontSee('Nagad');
     }
 
     /*
