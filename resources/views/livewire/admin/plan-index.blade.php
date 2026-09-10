@@ -192,84 +192,61 @@
             </div>
         </div>
 
-        {{-- The other plans --}}
-        <div class="card rise rise-3 p-6">
-            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-400">The other plans</h2>
-            <p class="mt-1 text-sm text-slate-500">
-                Moving up starts as soon as we find your payment, and you pay only the difference for the days
-                you have left. Moving down waits until your plan runs out, so you keep what you have paid for.
-            </p>
+        {{-- ------------------------------------------------------------------
+             Every plan side by side, written by us and read by them.
+        ------------------------------------------------------------------- --}}
+        <div class="rise rise-3">
+            @error('plan')
+                <p class="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">{{ $message }}</p>
+            @enderror
 
-            <div class="mt-4 grid gap-4 md:grid-cols-3">
-                @foreach ($choices as $package)
-                    @php($price = $package->priceIn($shop->currency))
-                    @php($isMine = $package->id === $subscription->package_id)
-                    @php($isUp = $plans->isUpgrade($subscription, $package, $shop))
+            {{-- What moving to the plan they pressed would actually mean --}}
+            @if ($lookingAt !== null)
+                @php($wanted = $choices->firstWhere('id', $lookingAt))
+                @if ($wanted && $wanted->id !== $subscription->package_id)
+                    @php($isUp = $plans->isUpgrade($subscription, $wanted, $shop))
 
-                    <div wire:key="plan-{{ $package->id }}"
-                         class="rounded-2xl border p-4 {{ $isMine ? 'border-rose-300 bg-rose-50/40' : 'border-slate-200' }}">
-                        <div class="flex items-baseline justify-between gap-2">
-                            <h3 class="font-semibold">{{ $package->name }}</h3>
-                            @if ($isMine)
-                                <span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800">Yours</span>
-                            @endif
-                        </div>
+                    <div class="card mb-4 border-rose-200 bg-rose-50/50 p-5">
+                        <h3 class="font-bold">Moving to {{ $wanted->name }}</h3>
 
-                        <p class="mt-1 text-xl font-bold tabular-nums">
-                            {{ $symbol }}{{ $price->toDisplay() }}
-                            <span class="text-xs font-normal text-slate-500">
-                                {{ $package->billing_period === 'yearly' ? 'a year' : 'a month' }}
-                            </span>
-                        </p>
-
-                        <ul class="mt-3 space-y-1 text-xs text-slate-600">
-                            @foreach ($package->entitlements->where('enabled', true)->take(5) as $entitlement)
-                                <li>
-                                    {{ config('features.'.$entitlement->feature.'.label', $entitlement->feature) }}:
-                                    <b>{{ $entitlement->limit_value === null ? 'no limit' : number_format($entitlement->limit_value) }}</b>
-                                </li>
-                            @endforeach
-                        </ul>
-
-                        @unless ($isMine)
-                            @if ($lookingAt === $package->id)
-                                <div class="mt-3 space-y-2 border-t border-slate-200 pt-3">
-                                    @if ($isUp)
-                                        <p class="text-xs text-slate-600">
-                                            To move up today you would send
-                                            <b>{{ $symbol }}{{ $plans->differenceToday($subscription, $package, $shop)->toDisplay() }}</b>
-                                            — the difference for the days you have left. Your renewal date does not move.
-                                        </p>
-                                        <button type="button" wire:click="moveUp({{ $package->id }})"
-                                                class="btn btn-primary w-full !px-3 !py-2">
-                                            Move up to {{ $package->name }}
-                                        </button>
-                                    @else
-                                        <p class="text-xs text-slate-600">
-                                            You would move down on
-                                            {{ $subscription->current_period_ends_at?->format('j F Y') }}, when
-                                            {{ $subscription->package->name }} runs out. Nothing changes before then.
-                                        </p>
-                                        <button type="button" wire:click="moveDown({{ $package->id }})"
-                                                class="btn btn-quiet w-full !px-3 !py-2">
-                                            Move down to {{ $package->name }}
-                                        </button>
-                                    @endif
-                                    <button type="button" wire:click="look({{ $package->id }})"
-                                            class="w-full text-xs text-slate-500 hover:text-slate-900">
-                                        Never mind
-                                    </button>
-                                </div>
-                            @else
-                                <button type="button" wire:click="look({{ $package->id }})"
-                                        class="btn btn-quiet mt-3 w-full !px-3 !py-2">
-                                    {{ $isUp ? 'Move up' : 'Move down' }}
-                                </button>
-                            @endif
-                        @endunless
+                        @if ($isUp)
+                            <p class="mt-1 text-sm text-slate-600">
+                                You would send
+                                <b>{{ $symbol }}{{ $plans->differenceToday($subscription, $wanted, $shop)->toDisplay() }}</b>
+                                — the difference for the days you have left. {{ $wanted->name }} starts the moment we
+                                find it, and your renewal date does not move.
+                            </p>
+                            <button type="button" wire:click="moveUp({{ $wanted->id }})" class="btn btn-primary mt-4">
+                                Move up to {{ $wanted->name }}
+                            </button>
+                        @else
+                            <p class="mt-1 text-sm text-slate-600">
+                                You would move down on
+                                <b>{{ $subscription->current_period_ends_at?->format('j F Y') }}</b>, when
+                                {{ $subscription->package->name }} runs out. Nothing changes before then, and there is
+                                nothing more to pay.
+                            </p>
+                            <button type="button" wire:click="moveDown({{ $wanted->id }})" class="btn btn-quiet mt-4">
+                                Move down to {{ $wanted->name }}
+                            </button>
+                        @endif
                     </div>
-                @endforeach
-            </div>
+                @endif
+            @endif
+
+            <x-plans.comparison
+                :settings="$settings"
+                :sections="$sections"
+                :packages="$choices"
+                :currency="$shop->currency"
+                :symbol="$symbol"
+                :current-id="$subscription->package_id"
+                :looking-at="$lookingAt" />
+
+            <p class="mt-3 px-1 text-xs text-slate-500">
+                Moving up starts as soon as we find your payment, and you pay only the difference for the days you
+                have left. Moving down waits until your plan runs out, so you keep what you have paid for.
+            </p>
         </div>
 
         {{-- What you have paid --}}

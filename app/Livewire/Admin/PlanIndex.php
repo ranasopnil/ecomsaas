@@ -5,9 +5,11 @@ namespace App\Livewire\Admin;
 use App\Exceptions\PlanChangeRefused;
 use App\Facades\Tenancy;
 use App\Models\Package;
+use App\Models\PlanPageSettings;
 use App\Models\SubscriptionPayment;
 use App\Services\Billing\Payments;
 use App\Services\Billing\PlanChange;
+use App\Services\Billing\PlanComparison;
 use App\Services\Billing\Usage;
 use App\Support\Money;
 use Livewire\Attributes\Layout;
@@ -193,18 +195,22 @@ class PlanIndex extends Component
         return $subscription === null ? null : app(Payments::class)->amountDue($subscription);
     }
 
-    public function render(PlanChange $plans, Usage $usage)
+    public function render(PlanChange $plans, Usage $usage, PlanComparison $comparison)
     {
         $shop = Tenancy::current();
         $subscription = $plans->current();
+        $choices = $plans->choices($shop);
 
         return view('livewire.admin.plan-index', [
+            // The comparison table, written by platform staff.
+            'settings' => PlanPageSettings::current(),
+            'sections' => $comparison->build($choices),
             'shop' => $shop,
             'subscription' => $subscription,
             'due' => $subscription === null ? null : app(Payments::class)->amountDue($subscription),
             'counted' => $usage->counted(),
             'switches' => $usage->switches(),
-            'choices' => $plans->choices($shop),
+            'choices' => $choices,
             'plans' => $plans,
             'history' => SubscriptionPayment::query()->latest('id')->take(12)->get(),
             'methods' => SubscriptionPayment::METHODS,

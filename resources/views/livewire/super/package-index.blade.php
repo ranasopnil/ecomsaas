@@ -5,15 +5,19 @@
         </div>
     @endif
 
-    <div class="flex items-end justify-between">
+    <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
-            <h1 class="text-2xl font-semibold">Plans</h1>
+            <h1 class="text-2xl font-bold tracking-tight">Plans</h1>
             <p class="mt-1 text-sm text-slate-500">What merchants can subscribe to, and what each plan allows.</p>
         </div>
-        <a href="{{ route('super.packages.create') }}" wire:navigate
-           class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
-            New plan
-        </a>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('super.packages.table') }}" wire:navigate class="btn btn-quiet">
+                The comparison table
+            </a>
+            <a href="{{ route('super.packages.create') }}" wire:navigate class="btn btn-primary">
+                New plan
+            </a>
+        </div>
     </div>
 
     @if ($packages->isEmpty())

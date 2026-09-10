@@ -50,6 +50,7 @@ use App\Livewire\Super\GatewayMatrix;
 use App\Livewire\Super\MapAccess;
 use App\Livewire\Super\PackageForm as SuperPackageForm;
 use App\Livewire\Super\PackageIndex as SuperPackageIndex;
+use App\Livewire\Super\PlanTable;
 use App\Livewire\Super\ShopPayments;
 use App\Livewire\Super\StoreForm;
 use App\Livewire\Super\StoreIndex;
@@ -181,6 +182,7 @@ Route::prefix('super')->name('super.')->middleware(EnsureCentralDomain::class)->
         Route::get('/', Dashboard::class)->name('dashboard');
 
         Route::get('plans', SuperPackageIndex::class)->name('packages.index');
+        Route::get('plans/table', PlanTable::class)->name('packages.table');
         Route::get('plans/new', SuperPackageForm::class)->name('packages.create');
         Route::get('plans/{package}/edit', SuperPackageForm::class)->name('packages.edit');
 
