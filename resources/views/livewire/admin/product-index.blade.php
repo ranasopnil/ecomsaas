@@ -14,9 +14,9 @@
 
     <div class="rise flex flex-wrap gap-3">
         <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search products"
-               class="w-full max-w-xs rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-violet-400 focus:outline-none">
+               class="w-full max-w-xs rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-rose-400 focus:outline-none">
         <select wire:model.live="status"
-                class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-violet-400 focus:outline-none">
+                class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-rose-400 focus:outline-none">
             <option value="">Every state</option>
             <option value="draft">Still writing</option>
             <option value="active">On sale</option>

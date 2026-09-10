@@ -4,7 +4,6 @@ namespace Tests\Feature\Admin;
 
 use App\Facades\Entitlements;
 use App\Facades\Tenancy;
-use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\ProductForm;
 use App\Models\Package;
 use App\Models\Product;
@@ -60,39 +59,6 @@ class ProfitTest extends TestCase
         $this->assertSame(37.9, $variant->marginPercent());
     }
 
-    public function test_the_dashboard_adds_up_what_the_stock_cost_and_what_it_would_make(): void
-    {
-        $service = app(ProductService::class);
-        $service->create(['name' => 'A', 'price' => '1000', 'cost_price' => '600', 'stock' => 10]);
-        $service->create(['name' => 'B', 'price' => '500', 'cost_price' => '300', 'stock' => 4]);
-
-        Livewire::test(Dashboard::class)
-            // 10 x 600 + 4 x 300 = 7200
-            ->assertSee('7,200.00')
-            // 10 x 1000 + 4 x 500 = 12000
-            ->assertSee('12,000.00')
-            // profit 4800
-            ->assertSee('4,800.00');
-    }
-
-    public function test_things_with_no_cost_entered_are_left_out_and_said_so(): void
-    {
-        $service = app(ProductService::class);
-        $service->create(['name' => 'Costed', 'price' => '1000', 'cost_price' => '600', 'stock' => 2]);
-        $service->create(['name' => 'Not costed', 'price' => '900', 'stock' => 5]);
-
-        Livewire::test(Dashboard::class)
-            ->assertSee('1,200.00')
-            ->assertSee('have no cost entered');
-    }
-
-    public function test_selling_below_cost_is_pointed_out(): void
-    {
-        app(ProductService::class)->create(['name' => 'Loss maker', 'price' => '400', 'cost_price' => '600', 'stock' => 3]);
-
-        Livewire::test(Dashboard::class)->assertSee('you would lose money');
-    }
-
     public function test_each_combination_can_have_its_own_cost(): void
     {
         $products = app(ProductService::class);
@@ -109,19 +75,5 @@ class ProfitTest extends TestCase
 
         $this->assertSame(130000, $variants[0]->fresh()->cost_price_minor);
         $this->assertSame(125000, $variants[1]->fresh()->cost_price_minor);
-    }
-
-    public function test_a_shopkeeper_never_sees_another_shops_costs(): void
-    {
-        app(ProductService::class)->create(['name' => 'Secret margin', 'price' => '1000', 'cost_price' => '100', 'stock' => 50]);
-
-        $other = Tenant::factory()->create(['currency' => 'BDT']);
-        app(SubscribeToPackage::class)->handle($other, Package::factory()->allowing(['products' => 10])->create());
-
-        Tenancy::run($other, function () use ($other) {
-            $this->actingAs(User::factory()->create(['tenant_id' => $other->id]));
-
-            Livewire::test(Dashboard::class)->assertDontSee('45,000.00');
-        });
     }
 }

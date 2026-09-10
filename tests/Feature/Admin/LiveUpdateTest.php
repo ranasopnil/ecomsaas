@@ -99,36 +99,37 @@ class LiveUpdateTest extends TestCase
             'name' => 'Counted', 'regular_price' => '1000', 'cost_price' => '600', 'stock' => 10,
         ]);
 
-        // The rolling animation is decoration. The real figure is rendered by
-        // the server, so it is there with or without JavaScript.
+        // The chart and the little lines are drawn by the server, so every
+        // figure is on the page with or without JavaScript.
         Livewire::test(Dashboard::class)
-            ->assertSee('BDT 6,000.00')
-            ->assertSee('BDT 10,000.00')
+            ->assertSee('Total sales')
+            ->assertSee('Products')
+            ->assertSee('Sales overview')
             ->assertSee('Getting started');
     }
 
-    public function test_the_activity_chart_can_be_switched_without_leaving_the_page(): void
+    public function test_the_sales_chart_can_be_stretched_without_leaving_the_page(): void
     {
         app(ProductService::class)->create(['name' => 'Something', 'regular_price' => '100', 'stock' => 3]);
 
         Livewire::test(Dashboard::class)
-            ->assertSet('series', 'stock')
-            ->assertSee('items moved in or out')
-            ->call('setSeries', 'products')
-            ->assertSet('series', 'products')
-            ->assertSee('products added');
+            ->assertSet('chartDays', '14')
+            ->assertSee('Last 14 days')
+            ->call('setChartDays', '7')
+            ->assertSet('chartDays', '7')
+            ->assertSee('Last 7 days');
     }
 
     public function test_an_unknown_chart_choice_falls_back_instead_of_breaking(): void
     {
         Livewire::test(Dashboard::class)
-            ->call('setSeries', 'nonsense')
-            ->assertSet('series', 'stock');
+            ->call('setChartDays', 'nonsense')
+            ->assertSet('chartDays', '14');
     }
 
     public function test_the_readiness_figure_counts_what_is_actually_done(): void
     {
-        Livewire::test(Dashboard::class)->assertSee('of 7 done');
+        Livewire::test(Dashboard::class)->assertSee('steps to go');
 
         app(ProductService::class)->create([
             'name' => 'First', 'regular_price' => '100', 'status' => Product::STATUS_ACTIVE, 'cost_price' => '50',

@@ -144,3 +144,108 @@ body { background: var(--color-canvas); }
    the shop's own colour when the pointer is over it, so the footer belongs to
    the same shop as the rest of the page. */
 .social-chip:hover { background-color: var(--chip); border-color: transparent; }
+
+/* ---------------------------------------------------------------------------
+   The shop admin's own colours.
+
+   The platform's staff admin keeps the violet it always had; a shopkeeper's
+   own dashboard is pink, and everything in it — the rail, the buttons, the
+   cards — takes its colour from here rather than from any one screen.
+--------------------------------------------------------------------------- */
+
+.shop-admin {
+    --shop-pink: #f5325b;
+    --shop-pink-deep: #d81e4a;
+    --shop-pink-soft: #fff1f4;
+    --shop-pink-line: #ffe0e6;
+    --shop-canvas: #f8f9fc;
+    --shop-line: #eef0f6;
+
+    background: var(--shop-canvas);
+}
+
+/* The rail down the side, white now, with the page beside it -------------- */
+.shop-admin .rail {
+    background: #fff;
+    border-inline-end: 1px solid var(--shop-line);
+}
+
+.shop-admin .rail-link {
+    color: #64748b;
+    font-weight: 500;
+    padding: .6rem .875rem;
+}
+
+.shop-admin .rail-link:hover {
+    background: #f8fafc;
+    color: #0f172a;
+}
+
+.shop-admin .rail-link-active,
+.shop-admin .rail-link-active:hover {
+    background: var(--shop-pink-soft);
+    background-image: none;
+    color: var(--shop-pink);
+    box-shadow: none;
+    font-weight: 600;
+}
+
+/* A count sitting on a rail link, for work that is waiting ---------------- */
+.rail-count {
+    margin-inline-start: auto;
+    min-width: 1.35rem;
+    border-radius: 999px;
+    background: var(--shop-pink);
+    padding: 0 .4rem;
+    font-size: .7rem;
+    font-weight: 700;
+    line-height: 1.35rem;
+    color: #fff;
+    text-align: center;
+}
+
+.rail-link-active .rail-count { background: var(--shop-pink); }
+
+/* Buttons ---------------------------------------------------------------- */
+.shop-admin .btn-primary {
+    background-image: linear-gradient(135deg, #ff5a7a, var(--shop-pink-deep));
+    box-shadow: 0 6px 18px rgba(245, 50, 91, .28);
+}
+
+.shop-admin .btn-primary:hover { box-shadow: 0 10px 24px rgba(245, 50, 91, .36); }
+
+/* Cards ------------------------------------------------------------------ */
+.shop-admin .card {
+    border-color: var(--shop-line);
+    border-radius: 1rem;
+    box-shadow: 0 1px 2px rgba(15, 23, 41, .04);
+}
+
+.shop-admin .route-progress { background-image: linear-gradient(90deg, #ff5a7a, var(--shop-pink)); }
+
+/* The one soft-pink tile a figure sits in --------------------------------- */
+.stat-icon {
+    display: flex; align-items: center; justify-content: center;
+    height: 2.75rem; width: 2.75rem;
+    border-radius: .875rem;
+    background: var(--shop-pink-soft);
+    color: var(--shop-pink);
+}
+
+/* The welcome strip across the top of the dashboard ----------------------- */
+.welcome {
+    background: linear-gradient(100deg, #fff 42%, #fff4f6 100%);
+}
+
+.script {
+    font-family: 'Segoe Script', 'Bradley Hand', 'Brush Script MT', cursive;
+    font-style: italic;
+}
+
+/* A bar in the sales chart, grown from the bottom on arrival -------------- */
+@keyframes grow { from { transform: scaleY(.02); } to { transform: scaleY(1); } }
+.bar { transform-origin: bottom; animation: grow .5s cubic-bezier(.2, .8, .3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+    .bar { animation: none; }
+}

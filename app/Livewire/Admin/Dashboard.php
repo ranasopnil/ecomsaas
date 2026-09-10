@@ -7,27 +7,49 @@ use App\Facades\Tenancy;
 use App\Models\Category;
 use App\Models\Domain;
 use App\Models\InventoryLevel;
-use App\Models\InventoryMovement;
+use App\Models\Order;
+use App\Models\OrderLine;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use App\Models\Tenant;
 use App\Support\Money;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
+/**
+ * What happened in the shop today.
+ *
+ * Every figure on this screen is counted from the shop's own orders. Nothing
+ * is rounded up, padded or invented: a shopkeeper reading "158 orders" can go
+ * to the orders screen and count a hundred and fifty-eight. A shop with no
+ * orders yet is told so plainly rather than shown a hopeful zero dressed up
+ * as a trend.
+ */
 #[Layout('layouts.admin')]
 #[Title('Dashboard')]
 class Dashboard extends Component
 {
-    /** Which line the activity chart is showing. */
-    public string $series = 'stock';
+    /** How far back the figures at the top reach. */
+    public string $range = '7';
+
+    /** How many days the sales chart draws. */
+    public string $chartDays = '14';
 
     /** Whether this person has put the setup steps away. */
     public bool $setupHidden = false;
+
+    /** The stretches of time a shopkeeper can ask for. */
+    public const RANGES = [
+        '1' => 'Today',
+        '7' => 'Last 7 days',
+        '14' => 'Last 14 days',
+        '30' => 'Last 30 days',
+    ];
 
     public function mount(): void
     {
@@ -50,149 +72,167 @@ class Dashboard extends Component
         auth()->user()?->setPreference('setup_hidden', false);
     }
 
-    public function setSeries(string $series): void
+    public function setRange(string $days): void
     {
-        $this->series = in_array($series, ['stock', 'products'], true) ? $series : 'stock';
+        $this->range = array_key_exists($days, self::RANGES) ? $days : '7';
+    }
+
+    public function setChartDays(string $days): void
+    {
+        $this->chartDays = in_array($days, ['7', '14', '30'], true) ? $days : '14';
     }
 
     public function render()
     {
         $store = Tenancy::current();
-        $productCount = Product::count();
+        $timezone = $store->timezone ?: config('app.timezone');
+
+        $days = (int) $this->range;
+        $from = Carbon::now($timezone)->startOfDay()->subDays($days - 1);
+        $to = Carbon::now($timezone);
+
+        // The same stretch again, immediately before, so "up on last week"
+        // means something a shopkeeper can check.
+        $wasFrom = $from->copy()->subDays($days);
+        $wasTo = $from->copy()->subSecond();
 
         return view('livewire.admin.dashboard', [
             'store' => $store,
-            'productCount' => $productCount,
-            'onSaleCount' => Product::onSale()->count(),
-            'productAllowance' => Entitlements::limit('products'),
-            'productsLeft' => Entitlements::remaining('products', $productCount),
-            'stockUnits' => (int) InventoryLevel::live()->sum('available'),
-            'outOfStock' => InventoryLevel::live()->where('available', '<=', 0)->count(),
-            'lowStock' => InventoryLevel::live()
-                ->whereNotNull('low_stock_threshold')
-                ->whereColumn('available', '<=', 'low_stock_threshold')
-                ->where('available', '>', 0)
-                ->count(),
-            'money' => $this->stockMoney($store->currency, $store->currency_exponent),
-            'sales' => $this->sales($store),
-            'health' => $this->health($store, $productCount),
-            'chart' => $this->chart(),
+            'ranges' => self::RANGES,
+            'from' => $from,
+            'to' => $to,
+            'figures' => $this->figures($store, $timezone, $from, $to, $wasFrom, $wasTo, $days),
+            'chart' => $this->salesPerDay($store, $timezone, (int) $this->chartDays),
+            'donut' => $this->ordersByState(),
+            'recentOrders' => $this->recentOrders(),
             'topProducts' => $this->topProducts($store),
+            'health' => $this->health($store, Product::count()),
             'alerts' => $this->alerts(),
-            'activity' => $this->recentActivity(),
+            'productAllowance' => Entitlements::limit('products'),
         ]);
     }
 
-    /**
-     * What the stock on the shelf cost, what it would sell for, and the
-     * difference. Only lines with a cost entered are counted.
-     *
-     * @return array{cost: Money, retail: Money, profit: Money, margin: float|null, missingCost: int, counted: int}
+    /*
+     * ---------------------------------------------------------------
+     * The four figures across the top
+     * ---------------------------------------------------------------
      */
-    protected function stockMoney(string $currency, int $exponent): array
-    {
-        $totals = ProductVariant::query()
-            ->join('inventory_levels', function ($join) {
-                $join->on('inventory_levels.product_variant_id', '=', 'product_variants.id')
-                    ->on('inventory_levels.tenant_id', '=', 'product_variants.tenant_id');
-            })
-            ->selectRaw('COALESCE(SUM(GREATEST(inventory_levels.available, 0) * product_variants.cost_price_minor)
-                         FILTER (WHERE product_variants.cost_price_minor IS NOT NULL), 0) AS cost_minor')
-            ->selectRaw('COALESCE(SUM(GREATEST(inventory_levels.available, 0) * product_variants.price_minor)
-                         FILTER (WHERE product_variants.cost_price_minor IS NOT NULL), 0) AS retail_minor')
-            ->selectRaw('COUNT(*) FILTER (WHERE product_variants.cost_price_minor IS NULL) AS missing_cost')
-            ->selectRaw('COUNT(*) FILTER (WHERE product_variants.cost_price_minor IS NOT NULL) AS counted')
-            ->first();
 
-        $cost = (int) ($totals->cost_minor ?? 0);
-        $retail = (int) ($totals->retail_minor ?? 0);
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    protected function figures(Tenant $store, string $timezone, Carbon $from, Carbon $to, Carbon $wasFrom, Carbon $wasTo, int $days): array
+    {
+        $now = $this->countBetween($from, $to);
+        $before = $this->countBetween($wasFrom, $wasTo);
+
+        $customersEver = (int) $this->realOrders()->distinct()->count('customer_phone');
+        $products = Product::count();
+        $productsBefore = $products - Product::where('created_at', '>=', $from->copy()->utc())->count();
 
         return [
-            'cost' => new Money($cost, $currency, $exponent),
-            'retail' => new Money($retail, $currency, $exponent),
-            'profit' => new Money($retail - $cost, $currency, $exponent),
-            'margin' => $retail > 0 ? round(($retail - $cost) / $retail * 100, 1) : null,
-            'missingCost' => (int) ($totals->missing_cost ?? 0),
-            'counted' => (int) ($totals->counted ?? 0),
+            [
+                'key' => 'sales',
+                'label' => 'Total sales',
+                'value' => $store->currency.' '.(new Money($now['revenue'], $store->currency, $store->currency_exponent))->toDisplay(),
+                'change' => $this->change($now['revenue'], $before['revenue']),
+                'spark' => $this->sparkline($timezone, $days, 'revenue'),
+                'icon' => 'bag',
+            ],
+            [
+                'key' => 'orders',
+                'label' => 'Orders',
+                'value' => number_format($now['orders']),
+                'change' => $this->change($now['orders'], $before['orders']),
+                'spark' => $this->sparkline($timezone, $days, 'orders'),
+                'icon' => 'cart',
+            ],
+            [
+                'key' => 'customers',
+                'label' => 'Customers',
+                'value' => number_format($customersEver),
+                'change' => $this->change($now['customers'], $before['customers']),
+                'spark' => $this->sparkline($timezone, $days, 'customers'),
+                'icon' => 'people',
+                'note' => $now['customers'] === 0
+                    ? 'nobody bought in this stretch'
+                    : $now['customers'].' bought in this stretch',
+            ],
+            [
+                'key' => 'products',
+                'label' => 'Products',
+                'value' => number_format($products),
+                'change' => $this->change($products, max(0, $productsBefore)),
+                'spark' => $this->sparkline($timezone, $days, 'products'),
+                'icon' => 'box',
+            ],
         ];
     }
 
     /**
-     * What the shop has sold, taken from stock that went out marked as sold.
+     * Money taken, orders placed and people who bought, between two moments.
      *
-     * Until there is a checkout, this is the truest figure the shop has: every
-     * sale recorded on the stock screen counts. Value is worked out at today's
-     * prices, because a price is not written down against a stock movement.
-     *
-     * @return array{
-     *     today: array{revenue: Money, profit: Money, units: int},
-     *     yesterday: array{revenue: Money, profit: Money, units: int},
-     *     change: float|null,
-     *     spark: array<int, int>,
-     *     sparkPeak: int,
-     * }
+     * @return array{revenue: int, orders: int, customers: int}
      */
-    protected function sales(Tenant $store): array
+    protected function countBetween(Carbon $from, Carbon $to): array
     {
-        $timezone = $store->timezone;
-        $startOfToday = Carbon::now($timezone)->startOfDay();
-
-        $today = $this->soldBetween($startOfToday, Carbon::now($timezone), $store);
-        $yesterday = $this->soldBetween($startOfToday->copy()->subDay(), $startOfToday, $store);
-
-        $change = $yesterday['revenue']->minor > 0
-            ? round(($today['revenue']->minor - $yesterday['revenue']->minor) / $yesterday['revenue']->minor * 100, 1)
-            : null;
-
-        return [
-            'today' => $today,
-            'yesterday' => $yesterday,
-            'change' => $change,
-            'spark' => $spark = $this->soldPerDay($timezone, 7),
-            'sparkPeak' => max(1, max($spark)),
-        ];
-    }
-
-    /**
-     * @return array{revenue: Money, profit: Money, units: int}
-     */
-    protected function soldBetween(Carbon $from, Carbon $to, Tenant $store): array
-    {
-        $totals = InventoryMovement::query()
-            ->join('product_variants', function ($join) {
-                $join->on('product_variants.id', '=', 'inventory_movements.product_variant_id')
-                    ->on('product_variants.tenant_id', '=', 'inventory_movements.tenant_id');
-            })
-            ->where('inventory_movements.reason', InventoryMovement::REASON_SOLD)
-            ->whereBetween('inventory_movements.created_at', [$from->copy()->utc(), $to->copy()->utc()])
-            ->selectRaw('COALESCE(SUM(ABS(inventory_movements.quantity_change)), 0) AS units')
-            ->selectRaw('COALESCE(SUM(ABS(inventory_movements.quantity_change) * product_variants.price_minor), 0) AS revenue_minor')
-            ->selectRaw('COALESCE(SUM(ABS(inventory_movements.quantity_change)
-                         * (product_variants.price_minor - product_variants.cost_price_minor))
-                         FILTER (WHERE product_variants.cost_price_minor IS NOT NULL), 0) AS profit_minor')
+        $totals = $this->realOrders()
+            ->whereRaw($this->placedAt().' BETWEEN ? AND ?', [$from->copy()->utc(), $to->copy()->utc()])
+            ->selectRaw('COALESCE(SUM(total_minor), 0) AS money_taken')
+            ->selectRaw('COUNT(*) AS how_many')
+            ->selectRaw('COUNT(DISTINCT customer_phone) AS who_bought')
             ->first();
 
         return [
-            'units' => (int) ($totals->units ?? 0),
-            'revenue' => new Money((int) ($totals->revenue_minor ?? 0), $store->currency, $store->currency_exponent),
-            'profit' => new Money((int) ($totals->profit_minor ?? 0), $store->currency, $store->currency_exponent),
+            'revenue' => (int) ($totals->money_taken ?? 0),
+            'orders' => (int) ($totals->how_many ?? 0),
+            'customers' => (int) ($totals->who_bought ?? 0),
         ];
     }
 
     /**
-     * Units sold on each of the last few days, for the little line in the box.
+     * How much bigger or smaller than the stretch before. Null when there is
+     * nothing to compare against — a first week is not "up 100%".
+     *
+     * @return array{percent: float, up: bool}|null
+     */
+    protected function change(int $now, int $before): ?array
+    {
+        if ($before <= 0) {
+            return null;
+        }
+
+        return [
+            'percent' => round(abs($now - $before) / $before * 100, 1),
+            'up' => $now >= $before,
+        ];
+    }
+
+    /**
+     * The little line inside a figure's box.
      *
      * @return array<int, int>
      */
-    protected function soldPerDay(string $timezone, int $days): array
+    protected function sparkline(string $timezone, int $days, string $what): array
     {
-        $rows = InventoryMovement::query()
-            ->where('reason', InventoryMovement::REASON_SOLD)
-            ->where('created_at', '>=', Carbon::now($timezone)->startOfDay()->subDays($days - 1)->utc())
-            ->selectRaw("(created_at AT TIME ZONE 'UTC' AT TIME ZONE ?)::date AS on_day", [$timezone])
-            ->selectRaw('COALESCE(SUM(ABS(quantity_change)), 0) AS units')
-            ->groupBy('on_day')
-            ->pluck('units', 'on_day');
+        $days = max($days, 7);
+        $start = Carbon::now($timezone)->startOfDay()->subDays($days - 1);
+
+        $rows = $what === 'products'
+            ? Product::query()
+                ->where('created_at', '>=', $start->copy()->utc())
+                ->selectRaw("(created_at AT TIME ZONE 'UTC' AT TIME ZONE ?)::date AS on_day", [$timezone])
+                ->selectRaw('COUNT(*) AS how_many')
+                ->groupBy('on_day')->pluck('how_many', 'on_day')
+            : $this->realOrders()
+                ->whereRaw($this->placedAt().' >= ?', [$start->copy()->utc()])
+                ->selectRaw("(({$this->placedAt()}) AT TIME ZONE 'UTC' AT TIME ZONE ?)::date AS on_day", [$timezone])
+                ->selectRaw(match ($what) {
+                    'revenue' => 'COALESCE(SUM(total_minor), 0) AS how_many',
+                    'customers' => 'COUNT(DISTINCT customer_phone) AS how_many',
+                    default => 'COUNT(*) AS how_many',
+                })
+                ->groupBy('on_day')->pluck('how_many', 'on_day');
 
         $series = [];
 
@@ -204,10 +244,173 @@ class Dashboard extends Component
         return $series;
     }
 
+    /*
+     * ---------------------------------------------------------------
+     * The two charts
+     * ---------------------------------------------------------------
+     */
+
+    /**
+     * Money taken on each of the last few days.
+     *
+     * @return array{points: array<int, array{label: string, day: string, minor: int, money: Money, share: float}>, total: Money, peak: int}
+     */
+    protected function salesPerDay(Tenant $store, string $timezone, int $days): array
+    {
+        $start = Carbon::now($timezone)->startOfDay()->subDays($days - 1);
+
+        $rows = $this->realOrders()
+            ->whereRaw($this->placedAt().' >= ?', [$start->copy()->utc()])
+            ->selectRaw("(({$this->placedAt()}) AT TIME ZONE 'UTC' AT TIME ZONE ?)::date AS on_day", [$timezone])
+            ->selectRaw('COALESCE(SUM(total_minor), 0) AS money_taken')
+            ->groupBy('on_day')->pluck('money_taken', 'on_day');
+
+        $points = [];
+        $total = 0;
+
+        for ($back = $days - 1; $back >= 0; $back--) {
+            $day = Carbon::now($timezone)->startOfDay()->subDays($back);
+            $minor = (int) ($rows[$day->toDateString()] ?? 0);
+            $total += $minor;
+
+            $points[] = [
+                'label' => $day->format('j M'),
+                'day' => $day->format('j M, Y'),
+                'minor' => $minor,
+                'money' => new Money($minor, $store->currency, $store->currency_exponent),
+            ];
+        }
+
+        $peak = max(1, max(array_column($points, 'minor')));
+
+        foreach ($points as $index => $point) {
+            $points[$index]['share'] = $point['minor'] / $peak;
+        }
+
+        return [
+            'points' => $points,
+            'total' => new Money($total, $store->currency, $store->currency_exponent),
+            'peak' => $peak,
+        ];
+    }
+
+    /**
+     * Where every order the shop has taken has got to.
+     *
+     * The seven states an order can be in are gathered into the four a
+     * shopkeeper actually thinks in.
+     *
+     * @return array{total: int, slices: array<int, array{label: string, count: int, share: float, colour: string}>}
+     */
+    protected function ordersByState(): array
+    {
+        $counts = Order::query()
+            ->selectRaw('status, COUNT(*) AS how_many')
+            ->groupBy('status')
+            ->pluck('how_many', 'status');
+
+        $buckets = [
+            ['label' => 'Delivered', 'colour' => '#22c55e', 'states' => [Order::STATUS_DELIVERED]],
+            ['label' => 'Processing', 'colour' => '#f5325b', 'states' => [
+                Order::STATUS_APPROVED, Order::STATUS_PROCESSING, Order::STATUS_HANDED_OVER,
+            ]],
+            ['label' => 'Pending', 'colour' => '#fbbf24', 'states' => [
+                Order::STATUS_PLACED, Order::STATUS_PENDING_PAYMENT,
+            ]],
+            ['label' => 'Cancelled', 'colour' => '#cbd5e1', 'states' => [
+                Order::STATUS_CANCELLED, Order::STATUS_NOT_DELIVERED,
+            ]],
+        ];
+
+        $slices = [];
+        $total = 0;
+
+        foreach ($buckets as $bucket) {
+            $count = collect($bucket['states'])->sum(fn (string $state) => (int) $counts->get($state, 0));
+            $total += $count;
+
+            $slices[] = ['label' => $bucket['label'], 'count' => $count, 'colour' => $bucket['colour'], 'share' => 0.0];
+        }
+
+        foreach ($slices as $index => $slice) {
+            $slices[$index]['share'] = $total > 0 ? $slice['count'] / $total : 0.0;
+        }
+
+        return ['total' => $total, 'slices' => $slices];
+    }
+
+    /*
+     * ---------------------------------------------------------------
+     * The two tables
+     * ---------------------------------------------------------------
+     */
+
+    protected function recentOrders(): Collection
+    {
+        return Order::query()
+            ->with(['lines' => fn ($q) => $q->limit(3), 'lines.product.images'])
+            ->withCount('lines')
+            ->latest('id')
+            ->limit(5)
+            ->get();
+    }
+
+    /**
+     * What has actually sold, counted from the orders it sold in.
+     */
+    protected function topProducts(Tenant $store): Collection
+    {
+        $rows = OrderLine::query()
+            ->join('orders', function ($join) {
+                $join->on('orders.id', '=', 'order_lines.order_id')
+                    ->on('orders.tenant_id', '=', 'order_lines.tenant_id');
+            })
+            ->whereNotIn('orders.status', [Order::STATUS_PENDING_PAYMENT, Order::STATUS_CANCELLED])
+            ->whereNotNull('order_lines.product_id')
+            ->selectRaw('order_lines.product_id')
+            ->selectRaw('SUM(order_lines.quantity) AS sold')
+            ->selectRaw('SUM(order_lines.line_total_minor) AS revenue')
+            ->groupBy('order_lines.product_id')
+            ->orderByDesc('sold')
+            ->limit(5)
+            ->get();
+
+        $products = Product::with('images')->whereIn('id', $rows->pluck('product_id'))->get()->keyBy('id');
+
+        return $rows->map(fn ($row) => [
+            'product' => $products->get($row->product_id),
+            'sold' => (int) $row->sold,
+            'revenue' => new Money((int) $row->revenue, $store->currency, $store->currency_exponent),
+        ])->filter(fn (array $row) => $row['product'] !== null)->values();
+    }
+
+    /*
+     * ---------------------------------------------------------------
+     * Small things
+     * ---------------------------------------------------------------
+     */
+
+    /**
+     * Orders that actually count: an attempt that never became one does not.
+     */
+    protected function realOrders(): Builder
+    {
+        return Order::query()->whereNotIn('status', [Order::STATUS_PENDING_PAYMENT, Order::STATUS_CANCELLED]);
+    }
+
+    /**
+     * When an order happened. Placed is the truth; created stands in for the
+     * rare order that has not been stamped yet.
+     */
+    protected function placedAt(): string
+    {
+        return 'COALESCE(placed_at, created_at)';
+    }
+
     /**
      * How ready the shop is to trade, and what is still to do.
      *
-     * @return array{percent: int, done: int, total: int, tasks: array<int, array{label: string, done: bool, hint: string, route: string|null}>}
+     * @return array{percent: int, done: int, total: int, next: int|null, tasks: array<int, array<string, mixed>>}
      */
     protected function health(Tenant $store, int $productCount): array
     {
@@ -243,8 +446,6 @@ class Dashboard extends Component
         ];
 
         $done = count(array_filter($tasks, fn ($task) => $task['done']));
-
-        // The first thing not done is what to nudge towards.
         $next = null;
 
         foreach ($tasks as $index => $task) {
@@ -264,61 +465,8 @@ class Dashboard extends Component
     }
 
     /**
-     * The last fortnight of activity, drawn from what actually happened.
-     *
-     * @return array{points: array<int, array{label: string, value: int}>, total: int, peak: int}
+     * Stock that has run out, or is about to.
      */
-    protected function chart(): array
-    {
-        $from = Carbon::today()->subDays(13);
-
-        $rows = $this->series === 'products'
-            ? Product::query()
-                ->where('created_at', '>=', $from)
-                ->selectRaw('DATE(created_at) AS on_day, COUNT(*) AS total')
-                ->groupBy('on_day')->pluck('total', 'on_day')
-            : InventoryMovement::query()
-                ->where('created_at', '>=', $from)
-                ->selectRaw('DATE(created_at) AS on_day, COALESCE(SUM(ABS(quantity_change)), 0) AS total')
-                ->groupBy('on_day')->pluck('total', 'on_day');
-
-        $points = [];
-
-        for ($day = $from->copy(); $day->lte(Carbon::today()); $day->addDay()) {
-            $points[] = [
-                'label' => $day->format('j M'),
-                'value' => (int) ($rows[$day->toDateString()] ?? 0),
-            ];
-        }
-
-        return [
-            'points' => $points,
-            'total' => array_sum(array_column($points, 'value')),
-            'peak' => max(1, max(array_column($points, 'value'))),
-        ];
-    }
-
-    /**
-     * What is worth the most sitting on the shelf.
-     */
-    protected function topProducts(Tenant $store): Collection
-    {
-        return ProductVariant::query()
-            ->with(['product.images', 'inventory', 'optionValues'])
-            ->join('inventory_levels', function ($join) {
-                $join->on('inventory_levels.product_variant_id', '=', 'product_variants.id')
-                    ->on('inventory_levels.tenant_id', '=', 'product_variants.tenant_id');
-            })
-            ->selectRaw('product_variants.*, GREATEST(inventory_levels.available, 0) * product_variants.price_minor AS shelf_value')
-            ->orderByDesc('shelf_value')
-            ->limit(5)
-            ->get()
-            ->map(fn (ProductVariant $variant) => [
-                'variant' => $variant,
-                'value' => new Money((int) $variant->shelf_value, $store->currency, $store->currency_exponent),
-            ]);
-    }
-
     protected function alerts(): Collection
     {
         return InventoryLevel::live()
@@ -329,16 +477,7 @@ class Dashboard extends Component
                     ->whereNotNull('low_stock_threshold')
                     ->whereColumn('available', '<=', 'low_stock_threshold')))
             ->orderBy('available')
-            ->limit(5)
-            ->get();
-    }
-
-    protected function recentActivity(): Collection
-    {
-        return InventoryMovement::query()
-            ->with(['variant.product'])
-            ->orderByDesc('id')
-            ->limit(6)
+            ->limit(4)
             ->get();
     }
 }

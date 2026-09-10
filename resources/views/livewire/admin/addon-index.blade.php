@@ -61,12 +61,12 @@
     {{-- What is on sale --}}
     @if ($addons->isEmpty())
         <div class="card rise rise-1 p-8 text-center">
-            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-violet-100 text-2xl text-violet-700">+</div>
+            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-2xl text-rose-700">+</div>
             <h2 class="mt-4 text-lg font-semibold">Nothing to add just yet</h2>
             <p class="mx-auto mt-2 max-w-md text-sm text-slate-500">
                 There are no extras on sale for your shop at the moment. If you have run out of room on your
                 plan, you can always
-                <a href="{{ route('admin.plan.index') }}" wire:navigate class="font-medium text-violet-700 hover:underline">
+                <a href="{{ route('admin.plan.index') }}" wire:navigate class="font-medium text-rose-700 hover:underline">
                     move to a bigger one</a>.
             </p>
         </div>
@@ -125,7 +125,7 @@
         <p class="text-sm text-slate-500">
             Nothing switches on until we have found your payment. When you add something, send the money the
             usual way and
-            <a href="{{ route('admin.plan.index') }}" wire:navigate class="font-medium text-violet-700 hover:underline">
+            <a href="{{ route('admin.plan.index') }}" wire:navigate class="font-medium text-rose-700 hover:underline">
                 tell us on your plan page</a>.
         </p>
     @endif

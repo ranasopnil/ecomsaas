@@ -91,7 +91,7 @@
                             {{ $subscription->scheduled_change_at?->format('j F Y') }}. You keep everything you
                             have until then.
                         </span>
-                        <button type="button" wire:click="keepMyPlan" class="text-sm font-medium text-violet-700 hover:underline">
+                        <button type="button" wire:click="keepMyPlan" class="text-sm font-medium text-rose-700 hover:underline">
                             Stay where I am
                         </button>
                     </div>
@@ -121,7 +121,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="text-sm text-slate-500">{{ $symbol }}</span>
                                 <input type="text" inputmode="decimal" wire:model="amount"
-                                       class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm tabular-nums focus:border-violet-400 focus:outline-none">
+                                       class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm tabular-nums focus:border-rose-400 focus:outline-none">
                             </div>
                             @error('amount') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                         </div>
@@ -129,7 +129,7 @@
                         <div>
                             <label class="mb-1 block text-xs font-medium text-slate-500">How you sent it</label>
                             <select wire:model="method"
-                                    class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                                    class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                                 @foreach ($methods as $key => $label)
                                     <option value="{{ $key }}">{{ $label }}</option>
                                 @endforeach
@@ -139,7 +139,7 @@
                         <div>
                             <label class="mb-1 block text-xs font-medium text-slate-500">Transaction number</label>
                             <input type="text" wire:model="reference" maxlength="120" placeholder="8N7A2K9QX1"
-                                   class="w-full rounded-xl border border-slate-200 px-3 py-2.5 font-mono text-xs focus:border-violet-400 focus:outline-none">
+                                   class="w-full rounded-xl border border-slate-200 px-3 py-2.5 font-mono text-xs focus:border-rose-400 focus:outline-none">
                             <p class="mt-1 text-xs text-slate-500">It helps us find your payment faster.</p>
                         </div>
 
@@ -174,7 +174,7 @@
                         </div>
                         @if ($row['share'] !== null)
                             <div class="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                                <div class="h-full rounded-full {{ $row['full'] ? 'bg-rose-500' : ($row['share'] > 0.8 ? 'bg-amber-500' : 'bg-violet-500') }}"
+                                <div class="h-full rounded-full {{ $row['full'] ? 'bg-rose-500' : ($row['share'] > 0.8 ? 'bg-amber-500' : 'bg-rose-500') }}"
                                      style="width: {{ max(2, round($row['share'] * 100)) }}%"></div>
                             </div>
                         @endif
@@ -207,11 +207,11 @@
                     @php($isUp = $plans->isUpgrade($subscription, $package, $shop))
 
                     <div wire:key="plan-{{ $package->id }}"
-                         class="rounded-2xl border p-4 {{ $isMine ? 'border-violet-300 bg-violet-50/40' : 'border-slate-200' }}">
+                         class="rounded-2xl border p-4 {{ $isMine ? 'border-rose-300 bg-rose-50/40' : 'border-slate-200' }}">
                         <div class="flex items-baseline justify-between gap-2">
                             <h3 class="font-semibold">{{ $package->name }}</h3>
                             @if ($isMine)
-                                <span class="rounded-full bg-violet-100 px-2 py-0.5 text-xs text-violet-800">Yours</span>
+                                <span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800">Yours</span>
                             @endif
                         </div>
 

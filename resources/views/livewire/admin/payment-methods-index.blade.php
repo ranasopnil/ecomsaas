@@ -32,7 +32,7 @@
                                 </span>
                             @endif
                             @if ($gateway['reason'] === 'granted')
-                                <span class="rounded-full bg-violet-100 px-2 py-0.5 text-xs text-violet-800">Given to you</span>
+                                <span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-800">Given to you</span>
                             @endif
                             @unless ($gateway['covered_by_plan'])
                                 <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">Not in your plan</span>
@@ -74,7 +74,7 @@
                         <div>
                             <label class="mb-1 block text-xs font-medium text-slate-500">What customers see it called (optional)</label>
                             <input type="text" wire:model="display_name" placeholder="{{ $gateway['name'] }}"
-                                   class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-violet-400 focus:outline-none">
+                                   class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-rose-400 focus:outline-none">
                         </div>
 
                         @foreach ($definition['fields'] as $fieldKey => $field)
@@ -88,7 +88,7 @@
                                     <label class="mb-1 block text-xs font-medium text-slate-500">{{ $field['label'] }}</label>
                                     @if ($field['type'] === 'select')
                                         <select wire:model="form.{{ $fieldKey }}"
-                                                class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-violet-400 focus:outline-none">
+                                                class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-rose-400 focus:outline-none">
                                             <option value="">Choose…</option>
                                             @foreach ($field['options'] as $value => $label)
                                                 <option value="{{ $value }}">{{ $label }}</option>
@@ -97,12 +97,12 @@
                                     @elseif ($field['type'] === 'textarea')
                                         <textarea wire:model="form.{{ $fieldKey }}" rows="3" autocomplete="off"
                                                   placeholder="{{ $field['secret'] && $method?->hasSecret($fieldKey) ? 'Saved — paste to replace' : '' }}"
-                                                  class="w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-xs focus:border-violet-400 focus:outline-none"></textarea>
+                                                  class="w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-xs focus:border-rose-400 focus:outline-none"></textarea>
                                     @else
                                         <input type="{{ $field['type'] === 'password' ? 'password' : 'text' }}"
                                                wire:model="form.{{ $fieldKey }}" autocomplete="{{ $field['secret'] ? 'new-password' : 'off' }}"
                                                placeholder="{{ $field['secret'] && $method?->hasSecret($fieldKey) ? '•••••••• saved — type to replace' : '' }}"
-                                               class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-violet-400 focus:outline-none">
+                                               class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-rose-400 focus:outline-none">
                                     @endif
                                     @if ($field['hint'] ?? false)
                                         <p class="mt-1 text-xs text-slate-500">{{ $field['hint'] }}</p>

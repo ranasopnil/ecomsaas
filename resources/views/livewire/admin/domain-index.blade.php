@@ -18,11 +18,11 @@
             {{-- The free address, given with the shop --}}
             @if ($free)
                 <div class="card rise rise-1 relative overflow-hidden p-5 {{ $justChanged === $free->id ? 'settled' : '' }}">
-                    <div class="pointer-events-none absolute -end-10 -top-12 h-40 w-40 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 opacity-[.07] blur-2xl"></div>
+                    <div class="pointer-events-none absolute -end-10 -top-12 h-40 w-40 rounded-full bg-gradient-to-br from-rose-500 to-indigo-600 opacity-[.07] blur-2xl"></div>
 
                     <div class="flex flex-wrap items-center justify-between gap-4">
                         <div class="flex items-center gap-4">
-                            <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white">
+                            <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-600 to-indigo-700 text-white">
                                 <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3.5 9h17M3.5 15h17M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
                                 </svg>
@@ -32,7 +32,7 @@
                                     <a href="https://{{ $free->hostname }}" target="_blank" rel="noopener"
                                        class="text-lg font-semibold hover:underline">{{ $free->hostname }}</a>
                                     @if ($free->is_primary)
-                                        <span class="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-800">Main address</span>
+                                        <span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-800">Main address</span>
                                     @endif
                                 </div>
                                 <p class="mt-0.5 text-sm text-slate-500">
@@ -75,7 +75,7 @@
                     <div class="flex gap-2">
                         <input type="text" wire:model="hostname" wire:keydown.enter="add" placeholder="myshop.com"
                                @disabled(! $canAddMore)
-                               class="w-full max-w-sm rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none disabled:bg-slate-50">
+                               class="w-full max-w-sm rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none disabled:bg-slate-50">
                         <button type="button" wire:click="add" @disabled(! $canAddMore) class="btn btn-primary disabled:opacity-50">
                             <span wire:loading.remove wire:target="add">Add domain</span>
                             <span wire:loading wire:target="add">Adding…</span>
@@ -117,7 +117,7 @@
                                             <a href="https://{{ $domain->hostname }}" target="_blank" rel="noopener"
                                                class="truncate font-medium hover:underline">{{ $domain->hostname }}</a>
                                             @if ($domain->is_primary)
-                                                <span class="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-800">Main address</span>
+                                                <span class="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-800">Main address</span>
                                             @endif
                                             <span class="rounded-full px-2 py-0.5 text-xs font-medium
                                                          {{ $working ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">

@@ -8,7 +8,7 @@
         Order::STATUS_CANCELLED => 'bg-rose-100 text-rose-800',
         Order::STATUS_NOT_DELIVERED => 'bg-amber-100 text-amber-900',
         Order::STATUS_PENDING_PAYMENT => 'bg-slate-100 text-slate-500',
-        Order::STATUS_PLACED => 'bg-violet-100 text-violet-800',
+        Order::STATUS_PLACED => 'bg-rose-100 text-rose-800',
         default => 'bg-sky-100 text-sky-800',
     };
 @endphp
@@ -100,7 +100,7 @@
                             </td>
                             <td class="px-4 py-3 text-end">
                                 <a href="{{ route('admin.orders.show', $order) }}" wire:navigate
-                                   class="text-sm text-violet-700 hover:underline">Open</a>
+                                   class="text-sm text-rose-700 hover:underline">Open</a>
                             </td>
                         </tr>
                     @endforeach

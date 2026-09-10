@@ -14,7 +14,7 @@
 @endphp
 
 <div class="card overflow-hidden">
-    <div class="border-b border-slate-100 bg-gradient-to-br from-violet-50 to-white p-5">
+    <div class="border-b border-slate-100 bg-gradient-to-br from-rose-50 to-white p-5">
         <h2 class="font-semibold">Pointing your domain here</h2>
         <p class="mt-1 text-sm text-slate-500">Five steps, done once.</p>
     </div>
@@ -24,15 +24,15 @@
             <li class="relative ps-11 {{ $loop->last ? '' : 'pb-6' }}">
                 {{-- The thread and arrow joining this step to the next. --}}
                 @unless ($loop->last)
-                    <span class="absolute start-[0.9rem] top-9 bottom-1 w-px bg-gradient-to-b from-violet-200 to-violet-100"></span>
-                    <svg class="absolute start-[0.55rem] bottom-0 h-3 w-3 text-violet-300" viewBox="0 0 24 24"
+                    <span class="absolute start-[0.9rem] top-9 bottom-1 w-px bg-gradient-to-b from-rose-200 to-rose-100"></span>
+                    <svg class="absolute start-[0.55rem] bottom-0 h-3 w-3 text-rose-300" viewBox="0 0 24 24"
                          fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m6 9 6 6 6-6" />
                     </svg>
                 @endunless
 
                 <span class="absolute start-0 top-0 flex h-8 w-8 items-center justify-center rounded-full
-                             bg-gradient-to-br from-violet-600 to-indigo-700 text-sm font-bold text-white
+                             bg-gradient-to-br from-rose-600 to-indigo-700 text-sm font-bold text-white
                              shadow-[0_4px_10px_-2px_rgba(91,61,245,.5)]">
                     {{ $index + 1 }}
                 </span>

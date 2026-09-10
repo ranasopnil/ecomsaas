@@ -21,7 +21,7 @@
             'label' => 'Visits today',
             'value' => number_format($visits['today']['visits']),
             'note' => 'From '.$people($visits['today']['visitors']),
-            'accent' => 'from-violet-600 to-indigo-700',
+            'accent' => 'from-rose-600 to-indigo-700',
             'icon' => 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
             'live' => false,
             'change' => $change,

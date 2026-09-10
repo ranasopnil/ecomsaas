@@ -8,7 +8,7 @@
 
     <div class="flex flex-wrap items-center gap-4">
         <input type="search" wire:model.live.debounce.300ms="search" placeholder="Search products"
-               class="w-full max-w-xs rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-violet-400 focus:outline-none">
+               class="w-full max-w-xs rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-rose-400 focus:outline-none">
         <label class="flex items-center gap-2 text-sm">
             <input type="checkbox" wire:model.live="onlyProblems" class="rounded border-slate-300">
             Only what is out or running low
@@ -51,7 +51,7 @@
                         <td class="px-5 py-3">
                             <div class="flex items-center gap-2">
                                 <input type="number" wire:model="counted.{{ $variant->id }}" placeholder="—"
-                                       class="w-24 rounded-xl border border-slate-200 px-2 py-1.5 text-sm focus:border-violet-400 focus:outline-none">
+                                       class="w-24 rounded-xl border border-slate-200 px-2 py-1.5 text-sm focus:border-rose-400 focus:outline-none">
                                 <button wire:click="saveCount({{ $variant->id }})"
                                         class="btn btn-quiet !px-3 !py-1.5">
                                     <span wire:loading.remove wire:target="saveCount({{ $variant->id }})">Save</span>

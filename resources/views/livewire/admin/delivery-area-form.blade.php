@@ -76,13 +76,13 @@
             <div class="mb-4">
                 <label class="mb-1 block text-sm font-medium">What do you call this area?</label>
                 <input type="text" wire:model="name" placeholder="Mirpur"
-                       class="w-full max-w-sm rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-violet-400 focus:outline-none">
+                       class="w-full max-w-sm rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-rose-400 focus:outline-none">
                 @error('name') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
             </div>
 
             <div class="mb-4">
                 <label class="mb-1 block text-sm font-medium">What do you charge to deliver here?</label>
-                <div class="flex max-w-[12rem] items-center rounded-xl border border-slate-200 focus-within:border-violet-400">
+                <div class="flex max-w-[12rem] items-center rounded-xl border border-slate-200 focus-within:border-rose-400">
                     <span class="px-3 text-sm text-slate-500">{{ $currency }}</span>
                     <input type="text" inputmode="decimal" wire:model="charge" placeholder="0"
                            class="w-full rounded-e-xl border-0 px-2 py-2 text-sm focus:outline-none">

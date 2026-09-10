@@ -365,7 +365,7 @@
 
                 @foreach ($choices as $value => [$label, $hint])
                     <label class="flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition
-                                  {{ $availability === $value ? 'border-violet-400 bg-violet-50/50' : 'border-slate-200 hover:border-slate-300' }}">
+                                  {{ $availability === $value ? 'border-rose-400 bg-rose-50/50' : 'border-slate-200 hover:border-slate-300' }}">
                         <input type="radio" wire:model.live="availability" value="{{ $value }}" class="mt-1">
                         <span>
                             <span class="block text-sm font-medium">{{ $label }}</span>

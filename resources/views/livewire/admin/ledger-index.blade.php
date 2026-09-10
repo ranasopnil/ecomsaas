@@ -77,7 +77,7 @@
                 <div>
                     <label class="mb-1 block text-sm font-medium">Which way did the money go?</label>
                     <select wire:model="direction"
-                            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                         <option value="out">Money out — something you spent</option>
                         <option value="in">Money in — something you took</option>
                     </select>
@@ -88,7 +88,7 @@
                     <div class="flex items-center gap-2">
                         <span class="text-sm text-slate-500">{{ $symbol }}</span>
                         <input type="text" inputmode="decimal" wire:model="amount" placeholder="500"
-                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm tabular-nums focus:border-violet-400 focus:outline-none">
+                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm tabular-nums focus:border-rose-400 focus:outline-none">
                     </div>
                     @error('amount') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
@@ -97,14 +97,14 @@
                     <label class="mb-1 block text-sm font-medium">What was it for?</label>
                     <input type="text" wire:model="description" maxlength="200"
                            placeholder="Packing boxes, shop rent, courier charges, money from a walk-in customer…"
-                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                     @error('description') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
                     <label class="mb-1 block text-sm font-medium">The day it happened</label>
                     <input type="date" wire:model="occurred_on"
-                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                     @error('occurred_on') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -127,7 +127,7 @@
 
             <label class="mb-1 mt-4 block text-sm font-medium">Why?</label>
             <input type="text" wire:model="why" maxlength="200" placeholder="Entered twice by mistake"
-                   class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                   class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
 
             <div class="mt-5 flex items-center gap-3">
                 <button type="submit" class="btn btn-primary">Write the opposite line</button>
@@ -188,7 +188,7 @@
                                     <span class="rounded-full bg-slate-100 px-2 py-0.5">{{ $entry->kindLabel() }}</span>
                                     @if ($entry->order)
                                         <a href="{{ route('admin.orders.show', $entry->order) }}" wire:navigate
-                                           class="text-violet-700 hover:underline">{{ $entry->order->reference }}</a>
+                                           class="text-rose-700 hover:underline">{{ $entry->order->reference }}</a>
                                     @endif
                                     @if ($entry->user_name)
                                         <span>by {{ $entry->user_name }}</span>

@@ -8,7 +8,7 @@
         Order::STATUS_CANCELLED => 'bg-rose-100 text-rose-800',
         Order::STATUS_NOT_DELIVERED => 'bg-amber-100 text-amber-900',
         Order::STATUS_PENDING_PAYMENT => 'bg-slate-100 text-slate-600',
-        Order::STATUS_PLACED => 'bg-violet-100 text-violet-800',
+        Order::STATUS_PLACED => 'bg-rose-100 text-rose-800',
         default => 'bg-sky-100 text-sky-800',
     };
 
@@ -37,7 +37,7 @@
                 @foreach (Order::JOURNEY as $index => $stage)
                     <li class="flex items-center gap-2">
                         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold
-                                     {{ $index <= $at ? 'bg-violet-600 text-white' : 'bg-slate-100 text-slate-400' }}">
+                                     {{ $index <= $at ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-400' }}">
                             {{ $index < $at ? '✓' : $index + 1 }}
                         </span>
                         <span class="text-sm {{ $index === $at ? 'font-semibold' : 'text-slate-500' }}">
@@ -124,7 +124,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="text-sm text-slate-500">{{ $symbol }}</span>
                                 <input type="text" inputmode="decimal" wire:model="cash"
-                                       class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm tabular-nums focus:border-violet-400 focus:outline-none">
+                                       class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm tabular-nums focus:border-rose-400 focus:outline-none">
                             </div>
                             <p class="mt-1 text-xs text-slate-500">
                                 {{ $symbol }}{{ $stillOwed->toDisplay() }} is owed. Enter less if that is what came,
@@ -137,7 +137,7 @@
                             <label class="mb-1 block text-xs font-medium text-slate-500">A note (optional)</label>
                             <input type="text" wire:model="cash_note" maxlength="200"
                                    placeholder="Paid at the Friday settlement, courier kept its charge…"
-                                   class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                                   class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                         </div>
                     </div>
 
@@ -189,7 +189,7 @@
                                 <div>
                                     <label class="mb-1 block text-xs font-medium text-slate-500">Which courier</label>
                                     <select wire:model.live="courier_id"
-                                            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                                            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                                         @foreach ($couriers as $courier)
                                             <option value="{{ $courier->id }}">{{ $courier->name }}</option>
                                         @endforeach
@@ -203,7 +203,7 @@
                                             <label class="mb-1 block text-xs font-medium text-slate-500">{{ $ask['label'] }}</label>
                                             <select wire:model.live="booking.{{ $ask['key'] }}"
                                                     @disabled($ask['options'] === [])
-                                                    class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none disabled:bg-slate-50 disabled:text-slate-400">
+                                                    class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none disabled:bg-slate-50 disabled:text-slate-400">
                                                 <option value="">
                                                     {{ $ask['options'] === []
                                                         ? ($ask['depends_on'] ? 'Choose the '.$ask['depends_on'].' first' : 'Nothing to choose from')
@@ -226,7 +226,7 @@
                                             Consignment number (optional)
                                         </label>
                                         <input type="text" wire:model="tracking_code" maxlength="80"
-                                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                                         <p class="mt-1 text-xs text-slate-500">
                                             The customer sees this, and can follow the parcel if the courier has a page for it.
                                         </p>
@@ -245,7 +245,7 @@
                                       placeholder="{{ $step === Order::STATUS_CANCELLED
                                           ? 'Out of stock, customer changed their mind, cannot reach the address…'
                                           : 'Nobody at home, phone switched off, customer refused it…' }}"
-                                      class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none"></textarea>
+                                      class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none"></textarea>
                             <p class="mt-1 text-xs text-slate-500">
                                 Kept on the order for good. Whoever opens it next will see why.
                             </p>
@@ -322,7 +322,7 @@
                 @if ($order->latitude && $order->longitude)
                     <a href="https://www.google.com/maps?q={{ $order->latitude }},{{ $order->longitude }}"
                        target="_blank" rel="noopener"
-                       class="mt-3 inline-block text-xs text-violet-700 hover:underline">Where they said they are</a>
+                       class="mt-3 inline-block text-xs text-rose-700 hover:underline">Where they said they are</a>
                 @endif
             </div>
 
@@ -340,7 +340,7 @@
                         <p class="font-mono text-xs">{{ $order->tracking_code }}</p>
                         @if ($order->trackingUrl())
                             <a href="{{ $order->trackingUrl() }}" target="_blank" rel="noopener"
-                               class="mt-2 inline-block text-xs text-violet-700 hover:underline">Follow it on their site</a>
+                               class="mt-2 inline-block text-xs text-rose-700 hover:underline">Follow it on their site</a>
                         @endif
                     @endif
                     @if ($order->handed_over_at)
@@ -413,7 +413,7 @@
                 @foreach ($order->events->reverse() as $event)
                     <li wire:key="event-{{ $event->id }}" class="flex gap-3">
                         <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full
-                                     {{ $loop->first ? 'bg-violet-600' : 'bg-slate-300' }}"></span>
+                                     {{ $loop->first ? 'bg-rose-600' : 'bg-slate-300' }}"></span>
                         <div class="min-w-0">
                             <p class="text-sm font-medium">{{ $event->title() }}</p>
                             @if ($event->tracking_code)

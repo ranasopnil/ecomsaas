@@ -71,21 +71,21 @@
                     <div class="sm:col-span-2">
                         <label class="mb-1 block text-sm font-medium">Mail server (SMTP host)</label>
                         <input type="text" wire:model="host" placeholder="smtp.gmail.com"
-                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                         @error('host') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
                         <label class="mb-1 block text-sm font-medium">Port</label>
                         <input type="number" wire:model="port" min="1" max="65535"
-                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                         @error('port') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                     </div>
 
                     <div>
                         <label class="mb-1 block text-sm font-medium">Security</label>
                         <select wire:model="encryption"
-                                class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                                class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                             <option value="tls">TLS (usually port 587)</option>
                             <option value="ssl">SSL (usually port 465)</option>
                             <option value="none">None (not recommended)</option>
@@ -95,7 +95,7 @@
                     <div>
                         <label class="mb-1 block text-sm font-medium">Username</label>
                         <input type="text" wire:model="username" placeholder="you@yourshop.com" autocomplete="off"
-                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                         @error('username') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                     </div>
 
@@ -103,7 +103,7 @@
                         <label class="mb-1 block text-sm font-medium">Password</label>
                         <input type="password" wire:model="password" autocomplete="new-password"
                                placeholder="{{ $hasPassword ? '•••••••• saved — type to replace' : '' }}"
-                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                         <p class="mt-1 text-xs text-slate-500">
                             @if ($hasPassword)
                                 Stored securely. It is never shown again; leave this empty to keep it.
@@ -117,7 +117,7 @@
                     <div>
                         <label class="mb-1 block text-sm font-medium">From address</label>
                         <input type="email" wire:model="from_address" placeholder="orders@yourshop.com"
-                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                         <p class="mt-1 text-xs text-slate-500">What customers see the email is from. Usually has to match the account.</p>
                         @error('from_address') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                     </div>
@@ -125,7 +125,7 @@
                     <div>
                         <label class="mb-1 block text-sm font-medium">From name</label>
                         <input type="text" wire:model="from_name"
-                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                         @error('from_name') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                     </div>
 
@@ -159,7 +159,7 @@
 
                 <div class="flex flex-wrap gap-2">
                     <input type="email" wire:model="test_to" wire:keydown.enter="sendTest" placeholder="you@example.com"
-                           class="w-full max-w-sm rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                           class="w-full max-w-sm rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                     <button type="button" wire:click="sendTest" @disabled(! $settings) class="btn btn-quiet disabled:opacity-50">
                         <span wire:loading.remove wire:target="sendTest">Send test</span>
                         <span wire:loading wire:target="sendTest">Sending…</span>
@@ -175,7 +175,7 @@
         {{-- Right: the settings most people need --}}
         <div class="rise rise-3 space-y-4">
             <div class="card overflow-hidden">
-                <div class="border-b border-slate-100 bg-gradient-to-br from-violet-50 to-white p-5">
+                <div class="border-b border-slate-100 bg-gradient-to-br from-rose-50 to-white p-5">
                     <h2 class="font-semibold">Common providers</h2>
                     <p class="mt-1 text-sm text-slate-500">The settings each one expects.</p>
                 </div>

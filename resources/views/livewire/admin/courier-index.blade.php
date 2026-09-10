@@ -9,7 +9,7 @@
 
     @if ($couriers->isEmpty() && ! $adding)
         <div class="card rise rise-1 p-8 text-center">
-            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-violet-100 text-2xl text-violet-700">🛵</div>
+            <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-rose-100 text-2xl text-rose-700">🛵</div>
             <h2 class="mt-4 text-lg font-semibold">No couriers yet</h2>
             <p class="mx-auto mt-2 max-w-md text-sm text-slate-500">
                 You need at least one before you can hand an order over. Add the ones most shops here use,
@@ -44,7 +44,7 @@
                 @foreach ($couriers as $courier)
                     <div wire:key="courier-{{ $courier->id }}" class="flex flex-wrap items-center gap-3 py-3">
                         <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold
-                                     {{ $courier->is_active ? 'bg-violet-100 text-violet-700' : 'bg-slate-100 text-slate-400' }}">
+                                     {{ $courier->is_active ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-400' }}">
                             {{ mb_substr($courier->name, 0, 1) }}
                         </span>
 
@@ -57,7 +57,7 @@
                             </div>
                             <div class="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                                 @if ($courier->isAutomatic())
-                                    <span class="rounded-full bg-violet-100 px-2 py-0.5 font-medium text-violet-800">
+                                    <span class="rounded-full bg-rose-100 px-2 py-0.5 font-medium text-rose-800">
                                         Books parcels itself
                                     </span>
                                     @unless ($courier->isComplete())
@@ -101,7 +101,7 @@
 
             @if ($suggestions !== [])
                 <div class="mt-4 border-t border-slate-100 pt-4">
-                    <button type="button" wire:click="addSuggested" class="text-sm text-violet-700 hover:underline">
+                    <button type="button" wire:click="addSuggested" class="text-sm text-rose-700 hover:underline">
                         Add any of the usual ones I am missing
                     </button>
                 </div>
@@ -118,21 +118,21 @@
                 <div>
                     <label class="mb-1 block text-sm font-medium">Name</label>
                     <input type="text" wire:model="name" maxlength="80" placeholder="Pathao Courier"
-                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                     @error('name') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
                     <label class="mb-1 block text-sm font-medium">Phone (optional)</label>
                     <input type="text" wire:model="phone" maxlength="40" placeholder="+880 1712 345678"
-                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                     @error('phone') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="sm:col-span-2">
                     <label class="mb-1 block text-sm font-medium">How do you work with them?</label>
                     <select wire:model.live="driver"
-                            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                            class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                         <option value="">I book parcels with them myself, and type the number in</option>
                         @foreach ($modules as $key => $module)
                             <option value="{{ $key }}">{{ $module['name'] }} — this shop can talk to them</option>
@@ -186,7 +186,7 @@
                                            wire:model="form.{{ $fieldKey }}"
                                            autocomplete="{{ $field['secret'] ? 'new-password' : 'off' }}"
                                            placeholder="{{ $field['secret'] && $editing?->hasSecret($fieldKey) ? '•••••••• saved — type to replace' : '' }}"
-                                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                                     @if ($field['hint'] ?? false)
                                         <p class="mt-1 text-xs text-slate-500">{{ $field['hint'] }}</p>
                                     @elseif ($field['secret'])
@@ -204,7 +204,7 @@
                     <label class="mb-1 block text-sm font-medium">Where a parcel can be followed (optional)</label>
                     <input type="text" wire:model="tracking_url" maxlength="300"
                            placeholder="https://steadfast.com.bd/t/{code}"
-                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 font-mono text-xs focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 font-mono text-xs focus:border-rose-400 focus:outline-none">
                     <p class="mt-1 text-xs text-slate-500">
                         Put <span class="font-mono">{code}</span> where the consignment number goes. The customer gets a
                         link to it on their order.

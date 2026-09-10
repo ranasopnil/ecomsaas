@@ -50,7 +50,7 @@
                     <label class="mb-1 block text-sm font-medium">A line or two about the shop</label>
                     <textarea wire:model="about" rows="3" maxlength="400"
                               placeholder="Fresh groceries and daily needs, delivered across Dhaka since 2019."
-                              class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none"></textarea>
+                              class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none"></textarea>
                     <p class="mt-1 text-xs text-slate-500">Shown next to your shop name at the bottom of every page.</p>
                     @error('about') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
@@ -58,7 +58,7 @@
                 <div>
                     <label class="mb-1 block text-sm font-medium">The small line at the very bottom</label>
                     <input type="text" wire:model="copyright" maxlength="160" placeholder="All rights reserved."
-                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                     <p class="mt-1 text-xs text-slate-500">
                         Your shop name and this year are always shown before it.
                     </p>
@@ -76,28 +76,28 @@
                     <label class="mb-1 block text-sm font-medium">Shop address</label>
                     <textarea wire:model="address" rows="2" maxlength="300"
                               placeholder="House 12, Road 5, Dhanmondi, Dhaka 1205"
-                              class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none"></textarea>
+                              class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none"></textarea>
                     @error('address') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
                     <label class="mb-1 block text-sm font-medium">Phone</label>
                     <input type="text" wire:model="phone" maxlength="40" placeholder="+880 1712 345678"
-                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                     @error('phone') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
                     <label class="mb-1 block text-sm font-medium">Contact email</label>
                     <input type="email" wire:model="contact_email" maxlength="160" placeholder="hello@yourshop.com"
-                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                     @error('contact_email') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="sm:col-span-2">
                     <label class="mb-1 block text-sm font-medium">Opening hours</label>
                     <input type="text" wire:model="opening_hours" maxlength="120" placeholder="Saturday to Thursday, 9am – 9pm"
-                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                     @error('opening_hours') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
             </div>
@@ -115,7 +115,7 @@
                     <div wire:key="social-{{ $social['field'] }}">
                         <label class="mb-1 block text-sm font-medium">{{ $social['label'] }}</label>
                         <input type="text" wire:model="{{ $social['field'] }}" maxlength="200" placeholder="{{ $social['hint'] }}"
-                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                               class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                         @error($social['field']) <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                     </div>
                 @endforeach
@@ -123,7 +123,7 @@
                 <div>
                     <label class="mb-1 block text-sm font-medium">WhatsApp number</label>
                     <input type="text" wire:model="whatsapp_number" maxlength="24" placeholder="+880 1712 345678"
-                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-violet-400 focus:outline-none">
+                           class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-rose-400 focus:outline-none">
                     <p class="mt-1 text-xs text-slate-500">Becomes a button that opens a chat with you.</p>
                     @error('whatsapp_number') <p class="mt-1 text-sm text-rose-700">{{ $message }}</p> @enderror
                 </div>
@@ -173,7 +173,7 @@
                             <div class="mt-3">
                                 <p class="mb-2 text-xs text-slate-500">{{ $page['hint'] }}</p>
                                 <textarea wire:model="{{ $page['field'] }}" rows="12" maxlength="20000"
-                                          class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm leading-relaxed focus:border-violet-400 focus:outline-none"></textarea>
+                                          class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm leading-relaxed focus:border-rose-400 focus:outline-none"></textarea>
                                 <p class="mt-1 text-xs text-slate-500">
                                     Plain writing. Leave a blank line between paragraphs — that is how it appears on your shop.
                                 </p>
